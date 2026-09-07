@@ -106,6 +106,9 @@ model Cliente {
   /// que garante o "reconhecimento" do passo 2 em vez de cadastro duplicado.
   documento  String     @unique
   nome       String
+  /// `nome` em minúsculas e sem acento. É a coluna que a busca por nome
+  /// consulta — ver normalizarParaBusca em src/lib/formatos.ts.
+  nomeBusca  String
 
   // Qualificação (usada na geração da procuração e da declaração)
   rg             String?
@@ -134,7 +137,7 @@ model Cliente {
   documentos Documento[]
   acessos    Usuario[]
 
-  @@index([nome])
+  @@index([nomeBusca])
   @@index([contratoAssinadoEm])
   @@map("cliente")
 }

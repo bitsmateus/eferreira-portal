@@ -1,7 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useEffect, useId, useState, useTransition } from 'react'
+import {
+  useActionState,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useTransition,
+} from 'react'
 import { useFormStatus } from 'react-dom'
 
 import { formatarCep, formatarTelefone } from '@/lib/formatos'
@@ -113,6 +120,8 @@ export function FormularioDeCliente({
     estado: 'vazio',
   })
   const [, iniciarConsulta] = useTransition()
+  /** Número da última consulta disparada, para descartar resposta atrasada. */
+  const ultimaConsulta = useRef(0)
 
   useEffect(() => {
     if (!reconhecerAoDigitar) return
@@ -131,10 +140,18 @@ export function FormularioDeCliente({
 
     setReconhecimento({ estado: 'consultando' })
 
+    // Cancelar o relógio não cancela a consulta já enviada. Sem esta marca, a
+    // resposta atrasada do CPF anterior chegaria depois e rotularia o CPF
+    // atual como "já cadastrado" com o nome errado.
+    const requisicao = ++ultimaConsulta.current
+
     // Espera a digitação parar: sem isso, cada tecla vira uma consulta.
     const relogio = setTimeout(() => {
       iniciarConsulta(async () => {
         const achado = await conferirDocumento(digitos)
+
+        // Chegou tarde: já se está conferindo outro documento. Descarta.
+        if (requisicao !== ultimaConsulta.current) return
 
         if (
           achado.encontrado &&
@@ -240,7 +257,16 @@ export function FormularioDeCliente({
                 placeholder="000.000.000-00"
                 value={documento}
                 onChange={(evento) => setDocumento(evento.target.value)}
-                onBlur={() => setDocumento((atual) => formatarDocumento(atual))}
+                onBlur={() =>
+                  setDocumento((atual) => {
+                    // Formatar um documento incompleto apagaria o que a pessoa
+                    // acabou de digitar. Só formata quando está inteiro.
+                    const digitos = normalizarDocumento(atual)
+                    return digitos.length === 11 || digitos.length === 14
+                      ? formatarDocumento(atual)
+                      : atual
+                  })
+                }
               />
             </Campo>
 

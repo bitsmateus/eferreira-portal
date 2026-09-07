@@ -119,3 +119,34 @@ describe('formatos', () => {
     expect(formatarCep('0131010')).toBe('0131010')
   })
 })
+
+describe('validarCaso — situação (correções da revisão)', () => {
+  it('trata situação em branco como "em andamento"', () => {
+    const resultado = validarCaso(campos({ situacao: '' }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.situacao).toBe(SituacaoCaso.EM_ANDAMENTO)
+  })
+
+  // Regra 1: mensagem de erro também é português. O `nativeEnum` do Zod, sem
+  // errorMap, devolveria "Invalid enum value..." direto na tela.
+  it('recusa situação inexistente com mensagem em português', () => {
+    const resultado = validarCaso(campos({ situacao: 'GANHO' }))
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+
+    expect(resultado.erros['situacao']).toBe('Situação de caso inválida.')
+  })
+
+  it('aceita arquivado', () => {
+    const resultado = validarCaso(campos({ situacao: SituacaoCaso.ARQUIVADO }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.situacao).toBe(SituacaoCaso.ARQUIVADO)
+  })
+})

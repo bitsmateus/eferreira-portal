@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 import { EtiquetaDeAcesso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
-import { contarClientes, listarClientes } from '@/lib/clientes'
+import { LIMITE_DA_LISTA, contarClientes, listarClientes } from '@/lib/clientes'
 import { formatarData } from '@/lib/datas'
 import { formatarDocumento } from '@/lib/documento'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
@@ -23,11 +23,12 @@ export default async function PaginaDeClientes({
   const { busca } = await searchParams
   const termo = busca ?? ''
 
-  const [clientes, total] = await Promise.all([
+  const [lista, total] = await Promise.all([
     listarClientes(sessao, termo),
     contarClientes(sessao),
   ])
 
+  const clientes = lista.linhas
   const semEmail = clientes.filter((cliente) => !cliente.temEmail).length
 
   return (
@@ -139,6 +140,17 @@ export default async function PaginaDeClientes({
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {lista.truncada && (
+          <div className="aviso aviso-atencao mt-4">
+            <span aria-hidden="true">▲</span>
+            <div>
+              <b>A lista está cortada.</b> Mostrando os {LIMITE_DA_LISTA} primeiros de{' '}
+              {total} cadastrados, em ordem alfabética. Use a busca por nome, CPF ou
+              CNPJ para chegar a quem não aparece aqui.
             </div>
           </div>
         )}

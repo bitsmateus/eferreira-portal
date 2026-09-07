@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { TipoPessoa } from '@prisma/client'
 
 import { interpretarBusca, montarLinha, validarCliente } from '@/lib/clientes'
+import { normalizarParaBusca } from '@/lib/formatos'
 
 /** Base válida — cada teste troca só o campo que está sendo exercitado. */
 function campos(troca: Partial<Record<string, string>> = {}) {
@@ -245,5 +246,56 @@ describe('montarLinha', () => {
 
   it('trata e-mail em branco como ausência de e-mail', () => {
     expect(montarLinha({ ...base, email: '' }).temEmail).toBe(false)
+  })
+})
+
+describe('normalizarParaBusca — busca por nome sem acento', () => {
+  it('tira acento e baixa a caixa', () => {
+    expect(normalizarParaBusca('Marcos Vinícius Andrade')).toBe(
+      'marcos vinicius andrade',
+    )
+    expect(normalizarParaBusca('CONSTRUÇÃO Ltda')).toBe('construcao ltda')
+    expect(normalizarParaBusca('  José Antônio  ')).toBe('jose antonio')
+  })
+
+  // O ILIKE do Postgres é sensível a acento: sem esta normalização,
+  // "Vinicius" não encontraria "Vinícius" e a busca do Anexo I, 2.1 falharia
+  // justamente com os nomes brasileiros.
+  it('faz o termo digitado sem acento casar com o nome acentuado', () => {
+    const guardado = normalizarParaBusca('Marcos Vinícius Andrade')
+    expect(guardado.includes(normalizarParaBusca('Vinicius'))).toBe(true)
+    expect(guardado.includes(normalizarParaBusca('VINÍCIUS'))).toBe(true)
+  })
+
+  it('não muda quem já está sem acento', () => {
+    expect(normalizarParaBusca('joao silva')).toBe('joao silva')
+  })
+})
+
+describe('validarCliente — data de hoje (correção da revisão)', () => {
+  // A data é ancorada ao meio-dia UTC. Comparar com `Date.now()` rejeitaria
+  // hoje entre 00:00 e 09:00 em Brasília, porque 12:00 UTC ainda está à
+  // frente do instante atual. A comparação certa é entre dias civis.
+  it('aceita a data de hoje em São Paulo, a qualquer hora do dia', () => {
+    const hoje = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date())
+
+    expect(validarCliente(campos({ dataNascimento: hoje })).ok).toBe(true)
+  })
+
+  it('continua recusando o dia seguinte', () => {
+    const amanha = new Date(Date.now() + 36 * 60 * 60 * 1000)
+    const texto = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(amanha)
+
+    expect(validarCliente(campos({ dataNascimento: texto })).ok).toBe(false)
   })
 })

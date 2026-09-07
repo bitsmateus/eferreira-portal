@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
-import { contarCasos, listarCasos } from '@/lib/casos'
+import { LIMITE_DA_LISTA, contarCasos, listarCasos } from '@/lib/casos'
 import { formatarData } from '@/lib/datas'
 import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
@@ -23,10 +23,12 @@ export default async function PaginaDeCasos({
   const { busca } = await searchParams
   const termo = busca ?? ''
 
-  const [casos, total] = await Promise.all([
+  const [lista, total] = await Promise.all([
     listarCasos(sessao, termo),
     contarCasos(sessao),
   ])
+
+  const casos = lista.linhas
 
   return (
     <>
@@ -140,6 +142,17 @@ export default async function PaginaDeCasos({
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {lista.truncada && (
+          <div className="aviso aviso-atencao mt-4">
+            <span aria-hidden="true">▲</span>
+            <div>
+              <b>A lista está cortada.</b> Mostrando os {LIMITE_DA_LISTA} casos mais
+              recentes de {total}. Use a busca por número do processo, assunto ou
+              cliente para chegar aos demais.
             </div>
           </div>
         )}

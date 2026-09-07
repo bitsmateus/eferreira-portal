@@ -72,3 +72,20 @@ export function normalizarCep(valor: string): string {
   const digitos = somenteDigitos(limpo)
   return digitos.length === 8 ? digitos : limpo
 }
+
+/**
+ * Forma de um texto para busca: minúsculo e sem acento.
+ *
+ * "Marcos Vinícius" e "Marcos Vinicius" precisam se encontrar — quem digita o
+ * nome de um cliente na pressa não põe acento, e o Anexo I, 2.1 promete busca
+ * por nome. O Postgres só compara sem acento com a extensão `unaccent`, que
+ * exigiria consulta em SQL cru e, com ela, escapar do filtro de autorização.
+ * Por isso a normalização é feita aqui e guardada em coluna própria.
+ */
+export function normalizarParaBusca(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}

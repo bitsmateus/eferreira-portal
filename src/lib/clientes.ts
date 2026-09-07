@@ -14,11 +14,16 @@ import { AcaoAuditoria, type Prisma, TipoPessoa } from '@prisma/client'
 import { z } from 'zod'
 
 import { exigirEquipe, filtroDeClientes, type SessaoServidor } from '@/lib/autorizacao'
-import { prisma } from '@/lib/prisma'
+import { ehViolacaoDeUnicidade, prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { prepararDocumento } from '@/lib/documento'
-import { diaCivilParaData } from '@/lib/datas'
-import { normalizarCep, normalizarTelefone, somenteDigitos } from '@/lib/formatos'
+import { diaCivilParaData, diaEmSaoPaulo } from '@/lib/datas'
+import {
+  normalizarCep,
+  normalizarParaBusca,
+  normalizarTelefone,
+  somenteDigitos,
+} from '@/lib/formatos'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 
 // ---------------------------------------------------------------------------
@@ -59,10 +64,13 @@ const dataDeNascimento = z
       return z.NEVER
     }
 
-    if (data.getTime() > Date.now()) {
+    // Comparar com `Date.now()` rejeitaria a data de hoje entre 00:00 e 09:00
+    // em Brasília, porque o dia civil é ancorado ao meio-dia UTC. A comparação
+    // certa é entre dias civis em São Paulo, não entre instantes.
+    if (valor > diaEmSaoPaulo(new Date())) {
       contexto.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'A data de nascimento não pode estar no futuro.',
+        message: 'A data não pode estar no futuro.',
       })
       return z.NEVER
     }
@@ -171,7 +179,8 @@ export function interpretarBusca(termo: string): Busca {
 function condicaoDaBusca(busca: Busca): Prisma.ClienteWhereInput | undefined {
   if (busca.tipo === 'vazia') return undefined
   if (busca.tipo === 'documento') return { documento: { contains: busca.digitos } }
-  return { nome: { contains: busca.texto, mode: 'insensitive' } }
+  // Compara com a coluna já normalizada: "Vinicius" acha "Vinícius".
+  return { nomeBusca: { contains: normalizarParaBusca(busca.texto) } }
 }
 
 // ---------------------------------------------------------------------------
@@ -240,20 +249,35 @@ export function montarLinha(cliente: ClienteResumido): LinhaDeCliente {
   }
 }
 
+/** Teto de linhas por página. Existe para a tela não puxar a base inteira. */
+export const LIMITE_DA_LISTA = 200
+
+export type ListaDeClientes = {
+  linhas: LinhaDeCliente[]
+  /** Verdadeiro quando havia mais do que cabe: a tela precisa dizer isso. */
+  truncada: boolean
+}
+
 export async function listarClientes(
   sessao: SessaoServidor,
   termo: string,
-): Promise<LinhaDeCliente[]> {
+): Promise<ListaDeClientes> {
   const busca = interpretarBusca(termo)
 
+  // Pede um a mais que o teto: se vier, é porque havia mais do que coube.
   const clientes = await prisma.cliente.findMany({
     where: filtroDeClientes(sessao, condicaoDaBusca(busca)),
     select: RESUMO,
     orderBy: { nome: 'asc' },
-    take: 200,
+    take: LIMITE_DA_LISTA + 1,
   })
 
-  return clientes.map(montarLinha)
+  const truncada = clientes.length > LIMITE_DA_LISTA
+
+  return {
+    linhas: clientes.slice(0, LIMITE_DA_LISTA).map(montarLinha),
+    truncada,
+  }
 }
 
 export async function contarClientes(sessao: SessaoServidor): Promise<number> {
@@ -332,26 +356,47 @@ export async function criarCliente(
     return { situacao: 'ja_existe', clienteId: existente.id, nome: existente.nome }
   }
 
-  const clienteId = await prisma.$transaction(async (transacao) => {
-    const criado = await transacao.cliente.create({
-      data: { ...dados, criadoPorId: sessao.usuarioId },
-      select: { id: true },
+  let clienteId: string
+  try {
+    clienteId = await prisma.$transaction(async (transacao) => {
+      const criado = await transacao.cliente.create({
+        data: {
+          ...dados,
+          nomeBusca: normalizarParaBusca(dados.nome),
+          criadoPorId: sessao.usuarioId,
+        },
+        select: { id: true },
+      })
+
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.CRIACAO,
+          entidade: 'cliente',
+          entidadeId: criado.id,
+          detalhes: { documento: dados.documento, nome: dados.nome },
+        },
+        transacao,
+      )
+
+      return criado.id
     })
-
-    await registrarAuditoria(
-      {
-        usuarioId: sessao.usuarioId,
-        usuarioEmail: emailDoAutor,
-        acao: AcaoAuditoria.CRIACAO,
-        entidade: 'cliente',
-        entidadeId: criado.id,
-        detalhes: { documento: dados.documento, nome: dados.nome },
-      },
-      transacao,
-    )
-
-    return criado.id
-  })
+  } catch (erro) {
+    // A checagem acima resolve o caso comum, mas entre ela e o `create` cabe
+    // outro cadastro do mesmo documento. Quem decide de verdade é o índice
+    // único do banco; aqui só traduzimos a violação para a mesma resposta.
+    if (ehViolacaoDeUnicidade(erro)) {
+      const existente = await prisma.cliente.findUnique({
+        where: { documento: dados.documento },
+        select: { id: true, nome: true },
+      })
+      if (existente !== null) {
+        return { situacao: 'ja_existe', clienteId: existente.id, nome: existente.nome }
+      }
+    }
+    throw erro
+  }
 
   return { situacao: 'criado', clienteId }
 }
@@ -385,21 +430,38 @@ export async function atualizarCliente(
     return { situacao: 'documento_de_outro', nome: conflito.nome }
   }
 
-  await prisma.$transaction(async (transacao) => {
-    await transacao.cliente.update({ where: { id }, data: dados })
+  try {
+    await prisma.$transaction(async (transacao) => {
+      await transacao.cliente.update({
+        where: { id },
+        data: { ...dados, nomeBusca: normalizarParaBusca(dados.nome) },
+      })
 
-    await registrarAuditoria(
-      {
-        usuarioId: sessao.usuarioId,
-        usuarioEmail: emailDoAutor,
-        acao: AcaoAuditoria.ATUALIZACAO,
-        entidade: 'cliente',
-        entidadeId: id,
-        detalhes: { documento: dados.documento, nome: dados.nome },
-      },
-      transacao,
-    )
-  })
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.ATUALIZACAO,
+          entidade: 'cliente',
+          entidadeId: id,
+          detalhes: { documento: dados.documento, nome: dados.nome },
+        },
+        transacao,
+      )
+    })
+  } catch (erro) {
+    if (ehViolacaoDeUnicidade(erro)) {
+      const conflitante = await prisma.cliente.findUnique({
+        where: { documento: dados.documento },
+        select: { nome: true },
+      })
+      return {
+        situacao: 'documento_de_outro',
+        nome: conflitante?.nome ?? 'outro cliente',
+      }
+    }
+    throw erro
+  }
 
   return { situacao: 'atualizado' }
 }

@@ -53,6 +53,15 @@ export async function cadastrarCaso(
     return { mensagem: 'Cliente não encontrado.' }
   }
 
+  if (resultado.situacao === 'responsavel_invalido') {
+    return {
+      erros: {
+        responsavelId:
+          'Responsável inválido. Escolha um operador ou administrador ativo.',
+      },
+    }
+  }
+
   if (resultado.situacao === 'numero_repetido') {
     return {
       erros: {
@@ -86,6 +95,15 @@ export async function salvarEdicaoDeCaso(
 
   if (resultado.situacao === 'nao_encontrado') {
     return { mensagem: 'Caso não encontrado.' }
+  }
+
+  if (resultado.situacao === 'responsavel_invalido') {
+    return {
+      erros: {
+        responsavelId:
+          'Responsável inválido. Escolha um operador ou administrador ativo.',
+      },
+    }
   }
 
   if (resultado.situacao === 'numero_repetido') {

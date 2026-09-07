@@ -9,11 +9,17 @@
  * filtro da sessão. Um `clienteId` no corpo do formulário não é autorização.
  */
 
-import { AcaoAuditoria, type Prisma, SituacaoCaso } from '@prisma/client'
+import {
+  AcaoAuditoria,
+  PerfilUsuario,
+  type Prisma,
+  SituacaoCaso,
+  SituacaoUsuario,
+} from '@prisma/client'
 import { z } from 'zod'
 
 import { exigirEquipe, filtroDeCasos, filtroDeClientes, type SessaoServidor } from '@/lib/autorizacao'
-import { prisma } from '@/lib/prisma'
+import { ehViolacaoDeUnicidade, prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { normalizarNumeroDeProcesso, somenteDigitos } from '@/lib/formatos'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
@@ -62,7 +68,15 @@ export const esquemaDeCaso = z.object({
     .max(180, 'Assunto longo demais.'),
   vara: opcional,
   parteContraria: opcional,
-  situacao: z.nativeEnum(SituacaoCaso).default(SituacaoCaso.EM_ANDAMENTO),
+  // Em branco vira "em andamento", que é como o caso nasce. O `nativeEnum`
+  // sozinho devolveria a mensagem em inglês do Zod para valor fora da lista,
+  // e regra 1 vale também para mensagem de erro.
+  situacao: z.preprocess(
+    (valor) => (valor === '' || valor === undefined ? SituacaoCaso.EM_ANDAMENTO : valor),
+    z.nativeEnum(SituacaoCaso, {
+      errorMap: () => ({ message: 'Situação de caso inválida.' }),
+    }),
+  ),
   responsavelId: z
     .string()
     .trim()
@@ -131,16 +145,50 @@ function condicaoDaBusca(termo: string): Prisma.CasoWhereInput | undefined {
   }
 }
 
+/** Teto de linhas por página, como na lista de clientes. */
+export const LIMITE_DA_LISTA = 200
+
+export type ListaDeCasos = {
+  linhas: LinhaDeCaso[]
+  /** Verdadeiro quando havia mais do que cabe: a tela precisa dizer isso. */
+  truncada: boolean
+}
+
 export async function listarCasos(
   sessao: SessaoServidor,
   termo: string,
-): Promise<LinhaDeCaso[]> {
-  return prisma.caso.findMany({
+): Promise<ListaDeCasos> {
+  const casos = await prisma.caso.findMany({
     where: filtroDeCasos(sessao, condicaoDaBusca(termo)),
     select: RESUMO,
     orderBy: { criadoEm: 'desc' },
-    take: 200,
+    take: LIMITE_DA_LISTA + 1,
   })
+
+  return {
+    linhas: casos.slice(0, LIMITE_DA_LISTA),
+    truncada: casos.length > LIMITE_DA_LISTA,
+  }
+}
+
+/**
+ * Confere que o responsável escolhido existe e é da equipe do escritório.
+ *
+ * O `responsavelId` chega do `<select>`, e o navegador manda o que quiser.
+ * Sem esta conferência, um id inexistente derruba a escrita com erro de chave
+ * estrangeira, e o id de um usuário de perfil CLIENTE viraria "responsável"
+ * por um caso.
+ */
+async function responsavelEhValido(responsavelId: string): Promise<boolean> {
+  const encontrado = await prisma.usuario.findFirst({
+    where: {
+      id: responsavelId,
+      perfil: { in: [PerfilUsuario.OPERADOR, PerfilUsuario.ADMINISTRADOR] },
+      situacao: SituacaoUsuario.ATIVO,
+    },
+    select: { id: true },
+  })
+  return encontrado !== null
 }
 
 export async function contarCasos(sessao: SessaoServidor): Promise<number> {
@@ -168,8 +216,8 @@ export async function listarResponsaveis(sessao: SessaoServidor) {
 
   return prisma.usuario.findMany({
     where: {
-      perfil: { in: ['OPERADOR', 'ADMINISTRADOR'] },
-      situacao: 'ATIVO',
+      perfil: { in: [PerfilUsuario.OPERADOR, PerfilUsuario.ADMINISTRADOR] },
+      situacao: SituacaoUsuario.ATIVO,
     },
     select: { id: true, nome: true },
     orderBy: { nome: 'asc' },
@@ -185,6 +233,8 @@ export type ResultadoDeCaso =
   | { situacao: 'cliente_nao_encontrado' }
   /** A numeração já está em outro caso — o número do processo é único. */
   | { situacao: 'numero_repetido'; casoId: string }
+  /** O responsável escolhido não é operador nem administrador ativo. */
+  | { situacao: 'responsavel_invalido' }
 
 export async function criarCaso(
   sessao: SessaoServidor,
@@ -201,6 +251,10 @@ export async function criarCaso(
   })
   if (cliente === null) return { situacao: 'cliente_nao_encontrado' }
 
+  if (dados.responsavelId !== null && !(await responsavelEhValido(dados.responsavelId))) {
+    return { situacao: 'responsavel_invalido' }
+  }
+
   if (dados.numeroProcesso !== null) {
     const repetido = await prisma.caso.findUnique({
       where: { numeroProcesso: dados.numeroProcesso },
@@ -211,30 +265,45 @@ export async function criarCaso(
     }
   }
 
-  const casoId = await prisma.$transaction(async (transacao) => {
-    const criado = await transacao.caso.create({
-      data: { ...dados, clienteId: cliente.id },
-      select: { id: true },
-    })
+  let casoId: string
+  try {
+    casoId = await prisma.$transaction(async (transacao) => {
+      const criado = await transacao.caso.create({
+        data: { ...dados, clienteId: cliente.id },
+        select: { id: true },
+      })
 
-    await registrarAuditoria(
-      {
-        usuarioId: sessao.usuarioId,
-        usuarioEmail: emailDoAutor,
-        acao: AcaoAuditoria.CRIACAO,
-        entidade: 'caso',
-        entidadeId: criado.id,
-        detalhes: {
-          clienteId: cliente.id,
-          assunto: dados.assunto,
-          numeroProcesso: dados.numeroProcesso,
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.CRIACAO,
+          entidade: 'caso',
+          entidadeId: criado.id,
+          detalhes: {
+            clienteId: cliente.id,
+            assunto: dados.assunto,
+            numeroProcesso: dados.numeroProcesso,
+          },
         },
-      },
-      transacao,
-    )
+        transacao,
+      )
 
-    return criado.id
-  })
+      return criado.id
+    })
+  } catch (erro) {
+    // Mesma história do CPF: quem decide é o índice único do banco.
+    if (ehViolacaoDeUnicidade(erro) && dados.numeroProcesso !== null) {
+      const repetido = await prisma.caso.findUnique({
+        where: { numeroProcesso: dados.numeroProcesso },
+        select: { id: true },
+      })
+      if (repetido !== null) {
+        return { situacao: 'numero_repetido', casoId: repetido.id }
+      }
+    }
+    throw erro
+  }
 
   return { situacao: 'criado', casoId }
 }
@@ -243,6 +312,7 @@ export type ResultadoDeEdicaoDeCaso =
   | { situacao: 'atualizado' }
   | { situacao: 'nao_encontrado' }
   | { situacao: 'numero_repetido'; casoId: string }
+  | { situacao: 'responsavel_invalido' }
 
 export async function atualizarCaso(
   sessao: SessaoServidor,
@@ -258,6 +328,10 @@ export async function atualizarCaso(
   })
   if (alvo === null) return { situacao: 'nao_encontrado' }
 
+  if (dados.responsavelId !== null && !(await responsavelEhValido(dados.responsavelId))) {
+    return { situacao: 'responsavel_invalido' }
+  }
+
   if (dados.numeroProcesso !== null) {
     const repetido = await prisma.caso.findFirst({
       where: { numeroProcesso: dados.numeroProcesso, id: { not: id } },
@@ -268,25 +342,38 @@ export async function atualizarCaso(
     }
   }
 
-  await prisma.$transaction(async (transacao) => {
-    await transacao.caso.update({ where: { id }, data: dados })
+  try {
+    await prisma.$transaction(async (transacao) => {
+      await transacao.caso.update({ where: { id }, data: dados })
 
-    await registrarAuditoria(
-      {
-        usuarioId: sessao.usuarioId,
-        usuarioEmail: emailDoAutor,
-        acao: AcaoAuditoria.ATUALIZACAO,
-        entidade: 'caso',
-        entidadeId: id,
-        detalhes: {
-          assunto: dados.assunto,
-          numeroProcesso: dados.numeroProcesso,
-          situacao: dados.situacao,
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.ATUALIZACAO,
+          entidade: 'caso',
+          entidadeId: id,
+          detalhes: {
+            assunto: dados.assunto,
+            numeroProcesso: dados.numeroProcesso,
+            situacao: dados.situacao,
+          },
         },
-      },
-      transacao,
-    )
-  })
+        transacao,
+      )
+    })
+  } catch (erro) {
+    if (ehViolacaoDeUnicidade(erro) && dados.numeroProcesso !== null) {
+      const repetido = await prisma.caso.findFirst({
+        where: { numeroProcesso: dados.numeroProcesso, id: { not: id } },
+        select: { id: true },
+      })
+      if (repetido !== null) {
+        return { situacao: 'numero_repetido', casoId: repetido.id }
+      }
+    }
+    throw erro
+  }
 
   return { situacao: 'atualizado' }
 }
