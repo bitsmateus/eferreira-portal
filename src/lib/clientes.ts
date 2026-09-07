@@ -1,0 +1,405 @@
+/**
+ * Clientes — Anexo I, itens 1.e e 2.1.
+ *
+ * O CPF ou CNPJ é a chave de identificação em todo o sistema. Aqui ficam a
+ * validação do cadastro, a busca e o "reconhecimento" do passo 2: ao digitar
+ * um documento já cadastrado, o sistema traz o cliente existente com os casos
+ * dele em vez de abrir um registro duplicado.
+ *
+ * Regra 2: nenhuma consulta usa `findUnique` por id vindo da URL. Tudo passa
+ * por `filtroDeClientes`, montado a partir da sessão do servidor.
+ */
+
+import { AcaoAuditoria, type Prisma, TipoPessoa } from '@prisma/client'
+import { z } from 'zod'
+
+import { exigirEquipe, filtroDeClientes, type SessaoServidor } from '@/lib/autorizacao'
+import { prisma } from '@/lib/prisma'
+import { registrarAuditoria } from '@/lib/auditoria'
+import { prepararDocumento } from '@/lib/documento'
+import { diaCivilParaData } from '@/lib/datas'
+import { normalizarCep, normalizarTelefone, somenteDigitos } from '@/lib/formatos'
+import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
+
+// ---------------------------------------------------------------------------
+// Validação do cadastro
+// ---------------------------------------------------------------------------
+
+/** Texto que, em branco, vira nulo — quase todo campo de qualificação é opcional. */
+const opcional = z
+  .string()
+  .trim()
+  .max(180, 'Texto longo demais para este campo.')
+  .transform((valor) => (valor === '' ? null : valor))
+
+const documentoDoCliente = z
+  .string()
+  .trim()
+  .transform((valor, contexto) => {
+    const preparado = prepararDocumento(valor)
+    if (!preparado.ok) {
+      contexto.addIssue({ code: z.ZodIssueCode.custom, message: preparado.motivo })
+      return z.NEVER
+    }
+    return preparado
+  })
+
+const dataDeNascimento = z
+  .string()
+  .trim()
+  .transform((valor, contexto) => {
+    if (valor === '') return null
+
+    const data = diaCivilParaData(valor)
+    if (data === null) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Data de nascimento inválida.',
+      })
+      return z.NEVER
+    }
+
+    if (data.getTime() > Date.now()) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'A data de nascimento não pode estar no futuro.',
+      })
+      return z.NEVER
+    }
+
+    return data
+  })
+
+const emailDoCliente = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .transform((valor, contexto) => {
+    if (valor === '') return null
+
+    const conferido = z.string().email().safeParse(valor)
+    if (!conferido.success) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'E-mail inválido. Sem e-mail válido o cliente nunca recebe o código de acesso.',
+      })
+      return z.NEVER
+    }
+
+    return conferido.data
+  })
+
+export const esquemaDeCliente = z
+  .object({
+    documento: documentoDoCliente,
+    nome: z
+      .string()
+      .trim()
+      .min(3, 'Informe o nome completo do cliente.')
+      .max(180, 'Nome longo demais.'),
+    rg: opcional,
+    dataNascimento: dataDeNascimento,
+    estadoCivil: opcional,
+    profissao: opcional,
+    nacionalidade: opcional,
+    email: emailDoCliente,
+    telefone: opcional.transform((valor) =>
+      valor === null ? null : normalizarTelefone(valor),
+    ),
+    cep: opcional.transform((valor) => (valor === null ? null : normalizarCep(valor))),
+    endereco: z
+      .string()
+      .trim()
+      .max(240, 'Endereço longo demais.')
+      .transform((valor) => (valor === '' ? null : valor)),
+  })
+  .transform((campos) => ({
+    ...campos,
+    documento: campos.documento.documento,
+    // Regra 2: o tipo de pessoa sai do próprio documento, não do que o
+    // navegador escolheu no seletor. CPF é pessoa física, CNPJ é jurídica.
+    tipoPessoa:
+      campos.documento.tipo === 'CPF' ? TipoPessoa.FISICA : TipoPessoa.JURIDICA,
+  }))
+
+export type DadosDeCliente = z.output<typeof esquemaDeCliente>
+
+/** Entrada crua do formulário, antes de qualquer confiança. */
+export type CamposDeCliente = Record<keyof z.input<typeof esquemaDeCliente>, string>
+
+export function validarCliente(
+  campos: CamposDeCliente,
+): ResultadoDeFormulario<DadosDeCliente> {
+  const conferido = esquemaDeCliente.safeParse(campos)
+  if (!conferido.success) {
+    return { ok: false, erros: errosPorCampo(conferido.error) }
+  }
+  return { ok: true, dados: conferido.data }
+}
+
+// ---------------------------------------------------------------------------
+// Busca — Anexo I, 2.1: por nome, CPF ou CNPJ
+// ---------------------------------------------------------------------------
+
+export type Busca =
+  | { tipo: 'vazia' }
+  | { tipo: 'documento'; digitos: string }
+  | { tipo: 'nome'; texto: string }
+
+/**
+ * Decide se o termo digitado é documento ou nome.
+ *
+ * Um termo só de dígitos (com ou sem ponto, barra e traço) é procurado como
+ * CPF/CNPJ; qualquer letra o torna busca por nome. É pura de propósito: a
+ * regra de interpretação da busca tem teste próprio.
+ */
+export function interpretarBusca(termo: string): Busca {
+  const limpo = termo.trim()
+  if (limpo === '') return { tipo: 'vazia' }
+
+  const temLetra = /\p{L}/u.test(limpo)
+  const digitos = somenteDigitos(limpo)
+
+  if (!temLetra && digitos.length >= 3) {
+    return { tipo: 'documento', digitos }
+  }
+
+  return { tipo: 'nome', texto: limpo }
+}
+
+function condicaoDaBusca(busca: Busca): Prisma.ClienteWhereInput | undefined {
+  if (busca.tipo === 'vazia') return undefined
+  if (busca.tipo === 'documento') return { documento: { contains: busca.digitos } }
+  return { nome: { contains: busca.texto, mode: 'insensitive' } }
+}
+
+// ---------------------------------------------------------------------------
+// Leitura
+// ---------------------------------------------------------------------------
+
+/**
+ * Colunas da lista de clientes do protótipo: nome, CPF/CNPJ, casos, último
+ * andamento e situação do acesso.
+ *
+ * O último andamento vem aninhado sob o cliente — que já saiu do filtro de
+ * autorização —, então o isolamento se mantém por construção.
+ */
+const RESUMO = {
+  id: true,
+  nome: true,
+  documento: true,
+  tipoPessoa: true,
+  email: true,
+  contratoAssinadoEm: true,
+  criadoEm: true,
+  _count: { select: { casos: true } },
+  casos: {
+    select: {
+      andamentos: {
+        select: { data: true },
+        orderBy: { data: 'desc' as const },
+        take: 1,
+      },
+    },
+  },
+} satisfies Prisma.ClienteSelect
+
+type ClienteResumido = Prisma.ClienteGetPayload<{ select: typeof RESUMO }>
+
+export type LinhaDeCliente = {
+  id: string
+  nome: string
+  documento: string
+  tipoPessoa: TipoPessoa
+  quantidadeDeCasos: number
+  ultimoAndamentoEm: Date | null
+  temEmail: boolean
+  acessoLiberado: boolean
+}
+
+/** Achata o resumo do banco na linha que a tabela desenha. */
+export function montarLinha(cliente: ClienteResumido): LinhaDeCliente {
+  let ultimo: Date | null = null
+  for (const caso of cliente.casos) {
+    const andamento = caso.andamentos[0]
+    if (andamento !== undefined && (ultimo === null || andamento.data > ultimo)) {
+      ultimo = andamento.data
+    }
+  }
+
+  return {
+    id: cliente.id,
+    nome: cliente.nome,
+    documento: cliente.documento,
+    tipoPessoa: cliente.tipoPessoa,
+    quantidadeDeCasos: cliente._count.casos,
+    ultimoAndamentoEm: ultimo,
+    temEmail: cliente.email !== null && cliente.email !== '',
+    acessoLiberado: cliente.contratoAssinadoEm !== null,
+  }
+}
+
+export async function listarClientes(
+  sessao: SessaoServidor,
+  termo: string,
+): Promise<LinhaDeCliente[]> {
+  const busca = interpretarBusca(termo)
+
+  const clientes = await prisma.cliente.findMany({
+    where: filtroDeClientes(sessao, condicaoDaBusca(busca)),
+    select: RESUMO,
+    orderBy: { nome: 'asc' },
+    take: 200,
+  })
+
+  return clientes.map(montarLinha)
+}
+
+export async function contarClientes(sessao: SessaoServidor): Promise<number> {
+  return prisma.cliente.count({ where: filtroDeClientes(sessao) })
+}
+
+/** A ficha do cliente. Devolve null quando a sessão não pode vê-lo. */
+export async function obterCliente(sessao: SessaoServidor, id: string) {
+  return prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { id }),
+    include: {
+      casos: {
+        orderBy: { criadoEm: 'desc' },
+        include: {
+          responsavel: { select: { nome: true } },
+          andamentos: {
+            select: { data: true },
+            orderBy: { data: 'desc' },
+            take: 1,
+          },
+        },
+      },
+    },
+  })
+}
+
+export type ClienteDaFicha = NonNullable<Awaited<ReturnType<typeof obterCliente>>>
+
+/**
+ * O reconhecimento do passo 2: dado um CPF ou CNPJ, devolve o cliente que já
+ * existe — ou null. É o que evita o cadastro duplicado.
+ */
+export async function reconhecerPorDocumento(
+  sessao: SessaoServidor,
+  valor: string,
+): Promise<{ id: string; nome: string; quantidadeDeCasos: number } | null> {
+  const preparado = prepararDocumento(valor)
+  if (!preparado.ok) return null
+
+  const cliente = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { documento: preparado.documento }),
+    select: { id: true, nome: true, _count: { select: { casos: true } } },
+  })
+
+  if (cliente === null) return null
+
+  return {
+    id: cliente.id,
+    nome: cliente.nome,
+    quantidadeDeCasos: cliente._count.casos,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Escrita — sempre com auditoria (regra 6)
+// ---------------------------------------------------------------------------
+
+export type ResultadoDeCadastro =
+  | { situacao: 'criado'; clienteId: string }
+  /** Documento já cadastrado: em vez de duplicar, devolvemos quem já existe. */
+  | { situacao: 'ja_existe'; clienteId: string; nome: string }
+
+export async function criarCliente(
+  sessao: SessaoServidor,
+  dados: DadosDeCliente,
+  emailDoAutor: string | null,
+): Promise<ResultadoDeCadastro> {
+  exigirEquipe(sessao)
+
+  const existente = await prisma.cliente.findUnique({
+    where: { documento: dados.documento },
+    select: { id: true, nome: true },
+  })
+
+  if (existente !== null) {
+    return { situacao: 'ja_existe', clienteId: existente.id, nome: existente.nome }
+  }
+
+  const clienteId = await prisma.$transaction(async (transacao) => {
+    const criado = await transacao.cliente.create({
+      data: { ...dados, criadoPorId: sessao.usuarioId },
+      select: { id: true },
+    })
+
+    await registrarAuditoria(
+      {
+        usuarioId: sessao.usuarioId,
+        usuarioEmail: emailDoAutor,
+        acao: AcaoAuditoria.CRIACAO,
+        entidade: 'cliente',
+        entidadeId: criado.id,
+        detalhes: { documento: dados.documento, nome: dados.nome },
+      },
+      transacao,
+    )
+
+    return criado.id
+  })
+
+  return { situacao: 'criado', clienteId }
+}
+
+export type ResultadoDeAtualizacao =
+  | { situacao: 'atualizado' }
+  | { situacao: 'nao_encontrado' }
+  /** O novo documento já pertence a outro cliente. */
+  | { situacao: 'documento_de_outro'; nome: string }
+
+export async function atualizarCliente(
+  sessao: SessaoServidor,
+  id: string,
+  dados: DadosDeCliente,
+  emailDoAutor: string | null,
+): Promise<ResultadoDeAtualizacao> {
+  exigirEquipe(sessao)
+
+  // Regra 2: confirma que ESTA sessão enxerga ESTE cliente antes de escrever.
+  const alvo = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { id }),
+    select: { id: true },
+  })
+  if (alvo === null) return { situacao: 'nao_encontrado' }
+
+  const conflito = await prisma.cliente.findFirst({
+    where: { documento: dados.documento, id: { not: id } },
+    select: { nome: true },
+  })
+  if (conflito !== null) {
+    return { situacao: 'documento_de_outro', nome: conflito.nome }
+  }
+
+  await prisma.$transaction(async (transacao) => {
+    await transacao.cliente.update({ where: { id }, data: dados })
+
+    await registrarAuditoria(
+      {
+        usuarioId: sessao.usuarioId,
+        usuarioEmail: emailDoAutor,
+        acao: AcaoAuditoria.ATUALIZACAO,
+        entidade: 'cliente',
+        entidadeId: id,
+        detalhes: { documento: dados.documento, nome: dados.nome },
+      },
+      transacao,
+    )
+  })
+
+  return { situacao: 'atualizado' }
+}

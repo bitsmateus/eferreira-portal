@@ -8,6 +8,7 @@
 
 import { auth } from '@/auth'
 import { SemAutorizacao, type SessaoServidor, exigirEquipe } from '@/lib/autorizacao'
+import { prisma } from '@/lib/prisma'
 
 /** Devolve a sessão do servidor, ou null se não houver ninguém autenticado. */
 export async function sessaoDoServidor(): Promise<SessaoServidor | null> {
@@ -38,4 +39,17 @@ export async function exigirSessaoDaEquipe(): Promise<SessaoServidor> {
   const sessao = await exigirSessao()
   exigirEquipe(sessao)
   return sessao
+}
+
+/**
+ * O e-mail de quem está agindo, para o registro de auditoria (regra 6).
+ * Guardado em texto junto do id, para o registro sobreviver à exclusão do
+ * usuário.
+ */
+export async function emailDaSessao(sessao: SessaoServidor): Promise<string | null> {
+  const usuario = await prisma.usuario.findUnique({
+    where: { id: sessao.usuarioId },
+    select: { email: true },
+  })
+  return usuario?.email ?? null
 }

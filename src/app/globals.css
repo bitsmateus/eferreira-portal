@@ -67,3 +67,84 @@
     @apply border-erro-borda bg-erro-fundo text-erro;
   }
 }
+
+@layer components {
+  .botao-fantasma {
+    @apply border-transparent bg-transparent text-texto-2 hover:bg-prata-100;
+  }
+
+  .botao-pequeno {
+    @apply px-2.5 py-1.5 text-[12px];
+  }
+
+  .cartao-cabecalho {
+    @apply flex items-center gap-2.5 border-b border-borda px-[18px] py-3.5;
+  }
+
+  .cartao-cabecalho h2 {
+    @apply text-[14px] font-semibold;
+  }
+
+  .cartao-corpo {
+    @apply p-[18px];
+  }
+
+  /* Tabela do protótipo: cabeçalho em versalete, linha separada por prata. */
+  .tabela {
+    @apply w-full border-collapse text-[13px];
+  }
+
+  .tabela th {
+    @apply whitespace-nowrap border-b border-borda px-3.5 py-2.5 text-left
+           text-[11px] font-semibold uppercase tracking-[0.07em] text-texto-2;
+  }
+
+  .tabela td {
+    @apply border-b border-prata-100 px-3.5 py-3 align-middle;
+  }
+
+  .tabela tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .rolagem-lateral {
+    @apply overflow-x-auto;
+  }
+
+  .etiqueta {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full
+           px-2.5 py-[3px] text-[11.5px] font-medium;
+  }
+
+  .etiqueta-ok {
+    @apply bg-ok-fundo text-ok;
+  }
+
+  .etiqueta-atencao {
+    @apply bg-atencao-fundo text-atencao;
+  }
+
+  .etiqueta-erro {
+    @apply bg-erro-fundo text-erro;
+  }
+
+  .etiqueta-info {
+    @apply bg-info-fundo text-info;
+  }
+
+  .etiqueta-neutra {
+    @apply bg-prata-100 text-texto-2;
+  }
+
+  .dica {
+    @apply mt-1.5 text-[11.5px] text-texto-3;
+  }
+
+  .dica-ok {
+    @apply text-ok;
+  }
+
+  .dica-erro {
+    @apply text-erro;
+  }
+}

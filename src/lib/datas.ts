@@ -86,3 +86,44 @@ export function formatarDiaPorExtensoComSemana(data: Date): string {
   const capitalizada = semana.charAt(0).toUpperCase() + semana.slice(1)
   return `${capitalizada}, ${formatarDataExtenso(data)}`
 }
+
+// ---------------------------------------------------------------------------
+// Datas de calendário
+//
+// Data de nascimento não é um instante, é um dia civil. Guardá-la à meia-noite
+// UTC faria 14/03/1981 virar 13/03/1981 na exibição em São Paulo (UTC-3). Por
+// isso o dia civil é ancorado ao meio-dia UTC: 09:00 em São Paulo, mesmo dia
+// em qualquer fuso do Brasil, e o horário de verão não muda o resultado.
+// ---------------------------------------------------------------------------
+
+const DIA_ISO = /^(\d{4})-(\d{2})-(\d{2})$/
+
+/** '1981-03-14' (o que o <input type="date"> manda) → Date. Null se inválida. */
+export function diaCivilParaData(texto: string): Date | null {
+  const partes = DIA_ISO.exec(texto.trim())
+  if (partes === null) return null
+
+  const ano = Number(partes[1])
+  const mes = Number(partes[2])
+  const dia = Number(partes[3])
+
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null
+
+  const data = new Date(Date.UTC(ano, mes - 1, dia, 12, 0, 0))
+
+  // Rejeita 31/02 e afins, que o Date "corrige" sozinho para o mês seguinte.
+  if (
+    data.getUTCFullYear() !== ano ||
+    data.getUTCMonth() !== mes - 1 ||
+    data.getUTCDate() !== dia
+  ) {
+    return null
+  }
+
+  return data
+}
+
+/** Date → '1981-03-14', para preencher o <input type="date"> na edição. */
+export function dataParaDiaCivil(data: Date): string {
+  return diaEmSaoPaulo(data)
+}

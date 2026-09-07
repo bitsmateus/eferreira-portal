@@ -133,6 +133,22 @@ fornecedor ou de nuvem tem que ser mudança de configuração, não reescrita.
 
 ## Estado atual
 
+**Sprint 1 concluída** (07/09/2026). Cadastro de cliente com validação real de
+CPF e CNPJ, busca por nome/CPF/CNPJ, caso vinculado com número do processo e o
+reconhecimento automático do documento já cadastrado. Telas: lista e ficha do
+cliente, novo cliente, edição, novo caso, lista e ficha do caso, painel com
+indicadores. 112 testes verdes.
+
+Duas coisas ficaram registradas aqui porque afetam quem for adiante:
+
+- **Os CPFs do protótipo são inválidos.** Todos os quatro reprovam no dígito
+  verificador, e o CNPJ `18.442.907/0001-55` também. Nunca os use na semente,
+  na demonstração ou no roteiro de aceite — o sistema os recusa, corretamente.
+- **O formulário não tem o seletor "Tipo" do protótipo.** O tipo de pessoa é
+  derivado do próprio documento (11 dígitos = física, 14 = jurídica), porque
+  regra 2 proíbe decidir isso pelo que o navegador manda. Confirmar com o
+  escritório na demonstração.
+
 **Sprint 0 concluída** (04/09/2026), exceto a publicação em homologação, que
 depende do painel do EasyPanel e do domínio (dependência 3.3).
 
@@ -147,5 +163,5 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: Sprint 1 — clientes e casos. O repositório git ainda não foi
-inicializado (Prompt 2 do `PROMPTS.md`).
+Próximo passo: Sprint 2 — andamentos e a pasta única. Ela depende da lista de
+status de andamento do escritório (Anexo II, item 3.5), que ainda não chegou.
