@@ -1,0 +1,89 @@
+name: CI
+
+# Regra 9: cada PR passa por lint, tsc e testes. Sem exceção.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificacao:
+    name: Lint, tipos e testes
+    runs-on: ubuntu-latest
+
+    services:
+      banco:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: eferreira
+          POSTGRES_PASSWORD: eferreira
+          POSTGRES_DB: eferreira
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eferreira"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://eferreira:eferreira@localhost:5432/eferreira?schema=public
+      SOMBRA_DATABASE_URL: postgresql://eferreira:eferreira@localhost:5432/sombra?schema=public
+      AUTH_SECRET: apenas-para-o-ci-nao-e-segredo-de-producao
+
+    steps:
+      - name: Buscar o código
+        uses: actions/checkout@v4
+
+      - name: Preparar o Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Gerar o cliente do Prisma
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipos
+        run: npx tsc --noEmit
+
+      - name: Testes
+        run: npm run test
+
+      - name: Aplicar as migrações em um banco limpo
+        # Regra 7: o deploy roda `migrate deploy`. Se uma migração estiver
+        # quebrada, é aqui que se descobre, não em produção.
+        run: npx prisma migrate deploy
+
+      - name: Conferir se o schema tem migração correspondente
+        # Se alguém alterar o schema.prisma sem criar a migração, o diff
+        # devolve código 2 e o CI para. É o que impede `db push` disfarçado.
+        run: |
+          psql "$SOMBRA_DATABASE_URL" -c 'SELECT 1' >/dev/null 2>&1 || createdb sombra || true
+          npx prisma migrate diff \
+            --from-migrations prisma/migrations \
+            --to-schema-datamodel prisma/schema.prisma \
+            --shadow-database-url "$SOMBRA_DATABASE_URL" \
+            --exit-code
+        env:
+          PGHOST: localhost
+          PGUSER: eferreira
+          PGPASSWORD: eferreira
+
+      - name: Teste de restauração do backup
+        # Critério de pronto da Sprint 0: o restore precisa ter sido executado
+        # com sucesso. Aqui ele roda a cada PR, não uma vez só.
+        run: npm run banco:teste-restauracao
+        env:
+          BANCO_VIA_DOCKER: 'false'

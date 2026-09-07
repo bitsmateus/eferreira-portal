@@ -1,0 +1,290 @@
+// Portal do Cliente — E. Ferreira Advogados
+// Regra 1: tudo em português. Regra 7: migrações versionadas, nunca "db push".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enumerações
+// ---------------------------------------------------------------------------
+
+enum PerfilUsuario {
+  OPERADOR
+  ADMINISTRADOR
+  CLIENTE
+}
+
+enum SituacaoUsuario {
+  ATIVO
+  CONVITE_PENDENTE
+  INATIVO
+}
+
+enum TipoPessoa {
+  FISICA
+  JURIDICA
+}
+
+/// Situação do caso. Os dois valores vêm literalmente do protótipo aprovado
+/// (telas "Ficha do cliente" e "Cliente — meus processos"). A lista de status
+/// de ANDAMENTO é outra coisa: é configurável e depende do escritório
+/// (Anexo II, item 3.5) — ver modelo StatusAndamento.
+enum SituacaoCaso {
+  EM_ANDAMENTO
+  ARQUIVADO
+}
+
+enum TipoDocumento {
+  CONTRATO
+  PROCURACAO
+  DECLARACAO
+  ANEXO
+}
+
+enum AcaoAuditoria {
+  CRIACAO
+  ATUALIZACAO
+  EXCLUSAO
+  ACESSO
+  AUTENTICACAO
+}
+
+// ---------------------------------------------------------------------------
+// Usuário — Anexo I, 1.b: acesso individual por e-mail e senha, perfis
+// diferenciados. O usuário de perfil CLIENTE aponta para o Cliente que ele
+// pode consultar; operador e administrador não apontam para nenhum.
+// ---------------------------------------------------------------------------
+
+model Usuario {
+  id        String          @id @default(cuid())
+  nome      String
+  email     String          @unique
+  /// Argon2id. Nulo para o perfil CLIENTE, que entra por CPF/CNPJ + código
+  /// enviado por e-mail (Anexo II, item 3.6 — resolvido).
+  senhaHash String?
+  perfil    PerfilUsuario
+  situacao  SituacaoUsuario @default(ATIVO)
+
+  /// Bloqueio após 5 tentativas erradas, por 15 minutos.
+  tentativasFalhas Int       @default(0)
+  bloqueadoAte     DateTime?
+  ultimoAcessoEm   DateTime?
+
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  clientesCadastrados Cliente[]   @relation("ClienteCriadoPor")
+  casosResponsavel    Caso[]      @relation("CasoResponsavel")
+  andamentosLancados  Andamento[] @relation("AndamentoAutor")
+  documentosEnviados  Documento[] @relation("DocumentoEnviadoPor")
+  registrosAuditoria  Auditoria[]
+
+  @@index([perfil])
+  @@index([clienteId])
+  @@map("usuario")
+}
+
+// ---------------------------------------------------------------------------
+// Cliente — Anexo I, 1.e e 2.1: CPF ou CNPJ é a chave de identificação em
+// todo o sistema. Guardado normalizado (só dígitos), exibido formatado.
+// ---------------------------------------------------------------------------
+
+model Cliente {
+  id String @id @default(cuid())
+
+  tipoPessoa TipoPessoa
+  /// Só dígitos: 11 para CPF, 14 para CNPJ. Único no sistema inteiro — é o
+  /// que garante o "reconhecimento" do passo 2 em vez de cadastro duplicado.
+  documento  String     @unique
+  nome       String
+
+  // Qualificação (usada na geração da procuração e da declaração)
+  rg             String?
+  dataNascimento DateTime?
+  estadoCivil    String?
+  profissao      String?
+  nacionalidade  String?
+
+  // Contato — sem e-mail o cliente nunca consegue receber o código de acesso.
+  email    String?
+  telefone String?
+  cep      String?
+  endereco String?
+
+  /// Gatilho do Anexo I, 1.d: o acesso do cliente só é liberado depois que o
+  /// contrato foi assinado. Nulo = cliente não entra.
+  contratoAssinadoEm DateTime?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  criadoPorId String?
+  criadoPor   Usuario? @relation("ClienteCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  casos      Caso[]
+  documentos Documento[]
+  acessos    Usuario[]
+
+  @@index([nome])
+  @@index([contratoAssinadoEm])
+  @@map("cliente")
+}
+
+// ---------------------------------------------------------------------------
+// Caso — Anexo I, 2.2: um cliente, vários casos, cada um com identificação
+// própria e o respectivo número de processo.
+// ---------------------------------------------------------------------------
+
+model Caso {
+  id String @id @default(cuid())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  /// Pode ser nulo: o protótipo prevê "casos sem número de processo — ainda em
+  /// fase pré-processual".
+  numeroProcesso String?      @unique
+  assunto        String
+  vara           String?
+  parteContraria String?
+  situacao       SituacaoCaso @default(EM_ANDAMENTO)
+
+  responsavelId String?
+  responsavel   Usuario? @relation("CasoResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  andamentos Andamento[]
+  documentos Documento[]
+
+  @@index([clienteId])
+  @@index([situacao])
+  @@map("caso")
+}
+
+// ---------------------------------------------------------------------------
+// Status de andamento — lista CONFIGURÁVEL. O conteúdo dela é dependência do
+// escritório (Anexo II, item 3.5) e trava a Sprint 2. A tabela nasce vazia de
+// propósito: não se inventa lista de status.
+// ---------------------------------------------------------------------------
+
+model StatusAndamento {
+  id    String  @id @default(cuid())
+  nome  String  @unique
+  ordem Int     @default(0)
+  ativo Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  andamentos Andamento[]
+
+  @@map("status_andamento")
+}
+
+// ---------------------------------------------------------------------------
+// Andamento — Anexo I, 2.4: com data e histórico, e sempre com autor
+// identificado (regra 6).
+// ---------------------------------------------------------------------------
+
+model Andamento {
+  id String @id @default(cuid())
+
+  casoId String
+  caso   Caso   @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  /// Data do fato processual, em UTC. Exibida em America/Sao_Paulo (regra 11).
+  data DateTime
+
+  statusId String?
+  status   StatusAndamento? @relation(fields: [statusId], references: [id], onDelete: SetNull)
+
+  /// Texto que o cliente lê na área de consulta.
+  descricao String
+
+  autorId String
+  autor   Usuario @relation("AndamentoAutor", fields: [autorId], references: [id])
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([casoId, data])
+  @@map("andamento")
+}
+
+// ---------------------------------------------------------------------------
+// Documento — Anexo I, 4.a: pasta única por cliente. O arquivo em si vive no
+// object storage; aqui fica só a chave. Regra 5: a chave nunca é adivinhável e
+// nunca é servida direto.
+// ---------------------------------------------------------------------------
+
+model Documento {
+  id String @id @default(cuid())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  /// Nulo quando o documento é do cliente e não de um caso específico
+  /// (contrato, procuração, declaração, RG).
+  casoId String?
+  caso   Caso?   @relation(fields: [casoId], references: [id], onDelete: SetNull)
+
+  tipo         TipoDocumento
+  nome         String
+  /// Chave no object storage. Opaca, gerada pelo servidor.
+  chaveArquivo String        @unique
+  tipoConteudo String
+  tamanhoBytes Int
+
+  assinadoEm DateTime?
+
+  enviadoPorId String?
+  enviadoPor   Usuario? @relation("DocumentoEnviadoPor", fields: [enviadoPorId], references: [id], onDelete: SetNull)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([clienteId])
+  @@index([casoId])
+  @@map("documento")
+}
+
+// ---------------------------------------------------------------------------
+// Auditoria — regra 6: quem fez, o quê, quando e sobre qual registro.
+// ---------------------------------------------------------------------------
+
+model Auditoria {
+  id String @id @default(cuid())
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  /// Guardado em texto também, para o registro sobreviver à exclusão do usuário.
+  usuarioEmail String?
+
+  acao       AcaoAuditoria
+  entidade   String
+  entidadeId String?
+
+  detalhes Json?
+
+  enderecoIp    String?
+  agenteUsuario String?
+
+  criadoEm DateTime @default(now())
+
+  @@index([entidade, entidadeId])
+  @@index([usuarioId])
+  @@index([criadoEm])
+  @@map("auditoria")
+}

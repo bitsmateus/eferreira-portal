@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Portal do Cliente — E. Ferreira Advogados · Protótipo MVP</title>
+<style>
+:root{
+  --grafite-900:#161616; --grafite-800:#212121; --grafite-700:#2E2E2E; --grafite-600:#3C3C3C;
+  --grafite-500:#565656; --prata-400:#8E8E8E; --prata-300:#B4B4B4; --prata-200:#D8D8D8;
+  --prata-100:#EDEDED; --fundo:#F4F4F5; --superficie:#FFFFFF; --borda:#E3E3E6;
+  --texto:#1B1B1D; --texto-2:#6B6B72; --texto-3:#95959C;
+  --ok:#1F6F4A; --ok-bg:#E8F3ED; --atencao:#8A6100; --atencao-bg:#FBF2DE;
+  --erro:#A32B24; --erro-bg:#FBECEB; --info:#28506E; --info-bg:#E9F0F6;
+  --serif:"Cormorant Garamond",Georgia,"Times New Roman",serif;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --r:10px; --sombra:0 1px 2px rgba(0,0,0,.05),0 8px 24px -12px rgba(0,0,0,.18);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:#26262A; color:var(--texto); font-family:var(--sans);
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+
+/* ============ CHROME DO PROTÓTIPO (fora do produto) ============ */
+.proto-bar{
+  position:sticky; top:0; z-index:50; background:var(--grafite-900);
+  border-bottom:1px solid #000; padding:14px 20px 12px;
+}
+.proto-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.proto-title{color:#EDEDED;font-size:13px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.proto-title small{display:block;text-transform:none;letter-spacing:0;font-weight:400;color:#8E8E8E;font-size:12px;margin-top:2px}
+.proto-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+.toggle{
+  display:inline-flex;align-items:center;gap:8px;background:var(--grafite-700);
+  border:1px solid #4A4A4A;color:#D8D8D8;padding:7px 12px;border-radius:99px;
+  cursor:pointer;font-size:12.5px;font-family:inherit;
+}
+.toggle:hover{background:var(--grafite-600)}
+.toggle[aria-pressed="true"]{background:#EDEDED;color:#1B1B1D;border-color:#EDEDED}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{
+  background:transparent;border:1px solid #3E3E3E;color:#A9A9A9;padding:6px 11px;
+  border-radius:99px;cursor:pointer;font-size:12.5px;font-family:inherit;white-space:nowrap;
+}
+.tab:hover{border-color:#6A6A6A;color:#DDD}
+.tab.on{background:#EDEDED;border-color:#EDEDED;color:#1B1B1D;font-weight:500}
+.tab .n{opacity:.5;margin-right:5px;font-variant-numeric:tabular-nums}
+.tab.on .n{opacity:.45}
+
+.palco{padding:26px 20px 60px;display:flex;justify-content:center}
+.frame{
+  width:100%;max-width:1180px;background:var(--fundo);border-radius:14px;overflow:hidden;
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.7);transition:max-width .28s ease;
+}
+.frame.mob{max-width:392px;border-radius:30px;border:9px solid #0D0D0D;box-shadow:0 24px 60px -20px rgba(0,0,0,.8)}
+.nota{max-width:1180px;margin:0 auto;color:#8A8A90;font-size:12px;padding:14px 4px 0}
+
+/* ============ MARCA ============ */
+.marca{display:flex;align-items:center;gap:11px}
+.marca svg{width:30px;height:30px;flex:none}
+.marca-txt{display:flex;flex-direction:column;line-height:1}
+.marca-txt b{
+  font-family:var(--serif);font-size:18px;font-weight:600;letter-spacing:.03em;
+  background:linear-gradient(178deg,#FFF 0%,#D2D2D2 38%,#8C8C8C 54%,#E4E4E4 72%,#9A9A9A 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.marca-txt i{font-style:normal;font-size:8.5px;letter-spacing:.42em;color:var(--prata-400);margin-top:4px}
+.marca.sm svg{width:24px;height:24px}
+.marca.sm .marca-txt b{font-size:15px}
+.marca.sm .marca-txt i{font-size:7px;letter-spacing:.34em}
+.marca.dark .marca-txt b{background:none;color:var(--grafite-800);-webkit-text-fill-color:var(--grafite-800)}
+.marca.dark .marca-txt i{color:var(--prata-400)}
+
+/* ============ APP ============ */
+.app{display:grid;grid-template-columns:232px 1fr;min-height:660px}
+.frame.mob .app{grid-template-columns:1fr;min-height:720px}
+
+.lat{background:var(--grafite-800);padding:20px 14px;display:flex;flex-direction:column;gap:22px}
+.frame.mob .lat{display:none}
+.lat-menu{display:flex;flex-direction:column;gap:2px}
+.lat-menu .grp{color:#6E6E76;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:14px 10px 6px}
+.lat-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;
+  color:#B9B9C0;font-size:13.5px;cursor:default;
+}
+.lat-item .ic{width:15px;text-align:center;opacity:.65;font-size:13px}
+.lat-item.on{background:var(--grafite-600);color:#F2F2F2}
+.lat-item.on .ic{opacity:1}
+.lat-rodape{margin-top:auto;border-top:1px solid #3A3A3A;padding-top:14px;color:#78787F;font-size:11.5px;line-height:1.45}
+
+.barra-mob{display:none;background:var(--grafite-800);padding:12px 16px;align-items:center;gap:12px}
+.frame.mob .barra-mob{display:flex}
+.barra-mob .ham{margin-left:auto;color:#B9B9C0;font-size:17px}
+
+.conteudo{background:var(--fundo);display:flex;flex-direction:column;min-width:0}
+.topo{
+  background:var(--superficie);border-bottom:1px solid var(--borda);
+  padding:15px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.frame.mob .topo{padding:13px 16px}
+.topo h1{margin:0;font-size:17px;font-weight:600;letter-spacing:-.01em}
+.topo .sub{color:var(--texto-2);font-size:12.5px;margin-top:2px}
+.topo-acoes{margin-left:auto;display:flex;gap:8px;align-items:center}
+.frame.mob .topo-acoes{margin-left:0;width:100%;margin-top:10px}
+.corpo{padding:22px 24px;overflow:auto;flex:1}
+.frame.mob .corpo{padding:16px}
+
+/* elementos */
+.btn{
+  border:1px solid var(--grafite-800);background:var(--grafite-800);color:#F5F5F5;
+  padding:8px 14px;border-radius:8px;font-size:13px;font-family:inherit;cursor:default;
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+}
+.btn.sec{background:var(--superficie);color:var(--grafite-800);border-color:var(--borda)}
+.btn.gho{background:transparent;color:var(--texto-2);border-color:transparent}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.wide{width:100%;justify-content:center;padding:11px}
+
+.cartao{background:var(--superficie);border:1px solid var(--borda);border-radius:var(--r);box-shadow:var(--sombra)}
+.cartao-h{padding:14px 18px;border-bottom:1px solid var(--borda);display:flex;align-items:center;gap:10px}
+.cartao-h h2{margin:0;font-size:14px;font-weight:600}
+.cartao-h .dir{margin-left:auto;display:flex;gap:8px}
+.cartao-b{padding:18px}
+
+.grade{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g23{grid-template-columns:1.6fr 1fr}
+.frame.mob .g4,.frame.mob .g3,.frame.mob .g2,.frame.mob .g23{grid-template-columns:1fr}
+
+.kpi{background:var(--superficie);border:1px solid var(--borda);border-radius:var(--r);padding:16px 18px}
+.kpi .lab{color:var(--texto-2);font-size:12px;display:flex;align-items:center;gap:7px}
+.kpi .val{font-size:27px;font-weight:600;letter-spacing:-.02em;margin-top:7px;font-variant-numeric:tabular-nums}
+.kpi .pe{color:var(--texto-3);font-size:11.5px;margin-top:3px}
+.kpi .bar{height:3px;background:var(--prata-100);border-radius:99px;margin-top:12px;overflow:hidden}
+.kpi .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--grafite-600),var(--prata-300))}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{
+  text-align:left;font-weight:600;color:var(--texto-2);font-size:11px;letter-spacing:.07em;
+  text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--borda);white-space:nowrap;
+}
+td{padding:12px 14px;border-bottom:1px solid var(--prata-100);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.tab-wrap{overflow-x:auto}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum";letter-spacing:-.01em}
+td.mono,th+td.mono{white-space:nowrap}
+.frame.mob td.mono{white-space:normal}
+.forte{font-weight:600}
+.sec2{color:var(--texto-2);font-size:12px}
+
+.tag{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:500;white-space:nowrap}
+.t-ok{background:var(--ok-bg);color:var(--ok)}
+.t-at{background:var(--atencao-bg);color:var(--atencao)}
+.t-er{background:var(--erro-bg);color:var(--erro)}
+.t-in{background:var(--info-bg);color:var(--info)}
+.t-nu{background:var(--prata-100);color:var(--texto-2)}
+.pt{width:6px;height:6px;border-radius:99px;background:currentColor;flex:none}
+
+.campo{margin-bottom:15px}
+.campo label{display:block;font-size:12.5px;font-weight:500;color:var(--texto-2);margin-bottom:6px}
+.inp{
+  width:100%;border:1px solid var(--borda);border-radius:8px;padding:10px 12px;font-size:13.5px;
+  background:var(--superficie);color:var(--texto);font-family:inherit;
+}
+.inp.ph{color:var(--texto-3)}
+.dica{font-size:11.5px;color:var(--texto-3);margin-top:5px}
+.dica.ok{color:var(--ok)}
+.dica.er{color:var(--erro)}
+.linha{display:flex;gap:14px}
+.linha>*{flex:1}
+.frame.mob .linha{flex-direction:column;gap:0}
+
+.passos{display:flex;align-items:stretch;gap:0;margin-bottom:22px}
+.frame.mob .passos{flex-direction:column;gap:8px}
+.passo{flex:1;padding:12px 14px;border-top:3px solid var(--prata-200);background:var(--superficie);border-right:1px solid var(--borda)}
+.passo:last-child{border-right:0}
+.passo .n{font-size:11px;color:var(--texto-3);font-weight:600;letter-spacing:.08em}
+.passo .t{font-size:13px;font-weight:600;margin-top:3px}
+.passo .d{font-size:11.5px;color:var(--texto-2);margin-top:3px;line-height:1.4}
+.passo.feito{border-top-color:var(--ok)}
+.passo.feito .n{color:var(--ok)}
+.passo.agora{border-top-color:var(--grafite-700);background:#FAFAFA}
+.passo.agora .n{color:var(--grafite-700)}
+
+.tl{position:relative;padding-left:26px}
+.tl:before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:1px;background:var(--prata-200)}
+.tl-i{position:relative;padding-bottom:20px}
+.tl-i:last-child{padding-bottom:0}
+.tl-i:before{content:"";position:absolute;left:-23px;top:5px;width:9px;height:9px;border-radius:99px;background:var(--prata-300);border:2px solid var(--superficie);box-shadow:0 0 0 1px var(--prata-200)}
+.tl-i.novo:before{background:var(--grafite-700);box-shadow:0 0 0 1px var(--grafite-700)}
+.tl-d{font-size:11.5px;color:var(--texto-3);font-variant-numeric:tabular-nums}
+.tl-t{font-size:13.5px;font-weight:600;margin-top:2px}
+.tl-x{font-size:12.5px;color:var(--texto-2);margin-top:3px;line-height:1.5}
+.tl-a{font-size:11.5px;color:var(--texto-3);margin-top:5px}
+
+.arq{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--prata-100)}
+.arq:last-child{border-bottom:0}
+.arq .ico{width:32px;height:32px;border-radius:7px;background:var(--prata-100);display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--texto-2);flex:none}
+.arq .nm{font-size:13px;font-weight:500}
+.arq .mt{font-size:11.5px;color:var(--texto-3);margin-top:1px}
+.arq .dir{margin-left:auto;display:flex;gap:6px;align-items:center}
+
+.aviso{display:flex;gap:11px;padding:13px 15px;border-radius:9px;font-size:12.5px;line-height:1.5;border:1px solid}
+.aviso .i{font-size:14px;line-height:1.2;flex:none}
+.a-in{background:var(--info-bg);border-color:#CFDEEA;color:#1F3F57}
+.a-at{background:var(--atencao-bg);border-color:#EDDCB2;color:#6B4C00}
+.a-ok{background:var(--ok-bg);border-color:#C6E2D3;color:#155238}
+
+.vazio{text-align:center;padding:36px 20px;color:var(--texto-3)}
+.vazio .t{font-size:14px;color:var(--texto-2);font-weight:500;margin-bottom:4px}
+
+/* login */
+.login{min-height:660px;display:grid;grid-template-columns:1.05fr .95fr}
+.frame.mob .login{grid-template-columns:1fr;min-height:720px}
+.login-art{background:var(--grafite-800);padding:44px 42px;display:flex;flex-direction:column;justify-content:space-between}
+.frame.mob .login-art{padding:30px 22px}
+.login-art .frase{font-family:var(--serif);font-size:27px;line-height:1.32;color:#E9E9E9;max-width:19em;font-weight:500}
+.frame.mob .login-art .frase{font-size:21px}
+.login-art .pe{color:#75757C;font-size:11.5px;line-height:1.6}
+.login-form{background:var(--superficie);padding:44px 42px;display:flex;flex-direction:column;justify-content:center}
+.frame.mob .login-form{padding:28px 22px}
+.login-form h2{font-family:var(--serif);font-size:25px;margin:0 0 5px;font-weight:600}
+.login-form .sub{color:var(--texto-2);font-size:13px;margin-bottom:26px}
+
+.cod{display:flex;gap:9px;margin-bottom:6px}
+.cod i{
+  flex:1;height:52px;border:1px solid var(--borda);border-radius:9px;display:grid;place-items:center;
+  font-size:20px;font-weight:600;font-style:normal;background:var(--superficie);font-variant-numeric:tabular-nums;
+}
+.cod i.f{border-color:var(--grafite-700);box-shadow:0 0 0 3px rgba(46,46,46,.07)}
+.cod i.v{color:var(--texto-3)}
+
+/* área do cliente */
+.cli-topo{background:var(--grafite-800);padding:20px 26px;display:flex;align-items:center;gap:14px}
+.frame.mob .cli-topo{padding:16px}
+.cli-topo .quem{margin-left:auto;text-align:right;color:#B9B9C0;font-size:12px}
+.cli-topo .quem b{display:block;color:#EDEDED;font-size:13px;font-weight:600}
+.frame.mob .cli-topo .quem{display:none}
+.proc{background:var(--superficie);border:1px solid var(--borda);border-radius:var(--r);overflow:hidden;box-shadow:var(--sombra)}
+.proc-h{padding:16px 18px;border-bottom:1px solid var(--borda);display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.proc-h .num{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+.proc-h .tp{font-size:12px;color:var(--texto-2);margin-top:2px}
+.proc-h .dir{margin-left:auto}
+.frame.mob .proc-h .dir{margin-left:0;margin-top:8px;width:100%}
+.proc-b{padding:16px 18px}
+
+.doc-prev{background:var(--superficie);border:1px solid var(--borda);border-radius:8px;padding:26px 30px;font-size:12px;line-height:1.75;color:#3A3A3A;max-height:290px;overflow:hidden;position:relative}
+.doc-prev:after{content:"";position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff)}
+.doc-prev h4{text-align:center;font-family:var(--serif);font-size:16px;margin:16px 0 14px;letter-spacing:.06em}
+.doc-cab{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--prata-200)}
+.doc-cab .cod2{font-size:10px;color:var(--texto-3);letter-spacing:.08em}
+
+.cod-blk{background:var(--grafite-900);color:#D6D6D6;border-radius:9px;padding:15px 17px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.75;overflow-x:auto}
+.cod-blk .k{color:#9BB8D0}.cod-blk .s{color:#B9D5A8}.cod-blk .c{color:#6E6E76}
+
+.tela{display:none}
+.tela.on{display:block}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#FFFFFF"/><stop offset=".42" stop-color="#9E9E9E"/>
+<stop offset=".58" stop-color="#E2E2E2"/><stop offset="1" stop-color="#6E6E6E"/>
+</linearGradient></defs></svg>
+
+<div class="proto-bar">
+  <div class="proto-top">
+    <div class="proto-title">Protótipo MVP · Portal do Cliente
+      <small>E. Ferreira Advogados · Sistema de Cadastro de Clientes e Acompanhamento de Processos · NX Netscale</small>
+    </div>
+    <div class="proto-actions">
+      <button class="toggle" id="btMob" aria-pressed="false" onclick="mob()">
+        <span id="btMobIco">▭</span><span id="btMobTxt">Ver no celular</span>
+      </button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+</div>
+
+<div class="palco">
+  <div class="frame" id="frame">
+
+  <!-- ================= 0. FLUXO ================= -->
+  <section class="tela on" data-t="fluxo">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item on"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Protótipo de validação<br>v1.0 · 31/08/2026</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>O fluxo em quatro passos</h1><div class="sub">Anexo I, item 2 — do cadastro à consulta do cliente</div></div>
+        </div>
+        <div class="corpo">
+          <div class="passos">
+            <div class="passo feito"><div class="n">PASSO 1</div><div class="t">Cadastro do cliente</div><div class="d">A equipe registra por <b>CPF ou CNPJ</b>, com qualificação e contato.</div></div>
+            <div class="passo feito"><div class="n">PASSO 2</div><div class="t">Reconhecimento</div><div class="d">O sistema vincula os casos e o número de processo àquele <b>CPF ou CNPJ</b>.</div></div>
+            <div class="passo agora"><div class="n">PASSO 3</div><div class="t">Procuração e declaração</div><div class="d">Assinado o contrato, o sistema gera, envia para assinatura e arquiva.</div></div>
+            <div class="passo"><div class="n">PASSO 4</div><div class="t">Consulta do cliente</div><div class="d">O cliente entra com o <b>CPF ou CNPJ</b> e vê processo e andamento.</div></div>
+          </div>
+
+          <div class="grade g23">
+            <div class="cartao">
+              <div class="cartao-h"><h2>O que muda para o escritório</h2></div>
+              <div class="cartao-b">
+                <div class="tl">
+                  <div class="tl-i"><div class="tl-t">A pasta deixa de estar em três lugares</div><div class="tl-x">Contrato, procuração, declaração e documentos de cada caso passam a viver numa pasta única por cliente, com download pelo painel — item 4.a do Anexo I.</div></div>
+                  <div class="tl-i"><div class="tl-t">O CPF ou CNPJ vira a chave de tudo</div><div class="tl-x">Um cliente, vários casos. Digitou o CPF ou o CNPJ, o sistema reconhece e traz o histórico em vez de abrir cadastro novo.</div></div>
+                  <div class="tl-i"><div class="tl-t">O telefone toca menos</div><div class="tl-x">A pergunta "como está meu processo?" passa a ter resposta sem interromper ninguém: o cliente entra e lê o andamento com data.</div></div>
+                  <div class="tl-i novo"><div class="tl-t">Cada andamento fica registrado com autor e data</div><div class="tl-x">Quem lançou, quando lançou e o que escreveu. Serve para o escritório e serve como prova de diligência.</div></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Perfis de acesso</h2></div>
+                <div class="cartao-b" style="padding-top:6px">
+                  <div class="arq"><div class="ico">OP</div><div><div class="nm">Operador (interno)</div><div class="mt">Executa todos os passos do fluxo</div></div></div>
+                  <div class="arq"><div class="ico">CL</div><div><div class="nm">Cliente (externo)</div><div class="mt">Só os próprios casos, após a assinatura</div></div></div>
+                  <div class="arq"><div class="ico">AD</div><div><div class="nm">Administrador</div><div class="mt">Usuários, permissões e credenciais da API</div></div></div>
+                </div>
+              </div>
+              <div class="aviso a-in"><span class="i">▲</span><div><b>Decisões deste protótipo.</b> Assinatura em plataforma eletrônica externa e acesso do cliente por CPF + código por e-mail. Ambas eram pendências do Anexo II (itens 3.4 e 3.6).</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 1. LOGIN OPERADOR ================= -->
+  <section class="tela" data-t="entrar">
+    <div class="login">
+      <div class="login-art">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="frase">Cada processo em um lugar só, com o histórico de quem fez o quê.</div>
+        <div class="pe">Acesso restrito à equipe do escritório.<br>Todo acesso é registrado. Tráfego criptografado, conforme a Cláusula 5ª.</div>
+      </div>
+      <div class="login-form">
+        <h2>Entrar no painel</h2>
+        <div class="sub">Use o e-mail individual fornecido pelo escritório.</div>
+        <div class="campo"><label>E-mail</label><div class="inp">sergio@eferreiraadvogados.com.br</div></div>
+        <div class="campo"><label>Senha</label><div class="inp ph">••••••••••••</div></div>
+        <button class="btn wide">Entrar</button>
+        <div class="dica" style="margin-top:14px;text-align:center">Esqueceu a senha? Fale com o administrador do escritório.</div>
+        <div style="margin-top:26px;padding-top:18px;border-top:1px solid var(--borda)">
+          <div class="aviso a-at"><span class="i">▲</span><div>Após 5 tentativas erradas, o acesso é bloqueado por 15 minutos. É a proteção mínima para um painel que guarda dado de processo.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 2. PAINEL ================= -->
+  <section class="tela" data-t="painel">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item on"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Conectado como<br><b style="color:#C8C8CE">Sergio Ferreira</b><br>Administrador</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>Painel</h1><div class="sub">Segunda-feira, 31 de agosto de 2026</div></div>
+          <div class="topo-acoes"><button class="btn sec">Buscar por CPF</button><button class="btn">+ Novo cliente</button></div>
+        </div>
+        <div class="corpo">
+          <div class="grade g4" style="margin-bottom:18px">
+            <div class="kpi"><div class="lab">Clientes ativos</div><div class="val">148</div><div class="pe">+6 nos últimos 30 dias</div><div class="bar"><i style="width:72%"></i></div></div>
+            <div class="kpi"><div class="lab">Casos em andamento</div><div class="val">213</div><div class="pe">em 148 clientes</div><div class="bar"><i style="width:84%"></i></div></div>
+            <div class="kpi"><div class="lab">Aguardando assinatura</div><div class="val">7</div><div class="pe">procurações e declarações</div><div class="bar"><i style="width:24%"></i></div></div>
+            <div class="kpi"><div class="lab">Sem andamento há 30d</div><div class="val">12</div><div class="pe">merecem uma olhada</div><div class="bar"><i style="width:16%"></i></div></div>
+          </div>
+
+          <div class="grade g23">
+            <div class="cartao">
+              <div class="cartao-h"><h2>Últimos andamentos lançados</h2><div class="dir"><button class="btn gho sm">Ver todos</button></div></div>
+              <div class="tab-wrap">
+                <table>
+                  <thead><tr><th>Cliente</th><th>Processo</th><th>Andamento</th><th>Data</th></tr></thead>
+                  <tbody>
+                    <tr><td class="forte">Marcos Vinícius Andrade</td><td class="mono sec2">0012845-63.2026.8.26.0100</td><td>Juntada de petição</td><td class="mono sec2">31/08</td></tr>
+                    <tr><td class="forte">Construtora Alvorada Ltda</td><td class="mono sec2">0007719-22.2026.8.26.0602</td><td>Audiência designada</td><td class="mono sec2">30/08</td></tr>
+                    <tr><td class="forte">Helena Prado Barreto</td><td class="mono sec2">0031002-10.2025.8.26.0100</td><td>Sentença publicada</td><td class="mono sec2">29/08</td></tr>
+                    <tr><td class="forte">Rilton Alves Ferreira Ltda</td><td class="mono sec2">0004488-91.2026.8.26.0224</td><td>Contestação apresentada</td><td class="mono sec2">28/08</td></tr>
+                    <tr><td class="forte">Jonas Teixeira Lima</td><td class="mono sec2">0019930-45.2026.8.26.0100</td><td>Perícia agendada</td><td class="mono sec2">28/08</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Precisa de você</h2></div>
+                <div class="cartao-b" style="padding-top:8px">
+                  <div class="arq"><div class="ico" style="background:var(--atencao-bg);color:var(--atencao)">7</div><div><div class="nm">Assinaturas pendentes</div><div class="mt">A mais antiga há 9 dias</div></div><div class="dir"><button class="btn sec sm">Abrir</button></div></div>
+                  <div class="arq"><div class="ico" style="background:var(--erro-bg);color:var(--erro)">2</div><div><div class="nm">Cadastros incompletos</div><div class="mt">Sem e-mail — o cliente não consegue entrar</div></div><div class="dir"><button class="btn sec sm">Abrir</button></div></div>
+                  <div class="arq"><div class="ico" style="background:var(--info-bg);color:var(--info)">3</div><div><div class="nm">Casos sem número de processo</div><div class="mt">Ainda em fase pré-processual</div></div><div class="dir"><button class="btn sec sm">Abrir</button></div></div>
+                </div>
+              </div>
+              <div class="cartao">
+                <div class="cartao-h"><h2>Acesso dos clientes</h2></div>
+                <div class="cartao-b">
+                  <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:25px;font-weight:600" class="mono">61</div><div class="sec2">consultas nos últimos 30 dias</div></div>
+                  <div class="dica" style="margin-top:10px">Cada consulta é um telefonema que não aconteceu.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3. CLIENTES ================= -->
+  <section class="tela" data-t="clientes">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item on"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Conectado como<br><b style="color:#C8C8CE">Sergio Ferreira</b><br>Administrador</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>Clientes</h1><div class="sub">148 cadastrados · organizados por CPF ou CNPJ</div></div>
+          <div class="topo-acoes"><button class="btn">+ Novo cliente</button></div>
+        </div>
+        <div class="corpo">
+          <div class="cartao" style="margin-bottom:16px"><div class="cartao-b" style="padding:14px 16px">
+            <div class="linha">
+              <div class="inp ph">Buscar por nome, CPF ou CNPJ…</div>
+              <div class="inp ph" style="max-width:180px">Todos os tipos ▾</div>
+              <div class="inp ph" style="max-width:180px">Todos os status ▾</div>
+            </div>
+          </div></div>
+          <div class="cartao">
+            <div class="tab-wrap">
+              <table>
+                <thead><tr><th>Cliente</th><th>CPF / CNPJ</th><th>Casos</th><th>Último andamento</th><th>Acesso</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td class="forte">Marcos Vinícius Andrade</td><td class="mono sec2">381.204.556-08</td><td class="mono">2</td><td class="sec2">31/08/2026</td><td><span class="tag t-ok"><span class="pt"></span>Liberado</span></td><td><button class="btn sec sm">Abrir</button></td></tr>
+                  <tr><td class="forte">Construtora Alvorada Ltda</td><td class="mono sec2">18.442.907/0001-55</td><td class="mono">4</td><td class="sec2">30/08/2026</td><td><span class="tag t-ok"><span class="pt"></span>Liberado</span></td><td><button class="btn sec sm">Abrir</button></td></tr>
+                  <tr><td class="forte">Helena Prado Barreto</td><td class="mono sec2">205.887.401-72</td><td class="mono">1</td><td class="sec2">29/08/2026</td><td><span class="tag t-ok"><span class="pt"></span>Liberado</span></td><td><button class="btn sec sm">Abrir</button></td></tr>
+                  <tr><td class="forte">Rilton Alves Ferreira Ltda</td><td class="mono sec2">45.776.096/0001-12</td><td class="mono">3</td><td class="sec2">28/08/2026</td><td><span class="tag t-at"><span class="pt"></span>Aguardando assinatura</span></td><td><button class="btn sec sm">Abrir</button></td></tr>
+                  <tr><td class="forte">Jonas Teixeira Lima</td><td class="mono sec2">744.019.230-66</td><td class="mono">1</td><td class="sec2">28/08/2026</td><td><span class="tag t-ok"><span class="pt"></span>Liberado</span></td><td><button class="btn sec sm">Abrir</button></td></tr>
+                  <tr><td class="forte">Amanda Ribeiro Gouveia</td><td class="mono sec2">918.335.702-14</td><td class="mono">1</td><td class="sec2">—</td><td><span class="tag t-er"><span class="pt"></span>Sem e-mail</span></td><td><button class="btn sec sm">Abrir</button></td></tr>
+                  <tr><td class="forte">Transportes Serra Azul ME</td><td class="mono sec2">30.118.774/0001-09</td><td class="mono">2</td><td class="sec2">26/08/2026</td><td><span class="tag t-ok"><span class="pt"></span>Liberado</span></td><td><button class="btn sec sm">Abrir</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="aviso a-in" style="margin-top:16px"><span class="i">▲</span><div><b>Sem e-mail, sem acesso.</b> O código de entrada do cliente vai por e-mail. Um cadastro sem e-mail válido nunca vira consulta — por isso ele aparece em vermelho aqui e no painel, e não escondido numa aba.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4. NOVO CLIENTE ================= -->
+  <section class="tela" data-t="novo">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item on"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Passo 1 do fluxo</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>Novo cliente</h1><div class="sub">Passo 1 — o CPF ou CNPJ é a chave de identificação em todo o sistema</div></div>
+          <div class="topo-acoes"><button class="btn sec">Cancelar</button><button class="btn">Salvar e criar caso</button></div>
+        </div>
+        <div class="corpo">
+          <div class="grade g23">
+            <div class="cartao">
+              <div class="cartao-h"><h2>Identificação</h2></div>
+              <div class="cartao-b">
+                <div class="linha">
+                  <div class="campo"><label>Tipo</label><div class="inp">Pessoa física ▾</div></div>
+                  <div class="campo"><label>CPF</label><div class="inp">381.204.556-08</div><div class="dica ok">✓ CPF válido · nenhum cadastro anterior encontrado</div></div>
+                </div>
+                <div class="campo"><label>Nome completo</label><div class="inp">Marcos Vinícius Andrade</div></div>
+                <div class="linha">
+                  <div class="campo"><label>RG</label><div class="inp">42.118.907-3</div></div>
+                  <div class="campo"><label>Data de nascimento</label><div class="inp mono">14/03/1981</div></div>
+                </div>
+                <div class="linha">
+                  <div class="campo"><label>Estado civil</label><div class="inp">Casado ▾</div></div>
+                  <div class="campo"><label>Profissão</label><div class="inp">Engenheiro civil</div></div>
+                </div>
+                <div style="border-top:1px solid var(--borda);margin:6px 0 18px"></div>
+                <div class="campo"><label>E-mail <span style="color:var(--erro)">·  obrigatório para o acesso do cliente</span></label><div class="inp">marcos.andrade@email.com.br</div></div>
+                <div class="linha">
+                  <div class="campo"><label>Telefone</label><div class="inp mono">(11) 98812-4470</div></div>
+                  <div class="campo"><label>CEP</label><div class="inp mono">01310-100</div></div>
+                </div>
+                <div class="campo"><label>Endereço</label><div class="inp">Av. Paulista, 1578, apto 92 — Bela Vista, São Paulo/SP</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>O que acontece ao salvar</h2></div>
+                <div class="cartao-b">
+                  <div class="tl">
+                    <div class="tl-i"><div class="tl-t">Cliente criado</div><div class="tl-x">Passa a ser localizável pelo CPF em todo o sistema.</div></div>
+                    <div class="tl-i"><div class="tl-t">Pasta única aberta</div><div class="tl-x">Vazia, pronta para receber contrato, procuração e declaração.</div></div>
+                    <div class="tl-i"><div class="tl-t">Acesso ainda bloqueado</div><div class="tl-x">O cliente só entra depois que o contrato for assinado — Anexo I, 1.d.</div></div>
+                  </div>
+                </div>
+              </div>
+              <div class="aviso a-at"><span class="i">▲</span><div><b>Validação de verdade.</b> O sistema confere o dígito verificador do CPF e do CNPJ, não só o formato. Cadastro com número inválido é o que quebra a busca seis meses depois.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 5. FICHA DO CLIENTE ================= -->
+  <section class="tela" data-t="ficha">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item on"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Passo 2 do fluxo</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>Marcos Vinícius Andrade</h1><div class="sub"><span class="mono">381.204.556-08</span> · Pessoa física · cliente desde 12/02/2026</div></div>
+          <div class="topo-acoes"><span class="tag t-ok"><span class="pt"></span>Acesso liberado</span><button class="btn sec">Editar</button><button class="btn">+ Novo caso</button></div>
+        </div>
+        <div class="corpo">
+          <div class="grade g23">
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Casos vinculados</h2><div class="dir"><span class="sec2">2 casos</span></div></div>
+                <div class="tab-wrap">
+                  <table>
+                    <thead><tr><th>Número do processo</th><th>Assunto</th><th>Status</th><th>Último andamento</th><th></th></tr></thead>
+                    <tbody>
+                      <tr><td class="mono forte">0012845-63.2026.8.26.0100</td><td>Ação de cobrança</td><td><span class="tag t-in"><span class="pt"></span>Em andamento</span></td><td class="sec2">31/08/2026</td><td><button class="btn sec sm">Abrir</button></td></tr>
+                      <tr><td class="mono forte">0009331-08.2025.8.26.0100</td><td>Rescisão contratual</td><td><span class="tag t-nu"><span class="pt"></span>Arquivado</span></td><td class="sec2">04/12/2025</td><td><button class="btn sec sm">Abrir</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="cartao">
+                <div class="cartao-h"><h2>Pasta única do cliente</h2><div class="dir"><button class="btn sec sm">Baixar tudo</button><button class="btn sm">+ Anexar</button></div></div>
+                <div class="cartao-b" style="padding-top:6px">
+                  <div class="arq"><div class="ico">PDF</div><div><div class="nm">Contrato de honorários — assinado</div><div class="mt">12/02/2026 · assinatura eletrônica · 240 KB</div></div><div class="dir"><span class="tag t-ok"><span class="pt"></span>Assinado</span><button class="btn gho sm">Baixar</button></div></div>
+                  <div class="arq"><div class="ico">PDF</div><div><div class="nm">Procuração ad judicia</div><div class="mt">12/02/2026 · assinatura eletrônica · 118 KB</div></div><div class="dir"><span class="tag t-ok"><span class="pt"></span>Assinado</span><button class="btn gho sm">Baixar</button></div></div>
+                  <div class="arq"><div class="ico">PDF</div><div><div class="nm">Declaração de hipossuficiência</div><div class="mt">12/02/2026 · assinatura eletrônica · 96 KB</div></div><div class="dir"><span class="tag t-ok"><span class="pt"></span>Assinado</span><button class="btn gho sm">Baixar</button></div></div>
+                  <div class="arq"><div class="ico">JPG</div><div><div class="nm">RG e CPF — digitalizados</div><div class="mt">12/02/2026 · anexado por Camila Souza · 1,4 MB</div></div><div class="dir"><button class="btn gho sm">Baixar</button></div></div>
+                  <div class="arq"><div class="ico">PDF</div><div><div class="nm">Comprovante de residência</div><div class="mt">12/02/2026 · anexado por Camila Souza · 310 KB</div></div><div class="dir"><button class="btn gho sm">Baixar</button></div></div>
+                  <div class="arq"><div class="ico">PDF</div><div><div class="nm">Notas fiscais — caso 0012845</div><div class="mt">18/03/2026 · anexado por Camila Souza · 2,1 MB</div></div><div class="dir"><button class="btn gho sm">Baixar</button></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Contato</h2></div>
+                <div class="cartao-b">
+                  <div class="campo" style="margin-bottom:11px"><label>E-mail</label><div style="font-size:13px">marcos.andrade@email.com.br</div></div>
+                  <div class="campo" style="margin-bottom:11px"><label>Telefone</label><div style="font-size:13px" class="mono">(11) 98812-4470</div></div>
+                  <div class="campo" style="margin-bottom:0"><label>Endereço</label><div style="font-size:13px">Av. Paulista, 1578, apto 92<br>Bela Vista — São Paulo/SP<br><span class="mono">01310-100</span></div></div>
+                </div>
+              </div>
+              <div class="cartao">
+                <div class="cartao-h"><h2>Acesso do cliente</h2></div>
+                <div class="cartao-b">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px"><span class="tag t-ok"><span class="pt"></span>Liberado</span><span class="sec2">desde 12/02/2026</span></div>
+                  <div class="sec2" style="line-height:1.6">Último acesso em <b class="mono">27/08/2026, 19:42</b>.<br>Entra com CPF e código enviado ao e-mail cadastrado.</div>
+                  <button class="btn sec sm" style="margin-top:13px">Ver histórico de acessos</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 6. CASO E ANDAMENTOS ================= -->
+  <section class="tela" data-t="caso">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item on"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Passo 2 do fluxo</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1 class="mono">0012845-63.2026.8.26.0100</h1><div class="sub">Ação de cobrança · Marcos Vinícius Andrade · 3ª Vara Cível — Foro Central/SP</div></div>
+          <div class="topo-acoes"><span class="tag t-in"><span class="pt"></span>Em andamento</span><button class="btn">+ Lançar andamento</button></div>
+        </div>
+        <div class="corpo">
+          <div class="grade g23">
+            <div class="cartao">
+              <div class="cartao-h"><h2>Novo andamento</h2></div>
+              <div class="cartao-b">
+                <div class="linha">
+                  <div class="campo"><label>Data</label><div class="inp mono">31/08/2026</div></div>
+                  <div class="campo"><label>Status</label><div class="inp">Juntada de petição ▾</div></div>
+                </div>
+                <div class="campo"><label>Descrição visível ao cliente</label><div class="inp ph" style="min-height:74px;padding-top:10px">Petição de réplica juntada aos autos. Aguardando decisão sobre as provas requeridas.</div><div class="dica">Este texto aparece na área de consulta do cliente. Escreva pensando em quem não é advogado.</div></div>
+                <div style="display:flex;gap:9px;align-items:center"><button class="btn">Lançar andamento</button><button class="btn gho">Cancelar</button></div>
+
+                <div style="border-top:1px solid var(--borda);margin:22px 0 18px"></div>
+                <h2 style="font-size:14px;margin:0 0 15px">Histórico do processo</h2>
+                <div class="tl">
+                  <div class="tl-i novo"><div class="tl-d">31/08/2026</div><div class="tl-t">Juntada de petição</div><div class="tl-x">Petição de réplica juntada aos autos. Aguardando decisão sobre as provas requeridas.</div><div class="tl-a">Lançado por Camila Souza · hoje às 09:12</div></div>
+                  <div class="tl-i"><div class="tl-d">14/08/2026</div><div class="tl-t">Contestação apresentada</div><div class="tl-x">A parte contrária apresentou contestação. Prazo de 15 dias para réplica.</div><div class="tl-a">Lançado por Camila Souza</div></div>
+                  <div class="tl-i"><div class="tl-d">22/07/2026</div><div class="tl-t">Citação cumprida</div><div class="tl-x">Réu citado pessoalmente por oficial de justiça.</div><div class="tl-a">Lançado por Sergio Ferreira</div></div>
+                  <div class="tl-i"><div class="tl-d">03/07/2026</div><div class="tl-t">Petição inicial distribuída</div><div class="tl-x">Ação distribuída à 3ª Vara Cível do Foro Central. Custas recolhidas.</div><div class="tl-a">Lançado por Sergio Ferreira</div></div>
+                  <div class="tl-i"><div class="tl-d">18/03/2026</div><div class="tl-t">Documentos recebidos</div><div class="tl-x">Notas fiscais e comprovantes entregues pelo cliente e anexados à pasta.</div><div class="tl-a">Lançado por Camila Souza</div></div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Dados do caso</h2></div>
+                <div class="cartao-b">
+                  <div class="campo" style="margin-bottom:11px"><label>Número do processo</label><div style="font-size:13px" class="mono forte">0012845-63.2026.8.26.0100</div></div>
+                  <div class="campo" style="margin-bottom:11px"><label>Assunto</label><div style="font-size:13px">Ação de cobrança</div></div>
+                  <div class="campo" style="margin-bottom:11px"><label>Vara / Foro</label><div style="font-size:13px">3ª Vara Cível — Foro Central/SP</div></div>
+                  <div class="campo" style="margin-bottom:11px"><label>Parte contrária</label><div style="font-size:13px">Construtora Meridiano Ltda</div></div>
+                  <div class="campo" style="margin-bottom:0"><label>Responsável</label><div style="font-size:13px">Sergio Ferreira</div></div>
+                </div>
+              </div>
+              <div class="aviso a-at"><span class="i">▲</span><div><b>Lançamento é manual.</b> A captura automática de movimentações nos tribunais está expressamente fora deste contrato — Anexo II, item 1.c — e é uma das frentes da fase futura.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 7. DOCUMENTOS E ASSINATURA ================= -->
+  <section class="tela" data-t="docs">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item on"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Passo 3 do fluxo</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>Documentos</h1><div class="sub">Passo 3 — gerar a partir dos modelos do escritório, enviar para assinatura, arquivar</div></div>
+          <div class="topo-acoes"><button class="btn sec">Modelos</button><button class="btn">+ Gerar documento</button></div>
+        </div>
+        <div class="corpo">
+          <div class="grade g2" style="margin-bottom:16px">
+            <div class="cartao">
+              <div class="cartao-h"><h2>Procuração ad judicia — prévia</h2><div class="dir"><span class="tag t-nu">Rascunho</span></div></div>
+              <div class="cartao-b">
+                <div class="doc-prev">
+                  <div class="doc-cab">
+                    <div class="marca sm dark"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="#3C3C3C" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="#3C3C3C" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="#3C3C3C" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+                    <div class="cod2">DOC-PROC-2026-000184</div>
+                  </div>
+                  <h4>PROCURAÇÃO AD JUDICIA</h4>
+                  <p><b>OUTORGANTE:</b> MARCOS VINÍCIUS ANDRADE, brasileiro, casado, engenheiro civil, portador do RG nº 42.118.907-3 e inscrito no CPF sob o nº 381.204.556-08, residente e domiciliado na Av. Paulista, 1578, apto 92, Bela Vista, São Paulo/SP, CEP 01310-100.</p>
+                  <p><b>OUTORGADO:</b> E. FERREIRA ADVOGADOS, sociedade de advogados inscrita na OAB/SP sob o nº ____, com escritório profissional na ____________.</p>
+                  <p><b>PODERES:</b> pelo presente instrumento particular de mandato, o outorgante nomeia e constitui seu bastante procurador o outorgado, a quem confere os poderes da cláusula <i>ad judicia et extra</i>, para o foro em geral…</p>
+                </div>
+                <div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap"><button class="btn">Enviar para assinatura</button><button class="btn sec">Baixar PDF</button><button class="btn gho">Editar dados</button></div>
+                <div class="dica" style="margin-top:11px">Os campos em branco vêm do modelo oficial do escritório — dependência 3.1 do Anexo II.</div>
+              </div>
+            </div>
+
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Modelos disponíveis</h2></div>
+                <div class="cartao-b" style="padding-top:6px">
+                  <div class="arq"><div class="ico">01</div><div><div class="nm">Contrato de honorários</div><div class="mt">Modelo do escritório · v2</div></div><div class="dir"><button class="btn sec sm">Gerar</button></div></div>
+                  <div class="arq"><div class="ico">02</div><div><div class="nm">Procuração ad judicia</div><div class="mt">Modelo do escritório · v3</div></div><div class="dir"><button class="btn sec sm">Gerar</button></div></div>
+                  <div class="arq"><div class="ico">03</div><div><div class="nm">Declaração de hipossuficiência</div><div class="mt">Modelo do escritório · v1</div></div><div class="dir"><button class="btn sec sm">Gerar</button></div></div>
+                </div>
+              </div>
+              <div class="cartao">
+                <div class="cartao-h"><h2>Assinaturas em curso</h2><div class="dir"><span class="tag t-at">7 pendentes</span></div></div>
+                <div class="cartao-b" style="padding-top:6px">
+                  <div class="arq"><div class="ico" style="background:var(--atencao-bg);color:var(--atencao)">⋯</div><div><div class="nm">Rilton Alves Ferreira Ltda</div><div class="mt">Procuração · enviada há 9 dias · não aberta</div></div><div class="dir"><button class="btn sec sm">Reenviar</button></div></div>
+                  <div class="arq"><div class="ico" style="background:var(--atencao-bg);color:var(--atencao)">⋯</div><div><div class="nm">Amanda Ribeiro Gouveia</div><div class="mt">Contrato · enviada há 3 dias · aberta, não assinada</div></div><div class="dir"><button class="btn sec sm">Reenviar</button></div></div>
+                  <div class="arq"><div class="ico" style="background:var(--ok-bg);color:var(--ok)">✓</div><div><div class="nm">Jonas Teixeira Lima</div><div class="mt">Declaração · assinada hoje às 08:47 · arquivada</div></div><div class="dir"><button class="btn gho sm">Ver</button></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="aviso a-in"><span class="i">▲</span><div><b>O documento assinado volta sozinho.</b> Quando a plataforma confirma a assinatura, o sistema baixa o PDF final e arquiva na pasta do cliente, e o acesso à área de consulta é liberado no mesmo movimento. Ninguém move arquivo à mão — que é onde documento se perde.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 8. API ================= -->
+  <section class="tela" data-t="api">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item on"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Anexo I, item 3.b e 3.c</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>API do escritório</h1><div class="sub">Credenciais próprias da E. Ferreira · documentação e ambiente de testes</div></div>
+          <div class="topo-acoes"><button class="btn sec">Documentação</button><button class="btn">+ Nova credencial</button></div>
+        </div>
+        <div class="corpo">
+          <div class="grade g23">
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Consulta por CPF ou CNPJ</h2><div class="dir"><span class="tag t-nu">GET</span></div></div>
+                <div class="cartao-b">
+                  <div class="cod-blk"><span class="c"># requisição</span><br>GET /api/v1/consulta?documento=38120455608<br>Authorization: Bearer <span class="s">ef_live_••••••••••••</span><br><br><span class="c"># resposta</span><br>{<br>&nbsp;&nbsp;<span class="k">"cliente"</span>: <span class="s">"Marcos Vinícius Andrade"</span>,<br>&nbsp;&nbsp;<span class="k">"casos"</span>: [<br>&nbsp;&nbsp;&nbsp;&nbsp;{<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"processo"</span>: <span class="s">"0012845-63.2026.8.26.0100"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"assunto"</span>: <span class="s">"Ação de cobrança"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"status"</span>: <span class="s">"Em andamento"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"andamento"</span>: {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"data"</span>: <span class="s">"2026-08-31"</span>,<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"descricao"</span>: <span class="s">"Juntada de petição"</span><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;]<br>}</div>
+                </div>
+              </div>
+              <div class="cartao">
+                <div class="cartao-h"><h2>Endpoints</h2></div>
+                <div class="tab-wrap">
+                  <table>
+                    <thead><tr><th>Método</th><th>Caminho</th><th>O que faz</th></tr></thead>
+                    <tbody>
+                      <tr><td><span class="tag t-nu">GET</span></td><td class="mono sec2">/v1/consulta</td><td>Andamento por CPF ou CNPJ</td></tr>
+                      <tr><td><span class="tag t-in">POST</span></td><td class="mono sec2">/v1/clientes</td><td>Cadastrar cliente</td></tr>
+                      <tr><td><span class="tag t-at">PUT</span></td><td class="mono sec2">/v1/clientes/{id}</td><td>Atualizar cliente</td></tr>
+                      <tr><td><span class="tag t-in">POST</span></td><td class="mono sec2">/v1/casos</td><td>Cadastrar caso</td></tr>
+                      <tr><td><span class="tag t-in">POST</span></td><td class="mono sec2">/v1/casos/{id}/andamentos</td><td>Lançar andamento</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Credenciais</h2></div>
+                <div class="cartao-b" style="padding-top:6px">
+                  <div class="arq"><div class="ico">PR</div><div><div class="nm">Produção</div><div class="mt mono">ef_live_••••••4c21</div></div><div class="dir"><span class="tag t-ok"><span class="pt"></span>Ativa</span></div></div>
+                  <div class="arq"><div class="ico">TS</div><div><div class="nm">Ambiente de testes</div><div class="mt mono">ef_test_••••••9a07</div></div><div class="dir"><span class="tag t-in"><span class="pt"></span>Sandbox</span></div></div>
+                </div>
+              </div>
+              <div class="cartao" style="margin-bottom:16px">
+                <div class="cartao-h"><h2>Permissões desta chave</h2></div>
+                <div class="cartao-b">
+                  <div class="arq" style="border:0;padding:7px 0"><div class="nm">Consultar andamentos</div><div class="dir"><span class="tag t-ok">Sim</span></div></div>
+                  <div class="arq" style="border:0;padding:7px 0"><div class="nm">Cadastrar clientes</div><div class="dir"><span class="tag t-ok">Sim</span></div></div>
+                  <div class="arq" style="border:0;padding:7px 0"><div class="nm">Baixar documentos</div><div class="dir"><span class="tag t-nu">Não</span></div></div>
+                </div>
+              </div>
+              <div class="aviso a-at"><span class="i">▲</span><div><b>A chave aparece uma vez só.</b> No momento em que é gerada. Depois, fica mascarada para sempre — se perder, gera outra. É o padrão de mercado e evita que a chave viva num print de tela.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 9. USUÁRIOS ================= -->
+  <section class="tela" data-t="usuarios">
+    <div class="app">
+      <aside class="lat">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="lat-menu">
+          <div class="grp">Visão geral</div>
+          <div class="lat-item"><span class="ic">◇</span>Fluxo do escritório</div>
+          <div class="lat-item"><span class="ic">▤</span>Painel</div>
+          <div class="grp">Operação</div>
+          <div class="lat-item"><span class="ic">◉</span>Clientes</div>
+          <div class="lat-item"><span class="ic">▦</span>Casos</div>
+          <div class="lat-item"><span class="ic">▣</span>Documentos</div>
+          <div class="grp">Administração</div>
+          <div class="lat-item on"><span class="ic">⚙</span>Usuários</div>
+          <div class="lat-item"><span class="ic">⌁</span>API</div>
+        </div>
+        <div class="lat-rodape">Anexo I, item 1.b</div>
+      </aside>
+      <div class="conteudo">
+        <div class="barra-mob"><div class="marca sm"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div><span class="ham">☰</span></div>
+        <div class="topo">
+          <div><h1>Usuários e permissões</h1><div class="sub">Credenciais exclusivas da E. Ferreira · acesso individual por e-mail e senha</div></div>
+          <div class="topo-acoes"><button class="btn">+ Convidar usuário</button></div>
+        </div>
+        <div class="corpo">
+          <div class="cartao" style="margin-bottom:16px">
+            <div class="tab-wrap">
+              <table>
+                <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Último acesso</th><th>Situação</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td class="forte">Sergio Ferreira</td><td class="sec2">sergio@eferreiraadvogados.com.br</td><td><span class="tag t-in">Administrador</span></td><td class="sec2 mono">hoje, 08:31</td><td><span class="tag t-ok"><span class="pt"></span>Ativo</span></td><td><button class="btn sec sm">Editar</button></td></tr>
+                  <tr><td class="forte">Camila Souza</td><td class="sec2">camila@eferreiraadvogados.com.br</td><td><span class="tag t-nu">Operador</span></td><td class="sec2 mono">hoje, 09:12</td><td><span class="tag t-ok"><span class="pt"></span>Ativo</span></td><td><button class="btn sec sm">Editar</button></td></tr>
+                  <tr><td class="forte">Bruno Sacchi</td><td class="sec2">bruno@eferreiraadvogados.com.br</td><td><span class="tag t-nu">Operador</span></td><td class="sec2 mono">28/08, 17:44</td><td><span class="tag t-ok"><span class="pt"></span>Ativo</span></td><td><button class="btn sec sm">Editar</button></td></tr>
+                  <tr><td class="forte">Letícia Nunes</td><td class="sec2">leticia@eferreiraadvogados.com.br</td><td><span class="tag t-nu">Operador</span></td><td class="sec2">—</td><td><span class="tag t-at"><span class="pt"></span>Convite pendente</span></td><td><button class="btn sec sm">Reenviar</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="grade g2">
+            <div class="cartao">
+              <div class="cartao-h"><h2>O que cada perfil pode</h2></div>
+              <div class="tab-wrap">
+                <table>
+                  <thead><tr><th></th><th>Operador</th><th>Admin</th></tr></thead>
+                  <tbody>
+                    <tr><td>Cadastrar clientes e casos</td><td><span class="tag t-ok">Sim</span></td><td><span class="tag t-ok">Sim</span></td></tr>
+                    <tr><td>Lançar andamentos</td><td><span class="tag t-ok">Sim</span></td><td><span class="tag t-ok">Sim</span></td></tr>
+                    <tr><td>Gerar e enviar documentos</td><td><span class="tag t-ok">Sim</span></td><td><span class="tag t-ok">Sim</span></td></tr>
+                    <tr><td>Gerir usuários</td><td><span class="tag t-nu">Não</span></td><td><span class="tag t-ok">Sim</span></td></tr>
+                    <tr><td>Gerir credenciais da API</td><td><span class="tag t-nu">Não</span></td><td><span class="tag t-ok">Sim</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="cartao">
+              <div class="cartao-h"><h2>Registro de auditoria</h2><div class="dir"><button class="btn gho sm">Exportar</button></div></div>
+              <div class="cartao-b">
+                <div class="tl">
+                  <div class="tl-i novo"><div class="tl-d">31/08/2026 · 09:12</div><div class="tl-t">Camila Souza lançou um andamento</div><div class="tl-x">Processo 0012845-63.2026.8.26.0100</div></div>
+                  <div class="tl-i"><div class="tl-d">31/08/2026 · 08:47</div><div class="tl-t">Documento assinado arquivado</div><div class="tl-x">Declaração · Jonas Teixeira Lima</div></div>
+                  <div class="tl-i"><div class="tl-d">30/08/2026 · 16:03</div><div class="tl-t">Sergio Ferreira convidou um usuário</div><div class="tl-x">leticia@eferreiraadvogados.com.br · perfil operador</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 10. CLIENTE — ENTRAR ================= -->
+  <section class="tela" data-t="cli-entrar">
+    <div class="login">
+      <div class="login-art">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="frase">Acompanhe seu processo a qualquer hora, sem precisar ligar.</div>
+        <div class="pe">Portal do Cliente · E. Ferreira Advogados<br>Seus dados são acessíveis apenas por você e pela equipe do escritório.</div>
+      </div>
+      <div class="login-form">
+        <h2>Consultar meu processo</h2>
+        <div class="sub">Informe o CPF ou CNPJ cadastrado. Enviaremos um código para o seu e-mail.</div>
+        <div class="campo"><label>CPF ou CNPJ</label><div class="inp mono">381.204.556-08</div></div>
+        <div class="campo" style="margin-bottom:9px"><label>Código enviado para m•••••@email.com.br</label>
+          <div class="cod"><i>4</i><i>9</i><i>2</i><i class="f">7</i><i class="v">·</i><i class="v">·</i></div>
+          <div class="dica">O código vale por 10 minutos. Não recebeu? <b>Reenviar em 0:38</b></div>
+        </div>
+        <button class="btn wide" style="margin-top:12px">Entrar</button>
+        <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--borda)">
+          <div class="aviso a-in"><span class="i">▲</span><div>O código por e-mail existe por um motivo: sem ele, qualquer pessoa que saiba um CPF ou CNPJ veria o processo daquele cliente. Dado de processo é dado sensível de terceiro.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 11. CLIENTE — MEUS PROCESSOS ================= -->
+  <section class="tela" data-t="cli-area">
+    <div style="background:var(--fundo);min-height:660px">
+      <div class="cli-topo">
+        <div class="marca"><svg viewBox="0 0 64 64"><rect x="4" y="4" width="56" height="56" fill="none" stroke="url(#g1)" stroke-width="2.6"/><path d="M15 19H39M15 32H33M15 45H39" stroke="url(#g1)" stroke-width="2.6" fill="none" stroke-linecap="square"/><path d="M47 15V49" stroke="url(#g1)" stroke-width="2.6"/></svg><span class="marca-txt"><b>E. FERREIRA</b><i>ADVOGADOS</i></span></div>
+        <div class="quem"><b>Marcos Vinícius Andrade</b>381.204.556-08 · Sair</div>
+      </div>
+      <div style="padding:26px 26px 40px;max-width:940px;margin:0 auto">
+        <h1 style="font-family:var(--serif);font-size:27px;margin:0 0 4px;font-weight:600">Seus processos</h1>
+        <div class="sec2" style="margin-bottom:22px">Acompanhe abaixo o andamento de cada caso. As informações são atualizadas pela equipe do escritório.</div>
+
+        <div class="proc" style="margin-bottom:16px">
+          <div class="proc-h">
+            <div><div class="num mono">0012845-63.2026.8.26.0100</div><div class="tp">Ação de cobrança · 3ª Vara Cível — Foro Central/SP</div></div>
+            <div class="dir"><span class="tag t-in"><span class="pt"></span>Em andamento</span></div>
+          </div>
+          <div class="proc-b">
+            <div class="aviso a-ok" style="margin-bottom:18px"><span class="i">▲</span><div><b>Atualizado hoje.</b> Petição de réplica juntada aos autos. Aguardando decisão sobre as provas requeridas.</div></div>
+            <div class="tl">
+              <div class="tl-i novo"><div class="tl-d">31 de agosto de 2026</div><div class="tl-t">Juntada de petição</div><div class="tl-x">Petição de réplica juntada aos autos. Aguardando decisão sobre as provas requeridas.</div></div>
+              <div class="tl-i"><div class="tl-d">14 de agosto de 2026</div><div class="tl-t">Contestação apresentada</div><div class="tl-x">A parte contrária apresentou contestação. Prazo de 15 dias para réplica.</div></div>
+              <div class="tl-i"><div class="tl-d">22 de julho de 2026</div><div class="tl-t">Citação cumprida</div><div class="tl-x">Réu citado pessoalmente por oficial de justiça.</div></div>
+              <div class="tl-i"><div class="tl-d">3 de julho de 2026</div><div class="tl-t">Petição inicial distribuída</div><div class="tl-x">Ação distribuída à 3ª Vara Cível do Foro Central. Custas recolhidas.</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="proc" style="margin-bottom:16px">
+          <div class="proc-h">
+            <div><div class="num mono">0009331-08.2025.8.26.0100</div><div class="tp">Rescisão contratual</div></div>
+            <div class="dir"><span class="tag t-nu"><span class="pt"></span>Arquivado</span></div>
+          </div>
+          <div class="proc-b">
+            <div class="sec2">Último andamento em 4 de dezembro de 2025 — <b>Arquivamento definitivo</b>. Processo encerrado.</div>
+          </div>
+        </div>
+
+        <div class="cartao">
+          <div class="cartao-h"><h2>Seus documentos</h2></div>
+          <div class="cartao-b" style="padding-top:6px">
+            <div class="arq"><div class="ico">PDF</div><div><div class="nm">Contrato de honorários</div><div class="mt">Assinado em 12/02/2026</div></div><div class="dir"><button class="btn sec sm">Baixar</button></div></div>
+            <div class="arq"><div class="ico">PDF</div><div><div class="nm">Procuração ad judicia</div><div class="mt">Assinada em 12/02/2026</div></div><div class="dir"><button class="btn sec sm">Baixar</button></div></div>
+            <div class="arq"><div class="ico">PDF</div><div><div class="nm">Declaração de hipossuficiência</div><div class="mt">Assinada em 12/02/2026</div></div><div class="dir"><button class="btn sec sm">Baixar</button></div></div>
+          </div>
+        </div>
+
+        <div class="sec2" style="margin-top:22px;text-align:center;font-size:12px">Dúvidas sobre seu processo? Fale com o escritório pelos canais habituais.</div>
+      </div>
+    </div>
+  </section>
+
+  </div>
+</div>
+
+<div class="nota" id="nota"></div>
+
+<script>
+const TELAS = [
+  ["fluxo","Fluxo em 4 passos","Anexo I, item 2 — a esteira do escritório, do cadastro à consulta. CPF ou CNPJ é a chave nos quatro passos."],
+  ["entrar","Entrar — operador","Acesso interno por e-mail e senha individuais, com bloqueio após 5 tentativas."],
+  ["painel","Painel","Visão do dia: andamentos recentes e o que está travado esperando alguém."],
+  ["clientes","Clientes","Lista com busca por nome, CPF ou CNPJ. Cadastro sem e-mail aparece em vermelho."],
+  ["novo","Novo cliente","Passo 1. CPF e CNPJ validados por dígito verificador, não só por máscara."],
+  ["ficha","Ficha do cliente","Passo 2. Casos vinculados e a pasta única exigida pelo item 4.a do Anexo I."],
+  ["caso","Caso e andamentos","Linha do tempo com data, autor e o texto que o cliente vai ler."],
+  ["docs","Documentos e assinatura","Passo 3. Gera do modelo, envia para assinatura eletrônica e arquiva sozinho."],
+  ["api","API do escritório","Item 3.b e 3.c: consulta por CPF/CNPJ, cadastro, permissões e ambiente de testes."],
+  ["usuarios","Usuários e permissões","Perfis diferenciados e registro de auditoria de quem fez o quê."],
+  ["cli-entrar","Cliente — entrar","Passo 4. CPF ou CNPJ mais código por e-mail, decisão tomada sobre o Anexo II, item 3.6."],
+  ["cli-area","Cliente — meus processos","O que o cliente vê: número do processo, andamento com data e seus documentos."]
+];
+
+const tabs = document.getElementById('tabs');
+TELAS.forEach(([id,rot],i)=>{
+  const b=document.createElement('button');
+  b.className='tab'+(i===0?' on':'');
+  b.dataset.go=id;
+  b.innerHTML='<span class="n">'+String(i+1).padStart(2,'0')+'</span>'+rot;
+  b.onclick=()=>ir(id);
+  tabs.appendChild(b);
+});
+
+function ir(id){
+  document.querySelectorAll('.tela').forEach(s=>s.classList.toggle('on',s.dataset.t===id));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.go===id));
+  const t=TELAS.find(x=>x[0]===id);
+  document.getElementById('nota').textContent=t?t[2]:'';
+  document.querySelector('.palco').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+let emMob=false;
+function mob(){
+  emMob=!emMob;
+  document.getElementById('frame').classList.toggle('mob',emMob);
+  const b=document.getElementById('btMob');
+  b.setAttribute('aria-pressed',emMob?'true':'false');
+  document.getElementById('btMobTxt').textContent=emMob?'Ver no computador':'Ver no celular';
+  document.getElementById('btMobIco').textContent=emMob?'▭':'▯';
+}
+
+document.addEventListener('keydown',e=>{
+  const i=TELAS.findIndex(t=>document.querySelector('.tela[data-t="'+t[0]+'"]').classList.contains('on'));
+  if(e.key==='ArrowRight'&&i<TELAS.length-1)ir(TELAS[i+1][0]);
+  if(e.key==='ArrowLeft'&&i>0)ir(TELAS[i-1][0]);
+});
+
+document.getElementById('nota').textContent=TELAS[0][2];
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Regra 8: nenhum segredo no repositório.
+.env
+.env.*
+!.env.example
+
+node_modules/
+.next/
+out/
+build/
+dist/
+
+*.tsbuildinfo
+next-env.d.ts
+
+.DS_Store
+Thumbs.db
+
+coverage/
+.vitest/
+
+# dumps de backup do banco
+backups/
+
+.vscode/
+.idea/
