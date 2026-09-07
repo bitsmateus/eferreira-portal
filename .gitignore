@@ -23,3 +23,6 @@ backups/
 
 .vscode/
 .idea/
+
+# permissoes locais do Claude Code — nao versionar
+.claude/settings.local.json
