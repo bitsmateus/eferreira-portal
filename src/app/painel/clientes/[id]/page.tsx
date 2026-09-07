@@ -3,9 +3,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { TipoPessoa } from '@prisma/client'
 
+import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { EtiquetaDeAcesso, EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { obterCliente } from '@/lib/clientes'
+import { listarPastaDoCliente } from '@/lib/documentos'
 import { formatarData } from '@/lib/datas'
 import { formatarDocumento } from '@/lib/documento'
 import {
@@ -40,6 +42,8 @@ export default async function PaginaDaFichaDoCliente({
   // montado a partir da sessão — nunca um findUnique direto.
   const cliente = await obterCliente(sessao, id)
   if (cliente === null) notFound()
+
+  const documentos = await listarPastaDoCliente(sessao, cliente.id)
 
   const temEmail = cliente.email !== null && cliente.email !== ''
   const acessoLiberado = cliente.contratoAssinadoEm !== null
@@ -156,13 +160,8 @@ export default async function PaginaDaFichaDoCliente({
               )}
             </div>
 
-            <div className="aviso aviso-info mt-4">
-              <span aria-hidden="true">▲</span>
-              <div>
-                <b>A pasta do cliente entra na Sprint 2.</b> É onde contrato,
-                procuração, declaração e os documentos de cada caso vão ficar reunidos
-                em um lugar só (Anexo I, 4.a).
-              </div>
+            <div className="mt-4">
+              <PastaDoCliente clienteId={cliente.id} documentos={documentos} />
             </div>
           </div>
 

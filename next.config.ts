@@ -3,6 +3,12 @@ import type { NextConfig } from 'next'
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    // O anexo da pasta do cliente sobe pela ação de servidor, e o limite
+    // padrão do Next é 1 MB. Acompanha TAMANHO_MAXIMO_BYTES em
+    // src/lib/documentos.ts — se um mudar, o outro muda junto.
+    serverActions: { bodySizeLimit: '25mb' },
+  },
   // Regra 5: nenhum arquivo é público. Nada é servido a partir de /public
   // sem passar pela camada de autorização — os documentos saem por URL
   // pré-assinada de validade curta gerada no servidor.

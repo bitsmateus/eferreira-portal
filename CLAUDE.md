@@ -131,7 +131,38 @@ fornecedor ou de nuvem tem que ser mudança de configuração, não reescrita.
 - Se faltar informação do cliente (modelo de documento, lista de status, logo),
   **pare e avise** — não invente conteúdo para destravar.
 
+## Pendências com o escritório — cobrar
+
+**3.5 — campos obrigatórios e lista de status de andamento.** Não chegou.
+Trava a metade "andamentos" da Sprint 2. Cobrar a partir de **08/09/2026**.
+São dois pedidos:
+
+1. Os **status de andamento** com os nomes exatamente como o escritório usa,
+   em ordem, dizendo para cada um se o cliente o vê, e qual é o status inicial
+   de um caso novo.
+2. Os **campos obrigatórios** do cadastro. Hoje só CPF/CNPJ e nome (cliente) e
+   assunto (caso) são exigidos. Importa para a Sprint 3: procuração e
+   declaração saem da qualificação, então campo que o documento exige e o
+   cadastro não obriga vira documento incompleto.
+
+As outras três (3.1 modelos, 3.3 domínio e credenciais de assinatura, 3.2 logo
+em vetor) continuam abertas e vencem antes do fim das Sprints 2 e 4.
+
+Enquanto a 3.5 não chega: **não invente status nem torne campo obrigatório por
+conta própria.**
+
 ## Estado atual
+
+**Sprint 2 — metade feita** (07/09/2026). A **pasta única do cliente** está de
+pé: anexo pelo painel, visualização e download, tudo reunido por cliente e
+também filtrado por caso. Nenhum arquivo é público — a chave no armazenamento é
+sorteada pelo servidor e o arquivo só sai por URL assinada de validade curta,
+gerada depois da verificação de autorização; envio e leitura ficam na auditoria.
+Verificado contra o MinIO real, inclusive que o balde recusa a leitura sem
+assinatura. 132 testes.
+
+**A outra metade — os andamentos — está parada na dependência 3.5.** Ver a
+seção de pendências acima.
 
 **Sprint 1 concluída** (07/09/2026). Cadastro de cliente com validação real de
 CPF e CNPJ, busca por nome/CPF/CNPJ, caso vinculado com número do processo e o
@@ -163,5 +194,5 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: Sprint 2 — andamentos e a pasta única. Ela depende da lista de
-status de andamento do escritório (Anexo II, item 3.5), que ainda não chegou.
+Próximo passo: os andamentos, assim que a lista de status chegar. Depois, a
+Sprint 3 — documentos e assinatura, que depende das dependências 3.1 e 3.3.

@@ -2,9 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { obterCaso } from '@/lib/casos'
+import { listarDocumentosDoCaso } from '@/lib/documentos'
 import { formatarData } from '@/lib/datas'
 import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
@@ -35,6 +37,8 @@ export default async function PaginaDoCaso({
   // colado na URL não encontra nada — devolve 404, não o caso de outro.
   const caso = await obterCaso(sessao, id)
   if (caso === null) notFound()
+
+  const documentos = await listarDocumentosDoCaso(sessao, caso.id)
 
   const titulo =
     caso.numeroProcesso === null
@@ -73,19 +77,30 @@ export default async function PaginaDoCaso({
 
       <div className="flex-1 overflow-auto px-6 py-6">
         <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-          <div className="cartao">
-            <div className="cartao-cabecalho">
-              <h2>Histórico do processo</h2>
+          <div>
+            <div className="cartao">
+              <div className="cartao-cabecalho">
+                <h2>Histórico do processo</h2>
+              </div>
+              <div className="px-[18px] py-10 text-center">
+                <p className="mb-1 text-[13.5px] font-medium text-texto-2">
+                  Os andamentos ainda não estão liberados.
+                </p>
+                <p className="text-[12.5px] text-texto-3">
+                  O registro de andamento com data e histórico depende da lista de
+                  status do escritório (Anexo II, item 3.5), que ainda não chegou. Nada
+                  de lista inventada aqui.
+                </p>
+              </div>
             </div>
-            <div className="px-[18px] py-10 text-center">
-              <p className="mb-1 text-[13.5px] font-medium text-texto-2">
-                Os andamentos entram na Sprint 2.
-              </p>
-              <p className="text-[12.5px] text-texto-3">
-                O registro de andamento com data e histórico depende da lista de status
-                do escritório (Anexo II, item 3.5), que ainda não chegou. Nada de lista
-                inventada aqui.
-              </p>
+
+            <div className="mt-4">
+              <PastaDoCliente
+                clienteId={caso.cliente.id}
+                documentos={documentos}
+                titulo="Documentos deste caso"
+                mostrarVinculo={false}
+              />
             </div>
           </div>
 
