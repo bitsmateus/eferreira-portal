@@ -112,10 +112,17 @@ model Cliente {
 
   // Qualificação (usada na geração da procuração e da declaração)
   rg             String?
+  /// Nunca foi usada por nenhum modelo do escritório; o escritório confirmou
+  /// em 14/09/2026 que sai da lista de obrigatórios. O campo fica porque há
+  /// cadastro antigo com o dado preenchido.
   dataNascimento DateTime?
   estadoCivil    String?
   profissao      String?
   nacionalidade  String?
+  /// Exigida pela procuração, pela declaração e pelo contrato — os três
+  /// abrem com o mesmo bloco de qualificação. Anulável no banco porque não
+  /// se aplica a pessoa jurídica: nesse caso ela mora no representante legal.
+  nomeMae        String?
 
   // Contato — sem e-mail o cliente nunca consegue receber o código de acesso.
   email    String?
@@ -137,9 +144,48 @@ model Cliente {
   documentos Documento[]
   acessos    Usuario[]
 
+  /// Quando este cliente é pessoa jurídica: quem assina por ele.
+  representantes    RepresentanteLegal[] @relation("RepresentadaPor")
+  /// Quando este cliente é pessoa física: as empresas que ele representa.
+  empresasQueRepresenta RepresentanteLegal[] @relation("Representa")
+
   @@index([nomeBusca])
   @@index([contratoAssinadoEm])
   @@map("cliente")
+}
+
+// ---------------------------------------------------------------------------
+// Representante legal — o "sócio" que o escritório pediu (14/09/2026).
+//
+// "Seria o mesmo cadastro da PF mas está ligado ao cadastro do PJ": o
+// representante não é um bloco de campos dentro da empresa, é um Cliente
+// pessoa física próprio, com a qualificação dele, ligado à pessoa jurídica.
+// Assim ele pode ser cliente por conta própria e representar mais de uma
+// empresa sem cadastro duplicado — que é a regra 4 aplicada a este caso.
+//
+// O termo de acordo enviado pelo escritório confirma o desenho: cada empresa
+// aparece "neste ato representada por seu sócio", com nome, RG, CPF e
+// endereço próprios.
+// ---------------------------------------------------------------------------
+
+model RepresentanteLegal {
+  id String @id @default(cuid())
+
+  pessoaJuridicaId String
+  pessoaJuridica   Cliente @relation("RepresentadaPor", fields: [pessoaJuridicaId], references: [id], onDelete: Cascade)
+
+  pessoaFisicaId String
+  pessoaFisica   Cliente @relation("Representa", fields: [pessoaFisicaId], references: [id], onDelete: Cascade)
+
+  /// Como consta no contrato social: "sócio", "sócio administrador",
+  /// "presidente". Texto livre porque varia com o tipo de sociedade.
+  qualificacao String?
+
+  criadoEm DateTime @default(now())
+
+  @@unique([pessoaJuridicaId, pessoaFisicaId])
+  @@index([pessoaFisicaId])
+  @@map("representante_legal")
 }
 
 // ---------------------------------------------------------------------------
@@ -164,15 +210,54 @@ model Caso {
   responsavelId String?
   responsavel   Usuario? @relation("CasoResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
 
+  /// Honorários contratados, em centavos — a cláusula 2ª do contrato precisa
+  /// deles para ser gerada. Centavos, e não decimal, para não haver erro de
+  /// arredondamento em valor que vai para documento assinado.
+  ///
+  /// ATENÇÃO (regra 12): isto é dado do contrato, NÃO é módulo financeiro. O
+  /// escritório foi explícito em 14/09/2026: "nada vinculado referente a
+  /// pagamentos, somente a adicionar". Não existe — e não deve passar a
+  /// existir — baixa de parcela, situação de pagamento, inadimplência nem
+  /// relatório financeiro. Se parecer necessário, pare e avise.
+  honorariosEmCentavos Int?
+
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
   andamentos Andamento[]
   documentos Documento[]
+  parcelas   ParcelaDeHonorarios[]
 
   @@index([clienteId])
   @@index([situacao])
   @@map("caso")
+}
+
+// ---------------------------------------------------------------------------
+// Parcela dos honorários — só para escrever a cláusula de pagamento do
+// contrato. Repare no que NÃO existe aqui: situação de pagamento, data de
+// quitação, comprovante. É de propósito (regra 12) — o módulo financeiro está
+// fora do contrato, e o escritório confirmou que quer apenas registrar.
+// ---------------------------------------------------------------------------
+
+model ParcelaDeHonorarios {
+  id String @id @default(cuid())
+
+  casoId String
+  caso   Caso   @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  /// 1 para a primeira, 2 para a segunda. É a ordem em que sai no contrato.
+  numero          Int
+  valorEmCentavos Int
+  /// Dia civil do vencimento, ancorado ao meio-dia UTC (regra 11).
+  vencimento      DateTime
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([casoId, numero])
+  @@index([casoId])
+  @@map("parcela_de_honorarios")
 }
 
 // ---------------------------------------------------------------------------

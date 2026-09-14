@@ -1,0 +1,61 @@
+<!--
+  PROCURAÇÃO — modelo oficial da E. Ferreira Advogados.
+
+  Transcrito do arquivo .docx enviado pelo escritório em 14/09/2026, com os
+  dados de exemplo substituídos por marcadores. Regra 10: o texto jurídico é
+  do escritório e NÃO se altera — nem para "melhorar" a redação, nem para
+  corrigir concordância. Se algo precisar mudar, o escritório manda a nova
+  versão.
+
+  Marcadores no formato {{campo}}. Ver src/lib/modelos.ts para a lista
+  completa e de onde cada um vem.
+-->
+<div class="marca-cabecalho">
+  <div class="nome">E. FERREIRA</div>
+  <div class="complemento">ADVOGADOS</div>
+</div>
+
+<h1>Procuração</h1>
+
+<p class="qualificacao">
+  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
+  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
+  número: {{cliente.rg}}, inscrito(a) no CPF sob o número:
+  {{cliente.documentoFormatado}}, Residente e domiciliado à
+  {{cliente.endereco}}, CEP: {{cliente.cepFormatado}}.
+</p>
+
+<p>
+  <span class="rotulo-parte">Outorgados:</span> {{escritorio.advogado}},
+  {{escritorio.advogadoQualificacao}}, inscrito na Ordem dos Advogados do
+  Brasil, Seção de São Paulo, sob o número {{escritorio.oab}}, com escritório
+  profissional na {{escritorio.endereco}}, CEP {{escritorio.cep}},
+  {{escritorio.cidade}}, {{escritorio.uf}}, e-mail: {{escritorio.email}}.
+</p>
+
+<p>
+  <span class="rotulo-parte">Poderes:</span> Pelo presente instrumento de
+  mandato o outorgante nomeia e constitui os outorgados seus bastantes
+  procuradores e advogados para o foro em geral, em qualquer juízo ou grau de
+  jurisdição, conferindo-lhes os poderes da cláusula AD JUDICIA ET EXTRA,
+  podendo para tanto, promover todas as ações e atos necessários para a defesa
+  dos interesses do OUTORGANTE, interpondo recursos, ações e medidas
+  incidentes, representando-o fora do juízo perante terceiros, sejam
+  particulares ou repartições públicas, emersas ou órgãos estatais, requerendo
+  o que de direito, conferindo ainda, poderes especiais para confessar, receber
+  e dar quitação, firmar acordos e compromissos, podendo os outorgados agir
+  conjunta ou isoladamente, independente de ordem de nomeação, substabelecer
+  com ou sem reserva de iguais poderes, dando tudo por bom, firme e valioso.
+</p>
+
+<p class="local-e-data">{{escritorio.cidade}}, {{dataPorExtenso}}</p>
+
+<div class="assinatura">
+  <div class="linha"></div>
+  <div class="nome">{{cliente.nome}}</div>
+</div>
+
+<div class="marca-rodape">
+  {{escritorio.razaoSocial}} · OAB/SP {{escritorio.oab}} ·
+  {{escritorio.telefone}} · {{escritorio.email}}
+</div>

@@ -1,0 +1,45 @@
+<!--
+  DECLARAÇÃO DE HIPOSSUFICIÊNCIA — modelo oficial da E. Ferreira Advogados.
+
+  Transcrito do .docx enviado em 14/09/2026, com os dados de exemplo
+  substituídos por marcadores. Regra 10: o texto é do escritório e cita lei e
+  artigos — não se altera nem uma vírgula. O trecho em maiúsculas está assim
+  no original.
+
+  É o documento mais simples: além da qualificação, não tem campo variável.
+-->
+<div class="marca-cabecalho">
+  <div class="nome">E. FERREIRA</div>
+  <div class="complemento">ADVOGADOS</div>
+</div>
+
+<h1>Declaração de Hipossuficiência</h1>
+
+<p class="qualificacao">
+  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
+  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
+  número: {{cliente.rg}}, inscrito(a) no CPF sob o número:
+  {{cliente.documentoFormatado}}, Residente e domiciliado à
+  {{cliente.endereco}}, CEP: {{cliente.cepFormatado}}.
+</p>
+
+<p class="maiusculas">
+  Desejando obter os benefícios da “justiça gratuita”, declara, sob as penas da
+  lei, que não possui recursos suficientes para custear qualquer demanda, sem
+  prejuízo do sustento próprio e da família, pelo que, nos termos da lei nº
+  1.060 de 05 de fevereiro de 1950, artigo 98 do novo CPC e nos termos do art.
+  5º, LXXIV da Constituição Federal de 1988, faz jus aos benefícios da
+  gratuidade da justiça.
+</p>
+
+<p class="local-e-data">{{escritorio.cidade}}, {{dataPorExtenso}}.</p>
+
+<div class="assinatura">
+  <div class="linha"></div>
+  <div class="nome">{{cliente.nome}}</div>
+</div>
+
+<div class="marca-rodape">
+  {{escritorio.razaoSocial}} · OAB/SP {{escritorio.oab}} ·
+  {{escritorio.telefone}} · {{escritorio.email}}
+</div>

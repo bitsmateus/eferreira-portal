@@ -1,0 +1,189 @@
+<!--
+  CONTRATO DE PRESTAÇÃO DE SERVIÇOS ADVOCATÍCIOS — modelo oficial da
+  E. Ferreira Advogados (cível / empresarial).
+
+  Transcrito do .docx enviado em 14/09/2026, com os dados de exemplo
+  substituídos por marcadores. Regra 10: o texto jurídico é do escritório e
+  não se altera.
+
+  DEFEITO NO ORIGINAL, transcrito como está: existem DUAS cláusulas numeradas
+  como 9ª — "Autorização para recebimento" e "Foro". Corrigir seria reescrever
+  texto jurídico por conta própria, o que a regra 10 proíbe. Está registrado
+  em docs/modelos-de-documento.md para o escritório resolver.
+-->
+<div class="marca-cabecalho">
+  <div class="nome">E. FERREIRA</div>
+  <div class="complemento">ADVOGADOS</div>
+</div>
+
+<h1>Contrato de Prestação de Serviços Advocatícios</h1>
+
+<p>Pelo presente instrumento particular, de um lado:</p>
+
+<p class="qualificacao">
+  <span class="rotulo-parte">Contratante:</span>
+  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
+  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
+  {{cliente.rg}}, inscrito(a) no CPF sob o número:
+  {{cliente.documentoFormatado}}, e-mail: {{cliente.email}}, residente e
+  domiciliado á {{cliente.endereco}}, CEP {{cliente.cepFormatado}}.
+</p>
+
+<p class="qualificacao">
+  <span class="rotulo-parte">Contratado:</span> {{escritorio.razaoSocial}}, sob
+  registro de Sociedades de Advocacia nº {{escritorio.registroOab}}, neste ato
+  representado, pelo advogado {{escritorio.advogado}}, inscrito na OAB/SP sob
+  nº {{escritorio.oab}}, com endereço profissional à {{escritorio.endereco}},
+  {{escritorio.cidade}} - {{escritorio.uf}}, CEP: {{escritorio.cep}},
+  doravante denominado ADVOGADO.
+</p>
+
+<p>
+  As partes acima identificadas celebram o presente Contrato de Prestação de
+  Serviços Advocatícios, regido pelas cláusulas e condições seguintes:
+</p>
+
+<h2>Cláusula 1ª – Objeto</h2>
+<p>
+  O presente contrato tem por objeto a prestação de serviços advocatícios pelo
+  CONTRATADO em favor do CONTRATANTE para propositura, acompanhamento e
+  conclusão de <span class="maiusculas">{{caso.assunto}}</span>{{caso.contraParteContraria}}, abrangendo todas as fases processuais,
+  inclusive recursos, até o trânsito em julgado e cumprimento da decisão
+  judicial.
+</p>
+
+<h2>Cláusula 2ª – Honorários Contratuais</h2>
+<p class="item">
+  2.1. Os honorários advocatícios contratados serão de
+  {{honorarios.valorFormatado}} ({{honorarios.valorPorExtenso}}) que serão
+  pagos pelo CONTRATANTE da seguinte forma: {{honorarios.condicoesDePagamento}}
+</p>
+<p class="item">
+  2.2. O pagamento dos honorários fica condicionado deve ser realizado na conta
+  do escritorio {{escritorio.banco}}, Agencia: {{escritorio.agencia}}, conta:
+  {{escritorio.conta}}, Chave Pix: {{escritorio.chavePix}}, Razão social:
+  {{escritorio.razaoSocialRecebedora}}.
+</p>
+<p class="item">
+  2.3. Caso não haja proveito econômico, não será devido qualquer valor a
+  título de honorários contratuais, sem prejuízo do reembolso das despesas
+  processuais eventualmente adiantadas pelo CONTRATADO.
+</p>
+
+<h2>Cláusula 3ª – Despesas Processuais</h2>
+<p class="item">
+  3.1. Custas, despesas processuais e honorários periciais não estão incluídos
+  nos honorários contratuais, devendo ser suportados pelo CONTRATANTE.
+</p>
+<p class="item">
+  3.2. Caso o CONTRATADO antecipe valores para custas e despesas, fica desde já
+  autorizado a reter esses montantes no ato do repasse de valores recebidos.
+</p>
+
+<h2>Cláusula 4ª – Obrigações do Contratado</h2>
+<p class="item">
+  a) Representar o CONTRATANTE perante órgãos administrativos e judiciais no
+  processo objeto deste contrato;
+</p>
+<p class="item">
+  b) Adotar todas as medidas jurídicas adequadas à defesa dos interesses do
+  CONTRATANTE;
+</p>
+<p class="item">c) Manter sigilo profissional nos termos da lei;</p>
+<p class="item">
+  d) Prestar informações sobre o andamento do processo em suas decisões
+  terminativas ou em caso de duvidas através do Telefone:
+  {{escritorio.telefone}} e e-mail: {{escritorio.email}}.
+</p>
+
+<h2>Cláusula 5ª – Natureza da Obrigação</h2>
+<p>
+  O CONTRATADO obriga-se a prestar serviços advocatícios ao CONTRATANTE,
+  consistentes na atuação profissional necessária à defesa de seus interesses
+  no(s) processo(s) especificado(s) neste instrumento, empregando todo o zelo,
+  diligência, conhecimento técnico e meios jurídicos adequados, dentro dos
+  limites éticos e legais, sem que tal obrigação implique em garantia de
+  resultado favorável, tratando-se, portanto, de obrigação de meio, nos termos
+  da legislação e do Código de Ética e Disciplina da OAB.
+</p>
+
+<h2>Cláusula 6ª – Obrigações do Contratante</h2>
+<p class="item">a) Fornecer todos os documentos e informações necessárias;</p>
+<p class="item">
+  b) Comparecer a audiências e demais atos quando intimado;
+</p>
+<p class="item">
+  c) Ressarcir eventuais despesas processuais suportadas pelo CONTRATADO.
+</p>
+
+<h2>Cláusula 7ª – Honorários Sucumbenciais</h2>
+<p>
+  Os honorários de sucumbência fixados em sentença ou arbitrados em acordo
+  pertencem exclusivamente ao CONTRATADO, cumulativamente com os honorários
+  contratuais ora pactuados.
+</p>
+
+<h2>Cláusula 8ª – Rescisão</h2>
+<p class="item">
+  8.1. O presente contrato poderá ser rescindido por qualquer das partes,
+  mediante aviso escrito.
+</p>
+<p class="item">
+  8.2. Se a rescisão ocorrer por iniciativa do CONTRATANTE sem justa causa, ou
+  se este constituir outro advogado para o mesmo processo, será devido ao
+  CONTRATADO o pagamento dos honorários proporcionais ao trabalho realizado,
+  calculados sobre o provável proveito econômico da demanda.
+</p>
+
+<h2>Cláusula 9ª – Autorização para Recebimento</h2>
+<p>
+  O CONTRATANTE autoriza o CONTRATADO a receber, em seu nome, quaisquer valores
+  decorrentes da ação, podendo reter diretamente o montante correspondente aos
+  honorários contratuais e às despesas adiantadas.
+</p>
+
+<h2>Cláusula 9ª – Foro</h2>
+<p>
+  Fica eleito o foro da Comarca de {{escritorio.comarca}}, com renúncia de
+  qualquer outro, para dirimir questões oriundas deste contrato.
+</p>
+
+<p>
+  E, por estarem justos e contratados, firmam o presente instrumento por meio
+  eletrônico, utilizando assinatura digital com certificação ICP-Brasil ou
+  outro meio de comprovação de autoria e integridade aceito em direito, em
+  conformidade com a Medida Provisória nº 2.200-2/2001 e o Código Civil
+  Brasileiro.
+</p>
+
+<p>
+  As partes reconhecem que o documento assinado digitalmente possui a mesma
+  validade jurídica que o instrumento físico assinado de próprio punho,
+  dispensando-se a presença física das testemunhas quando a assinatura
+  eletrônica permitir a identificação inequívoca dos signatários.
+</p>
+
+<p class="local-e-data">{{escritorio.cidade}}, {{dataPorExtenso}}.</p>
+
+<div class="assinatura">
+  <div class="linha"></div>
+  <div class="nome">{{cliente.nome}}</div>
+  <div class="documento">CPF nº {{cliente.documentoFormatado}}</div>
+</div>
+
+<div class="assinatura">
+  <div class="linha"></div>
+  <div class="nome">{{escritorio.advogado}}</div>
+  <div class="documento">OAB/SP {{escritorio.oab}}</div>
+</div>
+
+<div class="testemunhas">
+  <p class="rotulo-parte">Testemunhas:</p>
+  <p>Nome: ___________________ CPF: ___________________</p>
+  <p>Nome: ___________________ CPF: ___________________</p>
+</div>
+
+<div class="marca-rodape">
+  {{escritorio.razaoSocial}} · OAB/SP {{escritorio.oab}} ·
+  {{escritorio.telefone}} · {{escritorio.email}}
+</div>

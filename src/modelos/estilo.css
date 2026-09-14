@@ -1,0 +1,136 @@
+/**
+ * Folha de estilo dos documentos gerados.
+ *
+ * Serve tanto para a prévia na tela quanto para o PDF (Playwright imprime o
+ * mesmo HTML), que é o motivo de o CSS ser compartilhado: o que o operador vê
+ * na prévia é exatamente o que o cliente assina.
+ *
+ * Papel A4 com margens de documento jurídico, texto justificado e serifado.
+ */
+
+@page {
+  size: A4;
+  margin: 2.5cm 2.5cm 2cm 3cm;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  color: #000;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* Cabeçalho e rodapé com a marca — a logo definitiva é dependência 3.2 do
+   Anexo II e ainda não chegou; até lá vai o nome em texto. */
+.marca-cabecalho {
+  margin-bottom: 1.2cm;
+  padding-bottom: 0.4cm;
+  border-bottom: 1px solid #000;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.marca-cabecalho .nome {
+  font-size: 15pt;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+}
+
+.marca-cabecalho .complemento {
+  font-size: 8.5pt;
+  letter-spacing: 0.3em;
+}
+
+.marca-rodape {
+  margin-top: 1.2cm;
+  padding-top: 0.3cm;
+  border-top: 1px solid #000;
+  font-size: 8.5pt;
+  text-align: center;
+}
+
+h1 {
+  margin: 0 0 1cm;
+  font-size: 13pt;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+h2 {
+  margin: 0.8cm 0 0.3cm;
+  font-size: 12pt;
+  font-weight: bold;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+p {
+  margin: 0 0 0.45cm;
+}
+
+/* O bloco de qualificação das partes, igual nos três documentos. */
+.qualificacao {
+  margin-bottom: 0.6cm;
+}
+
+.rotulo-parte {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.maiusculas {
+  text-transform: uppercase;
+}
+
+.local-e-data {
+  margin: 1.4cm 0 1.8cm;
+  text-align: right;
+}
+
+.assinatura {
+  margin-top: 1.4cm;
+  text-align: center;
+  page-break-inside: avoid;
+}
+
+.assinatura .linha {
+  margin: 0 auto 0.15cm;
+  width: 9cm;
+  border-top: 1px solid #000;
+}
+
+.assinatura .nome {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.assinatura .documento {
+  font-size: 10.5pt;
+}
+
+.testemunhas {
+  margin-top: 1.2cm;
+  page-break-inside: avoid;
+}
+
+.testemunhas p {
+  margin-bottom: 0.9cm;
+}
+
+ol.clausulas {
+  margin: 0;
+  padding-left: 1.1cm;
+}
+
+.item {
+  margin-bottom: 0.35cm;
+}
