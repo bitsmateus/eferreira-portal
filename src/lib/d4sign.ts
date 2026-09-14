@@ -19,6 +19,18 @@
  * Autenticação: a D4Sign não usa cabeçalho, e sim `tokenAPI` e `cryptKey` na
  * query. Por isso nenhuma URL montada aqui pode ir para log ou mensagem de
  * erro — ela carrega as duas credenciais inteiras. Ver `semCredenciais`.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * ESTE ARQUIVO NÃO APAGA NADA, E NÃO DEVE PASSAR A APAGAR
+ *
+ * O cofre usado é um cofre que já existia, com documentos do escritório —
+ * pedido expresso de 14/09/2026: "apenas não exclua nada que tem ali".
+ *
+ * Não há aqui, e não pode haver, chamada de exclusão: nem de documento, nem de
+ * cofre, nem de signatário. O que este arquivo faz no cofre é acrescentar.
+ * Se algum dia parecer necessário apagar, pare e avise — documento assinado é
+ * prova, e prova apagada não volta.
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
 import { Buffer } from 'node:buffer'
