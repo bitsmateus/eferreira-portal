@@ -178,8 +178,28 @@ recebe só os clientes novos.
 
 - **Subdomínio: `portal.eferreira.adv.br` — RESOLVIDO e no ar.** Registro A na
   Locaweb apontando para `187.127.54.204`, uma VPS Hostinger
-  (`srv1911163.hstgr.cloud`) com o EasyPanel já instalado e respondendo. Falta
-  criar os projetos e publicar.
+  (`srv1911163.hstgr.cloud`).
+
+**A infraestrutura está de pé** (14/09/2026). Dois projetos no EasyPanel,
+`eferreira-producao` e `eferreira-homologacao`, cada um com **Postgres 16** e
+**MinIO**. O servidor hospeda outro cliente (projeto `consensus`) — não se
+encosta nele.
+
+O balde `eferreira-documentos` existe nos dois, e a **regra 5 foi conferida
+contra o armazenamento de verdade**: leitura sem assinatura devolve 403, não há
+política pública, e a URL assinada funciona.
+
+**Armadilha registrada:** a imagem `minio/minio` do Docker Hub dá "pull access
+denied" no servidor. A que funciona é `quay.io/minio/minio:latest`, o registro
+oficial da MinIO. O `docker-compose.yml` de desenvolvimento ainda usa a do
+Docker Hub, que só continua funcionando por já estar em cache local.
+
+Os segredos gerados (senhas do Postgres e do MinIO) **só existem no EasyPanel**
+— nunca passaram pelo repositório. Ficam visíveis em cada serviço, na aba
+Environment.
+
+Falta publicar a aplicação em si, o que depende de dar ao EasyPanel acesso ao
+repositório privado no GitHub.
 - **D4Sign: credenciais de PRODUÇÃO em mãos e conferidas** (14/09/2026). A
   conta responde, tem **26 cofres** e **32 envios restantes** de 50 créditos.
   Conferir com `npm run d4sign:conta`.
