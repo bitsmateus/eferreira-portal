@@ -6,12 +6,12 @@
  * o escritório manda para cliente. A regra 8 trata de credencial, não de
  * papel timbrado.
  *
- * Quando a tela de administração chegar (Sprint 5), isto deve virar
- * configuração editável pelo administrador — hoje, mudar o telefone do
- * escritório exige nova versão do sistema, o que não é razoável a longo prazo.
+ * Quando a tela de administração chegar, isto deve virar configuração editável
+ * pelo administrador — hoje, mudar o telefone do escritório exige nova versão
+ * do sistema, o que não é razoável a longo prazo.
  *
  * ─────────────────────────────────────────────────────────────────────────
- * DIVERGÊNCIA A CONFIRMAR COM O ESCRITÓRIO
+ * DIVERGÊNCIA AINDA ABERTA — decisão provisória de 14/09/2026
  *
  * Os modelos trazem DOIS endereços profissionais diferentes:
  *
@@ -19,8 +19,14 @@
  *   contrato   → "Rua Olegario Paiva, 180, 4º andar, sala 411,
  *                 Mogi das Cruzes/SP, CEP 08780-040"
  *
- * Adotei o do contrato, que é o mais completo e coerente com o foro citado.
- * Enquanto não confirmarem, a procuração sai com o endereço do contrato.
+ * O escritório respondeu: "a princípio siga o de São Paulo, deixamos pendente
+ * isso". Adotado o da procuração, portanto — e a pendência continua aberta,
+ * porque os dois vieram dos próprios modelos do escritório e um deles está
+ * errado em algum documento já assinado.
+ *
+ * ATENÇÃO: o endereço mudou de cidade, mas a COMARCA do foro não. A cláusula
+ * de foro do contrato cita São Paulo, e ela é texto jurídico do escritório
+ * (regra 10) — não se mexe nela por causa de um campo de endereço.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -34,10 +40,11 @@ export const ESCRITORIO = {
   advogadoQualificacao: 'brasileiro, solteiro, advogado',
   oab: '378.532',
 
-  endereco: 'Rua Olegario Paiva, 180, 4º andar, sala 411',
-  cidade: 'Mogi das Cruzes',
+  // Endereço da procuração, adotado em 14/09/2026 por decisão do escritório.
+  endereco: 'Gerônimo Barbosa da Silva, 159',
+  cidade: 'São Paulo',
   uf: 'SP',
-  cep: '08780-040',
+  cep: '01310-100',
   comarca: 'São Paulo - SP',
 
   telefone: '11 – 4580.3696',

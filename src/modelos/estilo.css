@@ -27,14 +27,29 @@ body {
   hyphens: auto;
 }
 
-/* Cabeçalho e rodapé com a marca — a logo definitiva é dependência 3.2 do
-   Anexo II e ainda não chegou; até lá vai o nome em texto. */
+/* Cabeçalho e rodapé com a marca (regra 10). O desenho é o do protótipo, que
+   o escritório aprovou como identidade definitiva em 14/09/2026 — o HTML dele
+   está em src/lib/timbre.ts, não nos modelos, porque modelo é texto jurídico
+   e timbre não é. */
 .marca-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45cm;
   margin-bottom: 1.2cm;
   padding-bottom: 0.4cm;
   border-bottom: 1px solid #000;
-  text-align: center;
   line-height: 1.2;
+}
+
+.marca-cabecalho .simbolo {
+  width: 1.15cm;
+  height: 1.15cm;
+  flex: none;
+}
+
+.marca-cabecalho .marca-texto {
+  text-align: left;
 }
 
 .marca-cabecalho .nome {

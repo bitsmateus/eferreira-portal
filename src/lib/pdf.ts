@@ -13,6 +13,8 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Browser } from 'playwright'
 
+import { cabecalhoDoDocumento, rodapeDoDocumento } from '@/lib/timbre'
+
 let navegadorMemorizado: Browser | null = null
 
 async function navegador(): Promise<Browser> {
@@ -52,6 +54,17 @@ export async function lerModelo(nome: string): Promise<string> {
 }
 
 /** Embrulha o corpo do documento na página completa, com o CSS embutido. */
+/**
+ * Monta a página inteira: timbre, corpo do documento, timbre.
+ *
+ * O cabeçalho e o rodapé entram AQUI, e não nos modelos, porque o que está em
+ * `src/modelos/` é texto jurídico do escritório — que a regra 10 proíbe
+ * alterar. Papel timbrado não é texto jurídico, e separá-los permite mexer em
+ * um sem nunca encostar no outro.
+ *
+ * Como a prévia na tela usa esta mesma função, o operador vê o documento
+ * timbrado exatamente como ele sai no PDF.
+ */
 export function montarPagina(corpo: string, estilo: string, titulo: string): string {
   return `<!doctype html>
 <html lang="pt-BR">
@@ -60,7 +73,7 @@ export function montarPagina(corpo: string, estilo: string, titulo: string): str
 <title>${titulo}</title>
 <style>${estilo}</style>
 </head>
-<body>${corpo}</body>
+<body>${cabecalhoDoDocumento()}${corpo}${rodapeDoDocumento()}</body>
 </html>`
 }
 

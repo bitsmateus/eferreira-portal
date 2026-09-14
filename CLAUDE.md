@@ -133,60 +133,70 @@ fornecedor ou de nuvem tem que ser mudança de configuração, não reescrita.
 
 ## Pendências com o escritório
 
-Situação em **14/09/2026**. Cobrança enviada em 09/09, respondida em parte.
+Situação em **14/09/2026**, depois da segunda rodada de respostas. Das oito
+dependências do Anexo II, **sete estão resolvidas**.
 
-**3.6 — RESPONDIDA, com pendência nova.** O escritório tem serviço de e-mail
-por **SMTP** próprio, e a entrada do cliente já está de pé sobre ele. Faltam as
-credenciais: servidor, porta, usuário, senha e qual endereço vai como
-remetente. Sem elas o sistema não manda o código e **nenhum cliente entra**.
-Em desenvolvimento o código é impresso no terminal. Ver
-`docs/area-do-cliente.md`.
+**3.1 — RESOLVIDA.** Os modelos viraram HTML em branco com marcadores em
+`src/modelos/`; o sistema gera procuração, declaração e contrato em PDF. O
+termo de acordo ficou fora do escopo. Ver `docs/modelos-de-documento.md`.
 
-**3.5 — RESPONDIDA.** A lista de status está cadastrada por migração
-(`20260914093800`). O escritório confirmou que o fluxo de acordo (polo passivo)
-está **fora do escopo**, que um caso **não muda de polo**, e que o cliente lê
-**a mensagem resumo** do andamento — por isso não há status interno nem coluna
-de visibilidade. Campos obrigatórios definidos, **sem** data de nascimento, e
-com bloqueio de gravação ("melhor não deixar salvar, para não criar futuras
-pendências").
+**3.2 — RESOLVIDA.** A logo em vetor **não vem, e não precisa**: o escritório
+confirmou que "a logo e a identidade visual é o que já está, não precisa
+ajustar nada". O desenho do protótipo é, portanto, a marca definitiva. Ela foi
+aplicada ao cabeçalho e ao rodapé dos documentos gerados (regra 10), em traço
+preto — ver `src/lib/timbre.ts`.
 
-**3.1 — RESPONDIDA.** Os modelos viraram HTML em branco com marcadores em
-`src/modelos/`, e o sistema já gera procuração, declaração e contrato em PDF.
-O termo de acordo ficou fora do escopo, por decisão do escritório. Ver
-`docs/modelos-de-documento.md`.
+**3.4 — RESOLVIDA.** Assinatura eletrônica pelo D4Sign.
 
-**3.3 — parcial.** Domínio `eferreira.adv.br` na Locaweb; falta definir o
-subdomínio e o acesso ao DNS. Assinatura pelo **D4Sign**, mas veio a senha de
-login em vez do **token de API** — que é o que a integração usa. A senha foi
-exposta em texto puro no WhatsApp e o escritório foi orientado a trocá-la.
+**3.5 — RESOLVIDA.** Lista de status por migração (`20260914093800`), campos
+obrigatórios definidos com bloqueio de gravação, fluxo de acordo fora do
+escopo, cliente lê a mensagem resumo.
 
-**3.2 — logo em vetor: não veio.** Trava a Sprint 5 e os documentos gerados.
+**3.6 — RESOLVIDA no desenho, pendente na implantação.** O escritório tem SMTP
+próprio e a entrada do cliente está de pé sobre ele. Faltam as credenciais:
+servidor, porta, usuário, senha e o endereço remetente. **Sem elas nenhum
+cliente entra.** Ver `docs/area-do-cliente.md`.
 
-### O que ainda falta perguntar
+**3.7 — RESOLVIDA, com trabalho novo.** Não haverá lista prévia de
+colaboradores: o escritório quer **criar, editar e excluir usuários dentro da
+própria ferramenta**. Isso é a tela de Usuários, que ainda não existe.
 
-1. **A cláusula 9ª aparece duas vezes** no contrato do escritório
-   ("Autorização para recebimento" e "Foro"). Transcrito como está — regra 10
-   proíbe reescrever texto jurídico. Precisa de correção deles.
-2. **Dois endereços profissionais diferentes** nos modelos. Adotado o do
-   contrato; ver `src/lib/escritorio.ts`.
-3. **Token de API do D4Sign**, para enviar à assinatura. A senha de login que
-   mandaram não serve para integração.
-4. **Subdomínio do portal** e acesso ao DNS na Locaweb.
-5. **Logo em vetor** (3.2): sem ela, o cabeçalho dos documentos sai em texto.
-6. **Credenciais do SMTP** (3.6): servidor, porta, usuário, senha e remetente.
-   É por elas que o código de acesso do cliente sai.
-7. **Quais serviços vão consumir a API** (dependência 3.3, segunda metade:
-   "os serviços que consumirão a nova API, com as respectivas credenciais e
-   documentação, quando houver"). A API está pronta e documentada; falta saber
-   para quem gerar chave, e com qual permissão.
-8. **A permissão "Baixar documentos"** aparece no protótipo, mas o item 3.b não
-   prevê endpoint de download por API — não foi implementada. Confirmar.
-9. **A tela de entrada do cliente não mostra o e-mail mascarado** que o
-   protótipo desenhou — mostrar responderia, a qualquer um, se um CPF é
-   cliente do escritório. Diferença visível; combinar na demonstração. Ver
-   `docs/area-do-cliente.md`.
+**3.8 — RESOLVIDA.** Sem migração de histórico. O sistema começa vazio e
+recebe só os clientes novos.
 
-**Enquanto não responderem: não invente conteúdo para destravar.**
+**3.3 — parcial, e é o que sobrou.**
+
+- **Subdomínio: `portal.eferreira.adv.br`**, definido. Falta montar o registro
+  de DNS na Locaweb, o que depende do endereço do servidor do EasyPanel.
+- **Token de API do D4Sign:** o escritório foi conferir. A senha de login que
+  mandaram antes não serve para integração.
+- **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
+  construída depois. A chave dela sai com acesso total, por decisão do
+  escritório. Nada a gerar por ora.
+- **Custo por envio da assinatura eletrônica:** ciente e aceito.
+
+### Decisões registradas nesta rodada
+
+1. **A cláusula 9ª repetida fica como está.** "Siga a versão enviada mesmo, sem
+   alterações." É o que o sistema já faz — regra 10.
+2. **Endereço profissional: o de São Paulo** (Gerônimo Barbosa da Silva, 159).
+   "A princípio siga o de São Paulo, deixamos pendente isso." A divergência
+   entre os dois modelos **continua aberta** e está marcada em
+   `src/lib/escritorio.ts`. A comarca do foro não mudou.
+3. **Documento por caso ou por cliente: fica como está** — contrato por caso,
+   procuração e declaração por cliente.
+4. **A tela de entrada do cliente continua sem o e-mail mascarado.** Aprovado.
+5. **O cadastro continua sem o seletor "Tipo"** — derivado do documento.
+6. **Não há download de documentos pela API.** Confirmado.
+
+### A senha do D4Sign
+
+O escritório decidiu **manter** a senha que trafegou em texto puro no WhatsApp
+("vai ser essa mesma"). A recomendação de trocá-la foi feita e fica registrada
+aqui. O sistema não usa essa senha — a integração vai pelo token de API —, então
+o risco é do painel do D4Sign do escritório, não do portal.
+
+**Enquanto uma dependência não responder: não invente conteúdo para destravar.**
 
 ## Estado atual
 
@@ -219,8 +229,15 @@ quem chama; ligar isto a um robô de tribunal é a fase 2.
 **282 testes** (232 unitários, 50 contra o banco). Os da API entram pelas rotas
 de verdade, porque é na rota que a permissão da chave é conferida.
 
-**Falta da Sprint 5 a aplicação da identidade visual**, travada na dependência
-3.2 — a logo em vetor não chegou.
+**A identidade visual foi aprovada como está** (14/09/2026): o escritório
+respondeu que a logo é a que já existe no sistema. Ela entrou no cabeçalho e no
+rodapé dos documentos gerados, em traço preto — o timbre saiu dos modelos e
+vive em `src/lib/timbre.ts`, porque o que está em `src/modelos/` é texto
+jurídico do escritório e a regra 10 proíbe encostar nele.
+
+**Falta da Sprint 5 a tela de Usuários**, pedida na mesma rodada: o escritório
+não vai mandar lista de colaboradores, quer criar, editar e excluir os acessos
+dentro da própria ferramenta.
 
 **Sprint 4 concluída** (14/09/2026). **A área do cliente está de pé.** O
 cliente entra em `/consultar` com CPF ou CNPJ e um código de seis dígitos
@@ -310,7 +327,7 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: a Sprint 6 — demonstração, aceite e produção. Ela depende das
-três pendências que sobraram: logo em vetor (3.2), domínio e DNS (3.3) e as
-credenciais do SMTP (3.6). O envio à assinatura eletrônica continua parado no
-token de API do D4Sign.
+Próximo passo: a **tela de Usuários** (dependência 3.7, respondida), e depois a
+Sprint 6 — demonstração, aceite e produção. O que ainda falta de terceiros:
+o registro de DNS de `portal.eferreira.adv.br` na Locaweb, as credenciais do
+SMTP e o token de API do D4Sign.
