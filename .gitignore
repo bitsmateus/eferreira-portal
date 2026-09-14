@@ -31,3 +31,8 @@ backups/
 # nome da mae e endereco de clientes de verdade. Nao versionar (LGPD).
 # O mapa de campos, sem dado pessoal, esta em docs/modelos-de-documento.md
 docs/modelos/
+
+# Scripts descartáveis de automação do painel de implantação. Ficam fora do
+# repositório: são de uso único, apontam para o painel e não são a documentação
+# da implantação — essa é docs/03-implantacao-easypanel.md.
+ep-*.mjs
