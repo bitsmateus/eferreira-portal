@@ -23,7 +23,7 @@ const MENU = [
   {
     grupo: 'Administração',
     itens: [
-      { icone: '⚙', rotulo: 'Usuários', href: null, sprint: 'Sprint 5' },
+      { icone: '⚙', rotulo: 'Usuários', href: '/painel/usuarios' },
       { icone: '⌁', rotulo: 'API', href: '/painel/api' },
     ],
   },

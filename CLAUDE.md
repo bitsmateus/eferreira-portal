@@ -167,6 +167,11 @@ caracteres. Com a senha comum a resposta é sempre "535-5.7.8 Username and
 Password not accepted", e nenhuma configuração resolve. Para conferir sem
 adivinhar: `npm run email:teste`. Ver `docs/area-do-cliente.md`.
 
+**A senha de app entrou no `.env` local e o `npm run email:teste` passou**
+(14/09/2026): conexão STARTTLS na porta 587, login aceito, e-mail entregue.
+Falta só repetir — a mesma senha de dezesseis caracteres, marcada como secreta
+— no EasyPanel, em `eferreira-producao` e `eferreira-homologacao`.
+
 **3.7 — RESOLVIDA, com trabalho novo.** Não haverá lista prévia de
 colaboradores: o escritório quer **criar, editar e excluir usuários dentro da
 própria ferramenta**. Isso é a tela de Usuários, que ainda não existe.
@@ -257,6 +262,43 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**A tela de Usuários está de pé** (14/09/2026), fechando o que faltava da
+Sprint 5 (dependência 3.7). Só o administrador acessa `/painel/usuarios` —
+`exigirAdministrador` decide isso no domínio (`src/lib/usuarios.ts`), a tela só
+evita o erro feio para o operador, mesmo padrão da tela da API.
+
+"Excluir" aqui é desativar, não apagar a linha: `autorId` de andamento,
+`criadoPorId` de cliente e a auditoria toda apontam para o usuário, e regra 6
+exige que esse rastro continue dizendo quem fez o quê mesmo depois que a
+pessoa sai do escritório. Desativado, o usuário para de entrar (a checagem já
+existia em `src/auth.ts`) — o efeito prático de "excluir" sem quebrar o
+histórico. Reativar desfaz.
+
+A senha **não é digitada pelo administrador** — o sistema sorteia (mesma
+lógica de `prisma/seed.ts`, agora compartilhada em `gerarSenhaAleatoria`,
+`src/lib/senha.ts`) e aparece na tela **uma vez só**, igual à chave de API em
+`credenciais.ts`. "Redefinir senha" segue o mesmo caminho e de quebra destrava
+quem estivesse bloqueado pelas 5 tentativas erradas.
+
+A tela só alcança quem tem e-mail e é operador ou administrador — de propósito
+fora do alcance: o perfil CLIENTE (gerido pelo cartão "Acesso do cliente" na
+ficha do cliente) e os usuários sem e-mail que só existem para uma credencial
+de API assinar andamentos (geridos em `/painel/api`).
+
+**O escritório não pode se trancar para fora do próprio painel:** rebaixar ou
+desativar o único administrador ativo é recusado (`ultimo_administrador`),
+com teste de banco dedicado.
+
+240 testes unitários verdes (`npm run test`) e `npx tsc --noEmit` limpo. Os
+testes de banco de `testes-de-banco/usuarios.teste.ts` foram escritos no mesmo
+padrão dos demais (violação real de unicidade de e-mail, o filtro que
+exclui CLIENTE e credencial de API, a trava do último administrador) mas
+**não puderam ser executados nesta sessão**: o Postgres local (`docker compose
+up -d banco`) subiu e respondeu a `psql` dentro do próprio contêiner, mas a
+conexão vinda do host nunca chegou a ele (nenhuma linha de log do lado do
+banco) — sintoma de rede do Docker Desktop neste ambiente, não do código.
+Rodar `npm run test:banco` para confirmar assim que a rede estabilizar.
+
 **Sprint 5 — a API do escritório está de pé** (14/09/2026). Anexo I, 3.b e
 3.c: consulta por CPF ou CNPJ com o número do processo e o andamento, cadastro
 e atualização de clientes, casos e andamentos, credenciais próprias com
@@ -306,10 +348,6 @@ existia na prévia. Ver `docs/modelos-de-documento.md`.
 
 **O cadastro ganhou cidade e UF**, obrigatórios: é do cliente que sai a cidade
 da assinatura dos documentos, por decisão do escritório.
-
-**Falta da Sprint 5 a tela de Usuários**, pedida na mesma rodada: o escritório
-não vai mandar lista de colaboradores, quer criar, editar e excluir os acessos
-dentro da própria ferramenta.
 
 **Sprint 4 concluída** (14/09/2026). **A área do cliente está de pé.** O
 cliente entra em `/consultar` com CPF ou CNPJ e um código de seis dígitos
@@ -399,7 +437,8 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: a **tela de Usuários** (dependência 3.7, respondida), e depois a
-Sprint 6 — demonstração, aceite e produção. O que ainda falta de terceiros:
-o registro de DNS de `portal.eferreira.adv.br` na Locaweb, as credenciais do
-SMTP e o token de API do D4Sign.
+Próximo passo: a **Sprint 6** — demonstração, aceite e produção. O que ainda
+falta de terceiros: o token de API do D4Sign (a senha SMTP já entrou no `.env`
+local e passou em `npm run email:teste`; falta repeti-la no EasyPanel) e dar
+ao EasyPanel acesso ao repositório privado no GitHub para publicar a
+aplicação.

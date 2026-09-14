@@ -5,6 +5,7 @@
  * (19 MiB de memória, 2 iterações, paralelismo 1).
  */
 
+import { randomBytes } from 'node:crypto'
 import { hash, verify } from '@node-rs/argon2'
 import type { Algorithm } from '@node-rs/argon2'
 
@@ -51,4 +52,13 @@ export async function gastarTempoDeVerificacao(senha: string): Promise<void> {
   } catch {
     // esperado: o hash falso nunca confere
   }
+}
+
+/**
+ * Senha aleatória forte, para quando é o sistema — e não a pessoa — quem
+ * escolhe: semente inicial e criação/redefinição pelo administrador (tela de
+ * Usuários). 18 bytes de CSPRNG em base64url, a mesma escolha da semente.
+ */
+export function gerarSenhaAleatoria(): string {
+  return randomBytes(18).toString('base64url')
 }

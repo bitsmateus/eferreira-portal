@@ -14,15 +14,10 @@
  */
 
 import 'dotenv/config'
-import { randomBytes } from 'node:crypto'
 import { AcaoAuditoria, PerfilUsuario, PrismaClient } from '@prisma/client'
-import { gerarHashDeSenha } from '../src/lib/senha'
+import { gerarHashDeSenha, gerarSenhaAleatoria } from '../src/lib/senha'
 
 const prisma = new PrismaClient()
-
-function senhaAleatoria(): string {
-  return randomBytes(18).toString('base64url')
-}
 
 type Semeado = { email: string; senha: string | null }
 
@@ -41,7 +36,7 @@ async function semearUsuario(
   const senha =
     senhaDoAmbiente !== undefined && senhaDoAmbiente.trim() !== ''
       ? senhaDoAmbiente
-      : senhaAleatoria()
+      : gerarSenhaAleatoria()
 
   const usuario = await prisma.usuario.create({
     data: {
