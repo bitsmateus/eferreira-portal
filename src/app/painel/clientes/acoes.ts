@@ -4,6 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import {
+  registrarAssinatura,
+  revogarAcesso,
+  validarAssinatura,
+} from '@/lib/assinatura'
+import {
   atualizarCliente,
   criarCliente,
   reconhecerPorDocumento,
@@ -124,4 +129,81 @@ export async function conferirDocumento(valor: string): Promise<{
     nome: cliente.nome,
     quantidadeDeCasos: cliente.quantidadeDeCasos,
   }
+}
+
+// ---------------------------------------------------------------------------
+// O gatilho do Anexo I, 1.d
+// ---------------------------------------------------------------------------
+
+export type EstadoDaAssinatura = { erro?: string } | undefined
+
+/**
+ * Registra a assinatura do contrato — é esta ação que libera o acesso do
+ * cliente. Enquanto o token de API do D4Sign não chega (dependência 3.3), é
+ * o operador quem informa a data que consta no documento assinado.
+ */
+export async function registrarAssinaturaDoContrato(
+  clienteId: string,
+  _estado: EstadoDaAssinatura,
+  dados: FormData,
+): Promise<EstadoDaAssinatura> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  const conferido = validarAssinatura({ assinadoEm: texto(dados, 'assinadoEm') })
+  if (!conferido.ok) {
+    return { erro: conferido.erros['assinadoEm'] ?? 'Data inválida.' }
+  }
+
+  const resultado = await registrarAssinatura(
+    sessao,
+    clienteId,
+    conferido.dados,
+    await emailDaSessao(sessao),
+  )
+
+  if (resultado.situacao === 'cliente_nao_encontrado') {
+    return { erro: 'Cliente não encontrado.' }
+  }
+
+  if (resultado.situacao === 'sem_email') {
+    return {
+      erro:
+        'Este cadastro não tem e-mail, e é por e-mail que o código de acesso ' +
+        'chega. Preencha o e-mail antes de registrar a assinatura.',
+    }
+  }
+
+  revalidatePath('/painel/clientes')
+  revalidatePath(`/painel/clientes/${clienteId}`)
+  return undefined
+}
+
+/** Desfaz o gatilho: o cliente deixa de entrar, na hora. */
+export async function revogarAcessoDoCliente(
+  clienteId: string,
+  _estado: EstadoDaAssinatura,
+  dados: FormData,
+): Promise<EstadoDaAssinatura> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  // A tela pede confirmação antes de mostrar este botão; o campo abaixo é a
+  // confirmação viajando junto. Cortar um acesso por clique perdido seria
+  // deixar um cliente sem consulta sem ninguém perceber.
+  if (texto(dados, 'confirmacao') !== 'revogar') {
+    return { erro: 'Revogação não confirmada.' }
+  }
+
+  const resultado = await revogarAcesso(
+    sessao,
+    clienteId,
+    await emailDaSessao(sessao),
+  )
+
+  if (resultado.situacao === 'cliente_nao_encontrado') {
+    return { erro: 'Cliente não encontrado.' }
+  }
+
+  revalidatePath('/painel/clientes')
+  revalidatePath(`/painel/clientes/${clienteId}`)
+  return undefined
 }

@@ -64,7 +64,15 @@ enum AcaoAuditoria {
 model Usuario {
   id        String          @id @default(cuid())
   nome      String
-  email     String          @unique
+  /// Obrigatório para OPERADOR e ADMINISTRADOR: é com ele que entram.
+  ///
+  /// NULO para o perfil CLIENTE, de propósito. O cliente entra por CPF/CNPJ e
+  /// o código vai para `cliente.email` — repetir o endereço aqui criaria duas
+  /// verdades que se desencontrariam assim que alguém corrigisse o cadastro.
+  /// Além disso, dois clientes podem legitimamente compartilhar um e-mail
+  /// (empresa e sócio, marido e mulher), e a unicidade desta coluna os
+  /// impediria de existir. No Postgres, o índice único convive com NULOS.
+  email     String?         @unique
   /// Argon2id. Nulo para o perfil CLIENTE, que entra por CPF/CNPJ + código
   /// enviado por e-mail (Anexo II, item 3.6 — resolvido).
   senhaHash String?
@@ -140,18 +148,56 @@ model Cliente {
   criadoPorId String?
   criadoPor   Usuario? @relation("ClienteCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
 
-  casos      Caso[]
-  documentos Documento[]
-  acessos    Usuario[]
+  casos           Caso[]
+  documentos      Documento[]
+  acessos         Usuario[]
+  codigosDeAcesso CodigoDeAcesso[]
 
   /// Quando este cliente é pessoa jurídica: quem assina por ele.
-  representantes    RepresentanteLegal[] @relation("RepresentadaPor")
+  representantes        RepresentanteLegal[] @relation("RepresentadaPor")
   /// Quando este cliente é pessoa física: as empresas que ele representa.
   empresasQueRepresenta RepresentanteLegal[] @relation("Representa")
 
   @@index([nomeBusca])
   @@index([contratoAssinadoEm])
   @@map("cliente")
+}
+
+// ---------------------------------------------------------------------------
+// Código de acesso do cliente — Anexo II, item 3.6 (resolvido): o cliente
+// entra com CPF ou CNPJ e um código enviado ao e-mail do cadastro.
+//
+// O código NÃO é guardado em texto: quem tivesse leitura do banco entraria no
+// lugar de qualquer cliente. Vale o mesmo Argon2id das senhas.
+//
+// Cada pedido gera uma linha nova; a anterior é invalidada. A linha sobrevive
+// ao uso porque é ela que sustenta o limite de pedidos por cliente — e porque
+// "quando este cliente pediu um código" é informação de auditoria.
+// ---------------------------------------------------------------------------
+
+model CodigoDeAcesso {
+  id String @id @default(cuid())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  /// Argon2id dos seis dígitos. Nunca o código em si.
+  codigoHash String
+
+  expiraEm     DateTime
+  /// Tentativas erradas contra ESTE código. Na quinta, ele morre.
+  tentativas   Int       @default(0)
+  usadoEm      DateTime?
+  /// Invalidado por um pedido mais novo, por tentativas demais ou por uso.
+  invalidadoEm DateTime?
+
+  enderecoIp    String?
+  agenteUsuario String?
+
+  criadoEm DateTime @default(now())
+
+  @@index([clienteId, criadoEm])
+  @@map("codigo_de_acesso")
 }
 
 // ---------------------------------------------------------------------------

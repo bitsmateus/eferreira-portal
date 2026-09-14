@@ -135,6 +135,13 @@ fornecedor ou de nuvem tem que ser mudança de configuração, não reescrita.
 
 Situação em **14/09/2026**. Cobrança enviada em 09/09, respondida em parte.
 
+**3.6 — RESPONDIDA, com pendência nova.** O escritório tem serviço de e-mail
+por **SMTP** próprio, e a entrada do cliente já está de pé sobre ele. Faltam as
+credenciais: servidor, porta, usuário, senha e qual endereço vai como
+remetente. Sem elas o sistema não manda o código e **nenhum cliente entra**.
+Em desenvolvimento o código é impresso no terminal. Ver
+`docs/area-do-cliente.md`.
+
 **3.5 — RESPONDIDA.** A lista de status está cadastrada por migração
 (`20260914093800`). O escritório confirmou que o fluxo de acordo (polo passivo)
 está **fora do escopo**, que um caso **não muda de polo**, e que o cliente lê
@@ -166,10 +173,41 @@ exposta em texto puro no WhatsApp e o escritório foi orientado a trocá-la.
    mandaram não serve para integração.
 4. **Subdomínio do portal** e acesso ao DNS na Locaweb.
 5. **Logo em vetor** (3.2): sem ela, o cabeçalho dos documentos sai em texto.
+6. **Credenciais do SMTP** (3.6): servidor, porta, usuário, senha e remetente.
+   É por elas que o código de acesso do cliente sai.
+7. **A tela de entrada do cliente não mostra o e-mail mascarado** que o
+   protótipo desenhou — mostrar responderia, a qualquer um, se um CPF é
+   cliente do escritório. Diferença visível; combinar na demonstração. Ver
+   `docs/area-do-cliente.md`.
 
 **Enquanto não responderem: não invente conteúdo para destravar.**
 
 ## Estado atual
+
+**Sprint 4 concluída** (14/09/2026). **A área do cliente está de pé.** O
+cliente entra em `/consultar` com CPF ou CNPJ e um código de seis dígitos
+enviado ao e-mail do cadastro, e vê em `/meus-processos` os próprios casos, o
+histórico de andamentos e os próprios documentos — nada mais.
+
+O **gatilho do Anexo I, 1.d** finalmente tem onde ser acionado: o cartão
+"Acesso do cliente", na ficha, registra a data da assinatura do contrato e é
+isso que libera a entrada. Tem o inverso também — revogar apaga a data,
+desativa o usuário e mata os códigos pendentes na hora. Cadastro sem e-mail não
+vira acesso liberado. Até o D4Sign chegar, quem informa a data é o operador.
+
+**233 testes.** Os 18 do isolamento rodam contra o Postgres de verdade
+(`npm run test:banco`, e no CI depois do `migrate deploy`): dois clientes com
+caso, andamento e documento próprios, e nenhum enxerga nada do outro — nem
+colando o id alheio na URL. É o critério de pronto da sprint, e a regra 3 diz
+que ele não é flexibilizado.
+
+A resposta do pedido de código é **sempre a mesma**, exista o cliente ou não:
+distinguir responderia, a qualquer um, se um CPF é cliente deste escritório.
+Pelo mesmo motivo a tela **não** mostra o e-mail mascarado do protótipo — a
+única divergência deliberada, registrada em `docs/area-do-cliente.md`.
+
+**Implantação:** sem as variáveis `SMTP_*` o sistema não manda o código e o
+cliente não entra. Em desenvolvimento o e-mail sai no terminal.
 
 **Sprint 3 — geração de documentos feita** (14/09/2026). Procuração, declaração
 e contrato saem em PDF a partir dos modelos do escritório, com prévia na tela
@@ -234,6 +272,6 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: os campos obrigatórios e o representante legal de pessoa
-jurídica (3.5 respondida), e depois a Sprint 3 — que precisa dos modelos em
-branco e do token do D4Sign.
+Próximo passo: a Sprint 5 — logo e identidade (travada na dependência 3.2) e a
+API com credenciais do escritório (livre). O envio à assinatura eletrônica
+continua parado no token de API do D4Sign.

@@ -12,6 +12,7 @@ import { AcaoAuditoria, PerfilUsuario, SituacaoUsuario } from '@prisma/client'
 import { z } from 'zod'
 
 import { configuracaoAuth } from '@/auth.config'
+import { conferirCodigo } from '@/lib/acesso-do-cliente'
 import { prisma } from '@/lib/prisma'
 import { gastarTempoDeVerificacao, senhaConfere } from '@/lib/senha'
 import {
@@ -36,6 +37,27 @@ class FalhaDeAcesso extends CredentialsSignin {
 const entradaDeAcesso = z.object({
   email: z.string().trim().toLowerCase().email(),
   senha: z.string().min(1),
+})
+
+/**
+ * O endereço de origem chega pelo formulário porque `authorize` não recebe a
+ * requisição. Ele NÃO é usado para decidir nada — só para a auditoria e para o
+ * limite de pedidos. Quem o monta é a ação de servidor, a partir dos
+ * cabeçalhos, nunca o navegador (regra 2).
+ */
+const entradaDoCliente = z.object({
+  documento: z.string().trim().min(1),
+  codigo: z.string().trim().min(1),
+  enderecoIp: z
+    .string()
+    .trim()
+    .transform((valor) => (valor === '' ? null : valor))
+    .nullable(),
+  agenteUsuario: z
+    .string()
+    .trim()
+    .transform((valor) => (valor === '' ? null : valor))
+    .nullable(),
 })
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -151,6 +173,57 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       },
     }),
+
+    /**
+     * Entrada do cliente: CPF ou CNPJ mais o código que chegou por e-mail
+     * (Anexo II, item 3.6). A conferência inteira — elegibilidade, validade,
+     * tentativas, auditoria — vive em `src/lib/acesso-do-cliente.ts`; aqui só
+     * se transforma o resultado dela em sessão.
+     *
+     * Sem senha, de propósito: o cliente não tem senha para esquecer, para
+     * repetir de outro serviço ou para o escritório precisar guardar.
+     */
+    Credentials({
+      id: 'codigo-do-cliente',
+      name: 'código do cliente',
+      credentials: {
+        documento: { label: 'CPF ou CNPJ', type: 'text' },
+        codigo: { label: 'Código', type: 'text' },
+        enderecoIp: { label: 'Endereço de origem', type: 'text' },
+        agenteUsuario: { label: 'Agente', type: 'text' },
+      },
+
+      async authorize(credenciais) {
+        const analise = entradaDoCliente.safeParse(credenciais)
+        if (!analise.success) {
+          await gastarTempoDeVerificacao('entrada-invalida')
+          throw new FalhaDeAcesso('codigo_invalido')
+        }
+
+        const { documento, codigo, enderecoIp, agenteUsuario } = analise.data
+
+        const resultado = await conferirCodigo(documento, codigo, {
+          enderecoIp,
+          agenteUsuario,
+        })
+
+        // Um motivo só: documento que não existe, contrato não assinado,
+        // código errado ou vencido dão exatamente a mesma resposta.
+        if (resultado.situacao !== 'confere') {
+          throw new FalhaDeAcesso('codigo_invalido')
+        }
+
+        return {
+          id: resultado.usuarioId,
+          name: resultado.nome,
+          // O cliente não tem e-mail no `Usuario` — ele vive no cadastro.
+          email: null,
+          perfil: PerfilUsuario.CLIENTE,
+          clienteId: resultado.clienteId,
+          contratoAssinado: true,
+        }
+      },
+    }),
   ],
 })
 
@@ -161,4 +234,5 @@ export const MENSAGENS_DE_FALHA: Record<string, string> = {
     'Este acesso não está ativo. Fale com o administrador do escritório.',
   acesso_bloqueado:
     'Acesso bloqueado por 15 minutos após 5 tentativas erradas. Tente novamente mais tarde.',
+  codigo_invalido: 'Código incorreto ou vencido. Peça um novo código.',
 }

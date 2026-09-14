@@ -66,6 +66,19 @@ jobs:
         # quebrada, é aqui que se descobre, não em produção.
         run: npx prisma migrate deploy
 
+      - name: Isolamento entre clientes, contra o banco de verdade
+        # Critério de pronto da Sprint 4 — e o teste que a regra 3 diz que
+        # nunca é flexibilizado. Roda depois do migrate porque precisa das
+        # tabelas. As chaves do armazenamento abaixo não são segredo: a URL
+        # pré-assinada é calculada localmente, sem chamar o MinIO.
+        run: npm run test:banco
+        env:
+          ARMAZENAMENTO_ENDPOINT: http://localhost:9000
+          ARMAZENAMENTO_REGIAO: us-east-1
+          ARMAZENAMENTO_BALDE: eferreira-documentos
+          ARMAZENAMENTO_CHAVE_ACESSO: ci
+          ARMAZENAMENTO_CHAVE_SECRETA: ci-nao-e-segredo
+
       - name: Conferir se o schema tem migração correspondente
         # Se alguém alterar o schema.prisma sem criar a migração, o diff
         # devolve código 2 e o CI para. É o que impede `db push` disfarçado.

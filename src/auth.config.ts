@@ -11,8 +11,11 @@ import type { NextAuthConfig } from 'next-auth'
 /** Rotas internas do escritório. Só operador e administrador entram. */
 const PREFIXOS_DO_PAINEL = ['/painel'] as const
 
-/** Rotas abertas: a tela de login e o que o Auth.js precisa. */
-const ROTAS_PUBLICAS = ['/entrar'] as const
+/** A área do cliente. Só o perfil CLIENTE entra — e a página confere de novo. */
+const PREFIXOS_DO_CLIENTE = ['/meus-processos'] as const
+
+/** Rotas abertas: as duas telas de entrada e o que o Auth.js precisa. */
+const ROTAS_PUBLICAS = ['/entrar', '/consultar'] as const
 
 function comecaCom(caminho: string, prefixos: readonly string[]): boolean {
   return prefixos.some(
@@ -49,18 +52,38 @@ export const configuracaoAuth = {
     authorized({ auth, request }) {
       const caminho = request.nextUrl.pathname
       const usuario = auth?.user
+      const ehCliente = usuario !== undefined && usuario.perfil === 'CLIENTE'
+      const ehDaEquipe =
+        usuario !== undefined &&
+        (usuario.perfil === 'OPERADOR' || usuario.perfil === 'ADMINISTRADOR')
 
       if (comecaCom(caminho, ROTAS_PUBLICAS)) {
-        // Quem já entrou não fica preso na tela de login.
-        if (usuario !== undefined && usuario.perfil !== 'CLIENTE') {
+        // Quem já entrou não fica preso na tela de entrada — cada um na sua.
+        if (ehDaEquipe) {
           return Response.redirect(new URL('/painel', request.nextUrl))
+        }
+        if (ehCliente) {
+          return Response.redirect(new URL('/meus-processos', request.nextUrl))
         }
         return true
       }
 
       if (comecaCom(caminho, PREFIXOS_DO_PAINEL)) {
-        if (usuario === undefined) return false
-        return usuario.perfil === 'OPERADOR' || usuario.perfil === 'ADMINISTRADOR'
+        return ehDaEquipe
+      }
+
+      if (comecaCom(caminho, PREFIXOS_DO_CLIENTE)) {
+        // A equipe não passeia pela área do cliente: lá o filtro de sessão
+        // deixaria o operador ver tudo, sem o recorte de um cliente só.
+        if (ehDaEquipe) {
+          return Response.redirect(new URL('/painel', request.nextUrl))
+        }
+        if (!ehCliente) {
+          return Response.redirect(new URL('/consultar', request.nextUrl))
+        }
+        // `contratoAssinado` do cookie NÃO decide nada: quem decide é
+        // `exigirSessaoDeCliente`, que relê o banco a cada requisição.
+        return true
       }
 
       return true

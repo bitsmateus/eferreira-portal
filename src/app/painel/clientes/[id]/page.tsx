@@ -3,13 +3,14 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { TipoPessoa } from '@prisma/client'
 
+import { AcessoDoCliente } from '@/componentes/acesso-do-cliente'
 import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { RepresentantesLegais } from '@/componentes/representantes-legais'
 import { EtiquetaDeAcesso, EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { obterCliente } from '@/lib/clientes'
 import { listarPastaDoCliente } from '@/lib/documentos'
-import { formatarData } from '@/lib/datas'
+import { dataParaDiaCivil, diaEmSaoPaulo, formatarData } from '@/lib/datas'
 import { formatarDocumento } from '@/lib/documento'
 import {
   formatarCep,
@@ -269,29 +270,21 @@ export default async function PaginaDaFichaDoCliente({
               </div>
             </div>
 
-            <div className="cartao">
-              <div className="cartao-cabecalho">
-                <h2>Acesso do cliente</h2>
-              </div>
-              <div className="cartao-corpo">
-                <div className="mb-3 flex items-center gap-2.5">
-                  <EtiquetaDeAcesso
-                    acessoLiberado={acessoLiberado}
-                    temEmail={temEmail}
-                  />
-                  {acessoLiberado && cliente.contratoAssinadoEm !== null && (
-                    <span className="text-[12px] text-texto-2">
-                      desde {formatarData(cliente.contratoAssinadoEm)}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[12px] leading-relaxed text-texto-2">
-                  {acessoLiberado
-                    ? 'Entra com CPF ou CNPJ e código enviado ao e-mail cadastrado.'
-                    : 'O acesso do cliente é liberado apenas depois que o contrato for assinado (Anexo I, 1.d). O registro da assinatura entra na Sprint 3, e a área de consulta, na Sprint 4.'}
-                </p>
-              </div>
-            </div>
+            <AcessoDoCliente
+              clienteId={cliente.id}
+              temEmail={temEmail}
+              assinadoEmIso={
+                cliente.contratoAssinadoEm === null
+                  ? null
+                  : dataParaDiaCivil(cliente.contratoAssinadoEm)
+              }
+              assinadoEmFormatado={
+                cliente.contratoAssinadoEm === null
+                  ? null
+                  : formatarData(cliente.contratoAssinadoEm)
+              }
+              hojeIso={diaEmSaoPaulo(new Date())}
+            />
           </div>
         </div>
       </div>
