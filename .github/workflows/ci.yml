@@ -66,11 +66,15 @@ jobs:
         # quebrada, é aqui que se descobre, não em produção.
         run: npx prisma migrate deploy
 
-      - name: Isolamento entre clientes, contra o banco de verdade
-        # Critério de pronto da Sprint 4 — e o teste que a regra 3 diz que
-        # nunca é flexibilizado. Roda depois do migrate porque precisa das
-        # tabelas. As chaves do armazenamento abaixo não são segredo: a URL
-        # pré-assinada é calculada localmente, sem chamar o MinIO.
+      - name: Testes contra o banco de verdade
+        # Duas suítes: o isolamento entre clientes — critério de pronto da
+        # Sprint 4, e o teste que a regra 3 diz que nunca é flexibilizado — e a
+        # API do escritório, que entra pelas rotas de verdade porque é na rota
+        # que a permissão da chave é conferida.
+        #
+        # Roda depois do migrate porque precisa das tabelas. As chaves do
+        # armazenamento abaixo não são segredo: a URL pré-assinada é calculada
+        # localmente, sem chamar o MinIO.
         run: npm run test:banco
         env:
           ARMAZENAMENTO_ENDPOINT: http://localhost:9000
