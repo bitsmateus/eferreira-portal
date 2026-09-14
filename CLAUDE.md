@@ -157,9 +157,10 @@ trocar `escritorio.ts` não basta — a imagem precisa ser substituída.
 obrigatórios definidos com bloqueio de gravação, fluxo de acordo fora do
 escopo, cliente lê a mensagem resumo.
 
-**3.6 — RESOLVIDA.** O e-mail é **Gmail** (Google Workspace), na conta
-`contato@eferreira.adv.br`. Servidor, porta, usuário e remetente já estão no
-`.env.example`; falta só a senha entrar no `.env` e no EasyPanel.
+**3.6 — RESOLVIDA de ponta a ponta.** O e-mail é **Gmail** (Google Workspace),
+na conta `contato@eferreira.adv.br`. Servidor, porta, usuário e remetente já
+estão no `.env.example`, e a senha de app já entrou no `.env` local e no
+EasyPanel (ver adiante).
 
 **A senha comum da conta não serve.** O Google recusa SMTP com senha de conta:
 é preciso verificação em duas etapas e uma **senha de app** de dezesseis
@@ -172,23 +173,36 @@ adivinhar: `npm run email:teste`. Ver `docs/area-do-cliente.md`.
 Falta só repetir — a mesma senha de dezesseis caracteres, marcada como secreta
 — no EasyPanel, em `eferreira-producao` e `eferreira-homologacao`.
 
-**3.7 — RESOLVIDA, com trabalho novo.** Não haverá lista prévia de
+**3.7 — RESOLVIDA, e a tela já existe.** Não haverá lista prévia de
 colaboradores: o escritório quer **criar, editar e excluir usuários dentro da
-própria ferramenta**. Isso é a tela de Usuários, que ainda não existe.
+própria ferramenta**. A tela de Usuários está pronta desde 14/09/2026 — ver
+"Estado atual" mais abaixo.
 
 **3.8 — RESOLVIDA.** Sem migração de histórico. O sistema começa vazio e
 recebe só os clientes novos.
 
-**3.3 — quase fechada.**
+**3.3 — RESOLVIDA na parte de infraestrutura; falta só o que segue abaixo.**
 
 - **Subdomínio: `portal.eferreira.adv.br` — RESOLVIDO e no ar.** Registro A na
   Locaweb apontando para `187.127.54.204`, uma VPS Hostinger
   (`srv1911163.hstgr.cloud`).
+- **Aplicação em produção: PUBLICADA e no ar** (14/09/2026), em
+  `https://portal.eferreira.adv.br` — TLS ativo, `prisma migrate deploy`
+  rodou na subida, o administrador semeado e o login conferidos de ponta a
+  ponta. Detalhes e as quatro armadilhas do deploy em
+  `docs/03-implantacao-easypanel.md`. A instalação de **homologação** está
+  construída, mas sem domínio — falta o registro de DNS para
+  `homologacao.eferreira.adv.br`.
+- **Backup:** falta ativar o backup automático do Postgres no EasyPanel e
+  repetir `npm run banco:teste-restauracao` em produção (já foi executado com
+  sucesso em desenvolvimento, antes de existir dado real).
+- **SMTP: RESOLVIDO de ponta a ponta** (14/09/2026). A senha de app do Gmail
+  foi testada com `npm run email:teste` (STARTTLS na porta 587, e-mail
+  entregue) e replicada como secreta no EasyPanel, nos dois projetos.
 
-**A infraestrutura está de pé** (14/09/2026). Dois projetos no EasyPanel,
-`eferreira-producao` e `eferreira-homologacao`, cada um com **Postgres 16** e
-**MinIO**. O servidor hospeda outro cliente (projeto `consensus`) — não se
-encosta nele.
+A infraestrutura de base: dois projetos no EasyPanel, `eferreira-producao` e
+`eferreira-homologacao`, cada um com **Postgres 16** e **MinIO**. O servidor
+hospeda outro cliente (projeto `consensus`) — não se encosta nele.
 
 O balde `eferreira-documentos` existe nos dois, e a **regra 5 foi conferida
 contra o armazenamento de verdade**: leitura sem assinatura devolve 403, não há
@@ -203,8 +217,6 @@ Os segredos gerados (senhas do Postgres e do MinIO) **só existem no EasyPanel**
 — nunca passaram pelo repositório. Ficam visíveis em cada serviço, na aba
 Environment.
 
-Falta publicar a aplicação em si, o que depende de dar ao EasyPanel acesso ao
-repositório privado no GitHub.
 - **D4Sign: credenciais de PRODUÇÃO em mãos e conferidas** (14/09/2026). A
   conta responde, tem **26 cofres** e **32 envios restantes** de 50 créditos.
   Conferir com `npm run d4sign:conta`.
@@ -213,10 +225,13 @@ repositório privado no GitHub.
   terceiro, Cláusula 6ª) e manda e-mail de assinatura de verdade para quem
   estiver na lista.
 
-  Falta **escolher o cofre** (`D4SIGN_COFRE`). A conta é compartilhada com
-  documentos de muitos clientes, já separados por área — "Procurações Civeis",
-  "contratos eFerreira advogados". A recomendação é criar um cofre próprio do
-  portal, para o que o sistema gera ficar separável e auditável.
+  **O cofre já foi escolhido: "Escritorio"** (`D4SIGN_COFRE`, commitado em
+  `.env.example`). A conta é compartilhada com documentos de muitos clientes,
+  já separados por área — "Procurações Civeis", "contratos eFerreira
+  advogados" —, e este é o cofre genérico do escritório. **Falta o
+  `D4SIGN_TOKEN_API` e o `D4SIGN_CRYPT_KEY` entrarem no `.env`/EasyPanel** —
+  são secretos, nunca passam pelo repositório; confirmar com o escritório se
+  já foram cadastrados.
 - **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
   construída depois. A chave dela sai com acesso total, por decisão do
   escritório. Nada a gerar por ora.
@@ -437,8 +452,11 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: a **Sprint 6** — demonstração, aceite e produção. O que ainda
-falta de terceiros: o token de API do D4Sign (a senha SMTP já entrou no `.env`
-local e passou em `npm run email:teste`; falta repeti-la no EasyPanel) e dar
-ao EasyPanel acesso ao repositório privado no GitHub para publicar a
-aplicação.
+**A aplicação já está publicada e no ar em produção**
+(`https://portal.eferreira.adv.br` — ver `docs/03-implantacao-easypanel.md`) e
+o **SMTP está resolvido de ponta a ponta**, senha de app testada e replicada
+no EasyPanel. Próximo passo: a **Sprint 6** — demonstração, aceite e
+produção. O que ainda falta de terceiros: o `D4SIGN_TOKEN_API` e o
+`D4SIGN_CRYPT_KEY` no `.env`/EasyPanel (o cofre já está escolhido), o
+registro de DNS de `homologacao.eferreira.adv.br` e o backup automático do
+Postgres em produção com o teste de restauração repetido lá.
