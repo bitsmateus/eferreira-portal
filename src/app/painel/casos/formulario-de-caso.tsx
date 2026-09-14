@@ -7,6 +7,7 @@ import { SituacaoCaso } from '@prisma/client'
 
 import { ROTULO_DA_SITUACAO } from '@/componentes/situacoes'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
+import { LINHAS_DE_PARCELA } from '@/lib/casos'
 import type { EstadoDoCaso } from './acoes'
 
 export type ValoresDoCaso = {
@@ -16,6 +17,8 @@ export type ValoresDoCaso = {
   parteContraria: string
   situacao: string
   responsavelId: string
+  honorarios: string
+  parcelas: readonly { valor: string; vencimento: string }[]
 }
 
 export const VALORES_VAZIOS: ValoresDoCaso = {
@@ -25,6 +28,8 @@ export const VALORES_VAZIOS: ValoresDoCaso = {
   parteContraria: '',
   situacao: SituacaoCaso.EM_ANDAMENTO,
   responsavelId: '',
+  honorarios: '',
+  parcelas: [],
 }
 
 type Props = {
@@ -83,6 +88,13 @@ export function FormularioDeCaso({
 }: Props) {
   const [estado, enviar] = useActionState(acao, undefined)
   const erros = estado?.erros ?? {}
+
+  // Linhas fixas em vez de "adicionar parcela": sem JavaScript extra, e o
+  // contrato do escritorio nunca passou de tres parcelas.
+  const linhasDeParcela = Array.from({ length: LINHAS_DE_PARCELA }, (_, i) => ({
+    valor: valores.parcelas[i]?.valor ?? '',
+    vencimento: valores.parcelas[i]?.vencimento ?? '',
+  }))
 
   return (
     <form action={enviar} noValidate>
@@ -208,6 +220,85 @@ export function FormularioDeCaso({
                   </select>
                 </Campo>
               </div>
+            </div>
+
+            <div className="my-[22px] border-t border-borda" />
+
+            <h2 className="mb-1 text-[14px] font-semibold">Honorários</h2>
+            <p className="mb-4 text-[12px] text-texto-2">
+              Usados para escrever a cláusula 2ª do contrato. Pode ficar em branco e
+              ser preenchido depois.
+            </p>
+
+            <Campo
+              nome="honorarios"
+              rotulo="Valor total"
+              erro={erros['honorarios']}
+              dica="Como no contrato: 1.750,00"
+            >
+              <input
+                id="honorarios"
+                name="honorarios"
+                inputMode="decimal"
+                className="campo-entrada mono"
+                placeholder="0,00"
+                defaultValue={valores.honorarios}
+              />
+            </Campo>
+
+            <div className="mb-[15px]">
+              <span className="campo-rotulo">Parcelas</span>
+              <div className="rolagem-lateral">
+                <table className="tabela">
+                  <thead>
+                    <tr>
+                      <th className="w-10">#</th>
+                      <th>Valor</th>
+                      <th>Vencimento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {linhasDeParcela.map((linha, indice) => (
+                      <tr key={indice}>
+                        <td className="mono text-texto-3">{indice + 1}</td>
+                        <td>
+                          <input
+                            name={`parcela-${indice}-valor`}
+                            inputMode="decimal"
+                            aria-label={`Valor da parcela ${indice + 1}`}
+                            className="campo-entrada mono"
+                            placeholder="0,00"
+                            defaultValue={linha.valor}
+                          />
+                          {erros[`parcelas.${indice}.valor`] !== undefined && (
+                            <p className="dica dica-erro" role="alert">
+                              {erros[`parcelas.${indice}.valor`]}
+                            </p>
+                          )}
+                        </td>
+                        <td>
+                          <input
+                            name={`parcela-${indice}-vencimento`}
+                            type="date"
+                            aria-label={`Vencimento da parcela ${indice + 1}`}
+                            className="campo-entrada mono"
+                            defaultValue={linha.vencimento}
+                          />
+                          {erros[`parcelas.${indice}.vencimento`] !== undefined && (
+                            <p className="dica dica-erro" role="alert">
+                              {erros[`parcelas.${indice}.vencimento`]}
+                            </p>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="dica">
+                Deixe em branco as que não usar. A soma precisa bater com o valor
+                total.
+              </p>
             </div>
 
             <div className="flex items-center gap-2.5">

@@ -4,11 +4,16 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import {
+  LINHAS_DE_PARCELA,
   atualizarCaso,
   criarCaso,
+  lerParcelas,
+  somaDasParcelasConfere,
   validarCaso,
   type CamposDeCaso,
+  type ParcelaInformada,
 } from '@/lib/casos'
+import { formatarReais } from '@/lib/extenso'
 import { texto, type ErrosDeCampo } from '@/lib/formulario'
 import { emailDaSessao, exigirSessaoDaEquipe } from '@/lib/sessao'
 
@@ -29,7 +34,50 @@ function lerCampos(dados: FormData): CamposDeCaso {
     parteContraria: texto(dados, 'parteContraria'),
     situacao: texto(dados, 'situacao'),
     responsavelId: texto(dados, 'responsavelId'),
+    honorarios: texto(dados, 'honorarios'),
   }
+}
+
+function lerLinhasDeParcela(dados: FormData) {
+  const linhas = []
+  for (let indice = 0; indice < LINHAS_DE_PARCELA; indice += 1) {
+    linhas.push({
+      valor: texto(dados, `parcela-${indice}-valor`),
+      vencimento: texto(dados, `parcela-${indice}-vencimento`),
+    })
+  }
+  return linhas
+}
+
+/** Valida caso e parcelas juntos, porque a soma precisa bater com o total. */
+function conferirTudo(
+  dados: FormData,
+):
+  | { ok: true; caso: ReturnType<typeof validarCaso> & { ok: true }; parcelas: ParcelaInformada[] }
+  | { ok: false; erros: ErrosDeCampo } {
+  const caso = validarCaso(lerCampos(dados))
+  const parcelas = lerParcelas(lerLinhasDeParcela(dados))
+
+  if (!caso.ok || !parcelas.ok) {
+    return {
+      ok: false,
+      erros: { ...(caso.ok ? {} : caso.erros), ...(parcelas.ok ? {} : parcelas.erros) },
+    }
+  }
+
+  if (!somaDasParcelasConfere(caso.dados.honorarios, parcelas.dados)) {
+    const soma = parcelas.dados.reduce((total, p) => total + p.valorEmCentavos, 0)
+    return {
+      ok: false,
+      erros: {
+        honorarios: `A soma das parcelas (${formatarReais(
+          soma,
+        )}) não bate com o total dos honorários. Contrato com dois valores diferentes para a mesma coisa vira discussão depois.`,
+      },
+    }
+  }
+
+  return { ok: true, caso, parcelas: parcelas.dados }
 }
 
 export async function cadastrarCaso(
@@ -39,13 +87,14 @@ export async function cadastrarCaso(
 ): Promise<EstadoDoCaso> {
   const sessao = await exigirSessaoDaEquipe()
 
-  const conferido = validarCaso(lerCampos(dados))
+  const conferido = conferirTudo(dados)
   if (!conferido.ok) return { erros: conferido.erros }
 
   const resultado = await criarCaso(
     sessao,
     clienteId,
-    conferido.dados,
+    conferido.caso.dados,
+    conferido.parcelas,
     await emailDaSessao(sessao),
   )
 
@@ -83,13 +132,14 @@ export async function salvarEdicaoDeCaso(
 ): Promise<EstadoDoCaso> {
   const sessao = await exigirSessaoDaEquipe()
 
-  const conferido = validarCaso(lerCampos(dados))
+  const conferido = conferirTudo(dados)
   if (!conferido.ok) return { erros: conferido.erros }
 
   const resultado = await atualizarCaso(
     sessao,
     id,
-    conferido.dados,
+    conferido.caso.dados,
+    conferido.parcelas,
     await emailDaSessao(sessao),
   )
 

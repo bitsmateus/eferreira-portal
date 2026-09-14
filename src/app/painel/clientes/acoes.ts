@@ -34,6 +34,7 @@ function lerCampos(dados: FormData): CamposDeCliente {
     estadoCivil: texto(dados, 'estadoCivil'),
     profissao: texto(dados, 'profissao'),
     nacionalidade: texto(dados, 'nacionalidade'),
+    nomeMae: texto(dados, 'nomeMae'),
     email: texto(dados, 'email'),
     telefone: texto(dados, 'telefone'),
     cep: texto(dados, 'cep'),

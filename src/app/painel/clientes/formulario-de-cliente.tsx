@@ -23,6 +23,7 @@ export type ValoresDoCliente = {
   estadoCivil: string
   profissao: string
   nacionalidade: string
+  nomeMae: string
   email: string
   telefone: string
   cep: string
@@ -37,6 +38,7 @@ export const VALORES_VAZIOS: ValoresDoCliente = {
   estadoCivil: '',
   profissao: '',
   nacionalidade: '',
+  nomeMae: '',
   email: '',
   telefone: '',
   cep: '',
@@ -122,6 +124,10 @@ export function FormularioDeCliente({
   const [, iniciarConsulta] = useTransition()
   /** Número da última consulta disparada, para descartar resposta atrasada. */
   const ultimaConsulta = useRef(0)
+
+  // Só para a tela saber o que mostrar. Quem decide o tipo de pessoa de
+  // verdade é o servidor, a partir do próprio documento (regra 2).
+  const ehPessoaJuridica = normalizarDocumento(documento).length === 14
 
   useEffect(() => {
     if (!reconhecerAoDigitar) return
@@ -335,18 +341,55 @@ export function FormularioDeCliente({
               </div>
             </div>
 
-            <Campo
-              nome="nacionalidade"
-              rotulo="Nacionalidade"
-              erro={erros['nacionalidade']}
-            >
-              <input
-                id="nacionalidade"
-                name="nacionalidade"
-                className="campo-entrada"
-                defaultValue={valores.nacionalidade}
-              />
-            </Campo>
+            <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
+              <div className="flex-1">
+                <Campo
+                  nome="nacionalidade"
+                  rotulo="Nacionalidade"
+                  erro={erros['nacionalidade']}
+                >
+                  <input
+                    id="nacionalidade"
+                    name="nacionalidade"
+                    className="campo-entrada"
+                    defaultValue={valores.nacionalidade}
+                  />
+                </Campo>
+              </div>
+              <div className="flex-1">
+                <Campo
+                  nome="nomeMae"
+                  rotulo="Nome da mãe"
+                  erro={erros['nomeMae']}
+                  dica={
+                    ehPessoaJuridica ? undefined : (
+                      <p className="dica">
+                        Exigido pela procuração, pela declaração e pelo contrato.
+                      </p>
+                    )
+                  }
+                >
+                  <input
+                    id="nomeMae"
+                    name="nomeMae"
+                    className="campo-entrada"
+                    defaultValue={valores.nomeMae}
+                  />
+                </Campo>
+              </div>
+            </div>
+
+            {ehPessoaJuridica && (
+              <div className="aviso aviso-info mb-[15px]">
+                <span aria-hidden="true">▲</span>
+                <div>
+                  <b>Qualificação pessoal é do sócio, não da empresa.</b> RG, estado
+                  civil, profissão, nacionalidade e nome da mãe ficam no cadastro do
+                  representante legal — que é um cliente pessoa física ligado a esta
+                  empresa. Você vincula o representante na ficha, depois de salvar.
+                </div>
+              </div>
+            )}
 
             <div className="my-[18px] border-t border-borda" />
 

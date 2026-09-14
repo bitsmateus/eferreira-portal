@@ -22,6 +22,8 @@ import { exigirEquipe, filtroDeCasos, filtroDeClientes, type SessaoServidor } fr
 import { ehViolacaoDeUnicidade, prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { normalizarNumeroDeProcesso, somenteDigitos } from '@/lib/formatos'
+import { reaisParaCentavos } from '@/lib/extenso'
+import { diaCivilParaData } from '@/lib/datas'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 
 // ---------------------------------------------------------------------------
@@ -59,7 +61,100 @@ const numeroDoProcesso = z
     return normalizarNumeroDeProcesso(valor)
   })
 
+/**
+ * Honorários — só o que a cláusula 2ª do contrato precisa para ser escrita.
+ *
+ * Regra 12: nada de pagamento. O escritório foi explícito — "nada vinculado
+ * referente a pagamentos, somente a adicionar". Se aparecer pedido de baixa
+ * de parcela ou de controle de inadimplência, pare e avise: é módulo
+ * financeiro, e está fora do contrato.
+ */
+const honorarios = z
+  .string()
+  .trim()
+  .transform((valor, contexto) => {
+    if (valor === '') return null
+
+    const centavos = reaisParaCentavos(valor)
+    if (centavos === null) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Valor inválido. Escreva como 1.750,00.',
+      })
+      return z.NEVER
+    }
+
+    if (centavos <= 0) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'O valor dos honorários precisa ser maior que zero.',
+      })
+      return z.NEVER
+    }
+
+    return centavos
+  })
+
+/**
+ * Quantas linhas de parcela o formulário mostra. Linhas fixas em vez de um
+ * botão "adicionar": o contrato do escritório nunca passou de três parcelas, e
+ * assim o formulário funciona sem JavaScript.
+ */
+export const LINHAS_DE_PARCELA = 12
+
+export type ParcelaInformada = { valorEmCentavos: number; vencimento: Date }
+
+/**
+ * Lê as parcelas que vieram do formulário. Linha sem valor e sem data é
+ * ignorada — o formulário mostra algumas linhas em branco de propósito.
+ */
+export function lerParcelas(
+  linhas: readonly { valor: string; vencimento: string }[],
+): ResultadoDeFormulario<ParcelaInformada[]> {
+  const parcelas: ParcelaInformada[] = []
+  const erros: Record<string, string> = {}
+
+  linhas.forEach((linha, indice) => {
+    const valor = linha.valor.trim()
+    const vencimento = linha.vencimento.trim()
+
+    if (valor === '' && vencimento === '') return
+
+    const centavos = reaisParaCentavos(valor)
+    if (centavos === null || centavos <= 0) {
+      erros[`parcelas.${indice}.valor`] = 'Valor inválido. Escreva como 500,00.'
+      return
+    }
+
+    const data = diaCivilParaData(vencimento)
+    if (data === null) {
+      erros[`parcelas.${indice}.vencimento`] = 'Informe o vencimento da parcela.'
+      return
+    }
+
+    parcelas.push({ valorEmCentavos: centavos, vencimento: data })
+  })
+
+  if (Object.keys(erros).length > 0) return { ok: false, erros }
+
+  return { ok: true, dados: parcelas }
+}
+
+/**
+ * A soma das parcelas tem que bater com o total. Divergência aqui vira
+ * contrato assinado dizendo duas coisas diferentes sobre o mesmo valor.
+ */
+export function somaDasParcelasConfere(
+  honorariosEmCentavos: number | null,
+  parcelas: readonly ParcelaInformada[],
+): boolean {
+  if (honorariosEmCentavos === null || parcelas.length === 0) return true
+  const soma = parcelas.reduce((total, parcela) => total + parcela.valorEmCentavos, 0)
+  return soma === honorariosEmCentavos
+}
+
 export const esquemaDeCaso = z.object({
+  honorarios,
   numeroProcesso: numeroDoProcesso,
   assunto: z
     .string()
@@ -204,6 +299,7 @@ export async function obterCaso(sessao: SessaoServidor, id: string) {
         select: { id: true, nome: true, documento: true, tipoPessoa: true },
       },
       responsavel: { select: { id: true, nome: true } },
+      parcelas: { orderBy: { numero: 'asc' } },
     },
   })
 }
@@ -236,10 +332,20 @@ export type ResultadoDeCaso =
   /** O responsável escolhido não é operador nem administrador ativo. */
   | { situacao: 'responsavel_invalido' }
 
+/** Numera as parcelas na ordem em que foram informadas. */
+function paraGravar(parcelas: readonly ParcelaInformada[]) {
+  return parcelas.map((parcela, indice) => ({
+    numero: indice + 1,
+    valorEmCentavos: parcela.valorEmCentavos,
+    vencimento: parcela.vencimento,
+  }))
+}
+
 export async function criarCaso(
   sessao: SessaoServidor,
   clienteId: string,
   dados: DadosDeCaso,
+  parcelas: readonly ParcelaInformada[],
   emailDoAutor: string | null,
 ): Promise<ResultadoDeCaso> {
   exigirEquipe(sessao)
@@ -268,8 +374,15 @@ export async function criarCaso(
   let casoId: string
   try {
     casoId = await prisma.$transaction(async (transacao) => {
+      const { honorarios, ...camposDoCaso } = dados
+
       const criado = await transacao.caso.create({
-        data: { ...dados, clienteId: cliente.id },
+        data: {
+          ...camposDoCaso,
+          honorariosEmCentavos: honorarios,
+          clienteId: cliente.id,
+          parcelas: { create: paraGravar(parcelas) },
+        },
         select: { id: true },
       })
 
@@ -318,6 +431,7 @@ export async function atualizarCaso(
   sessao: SessaoServidor,
   id: string,
   dados: DadosDeCaso,
+  parcelas: readonly ParcelaInformada[],
   emailDoAutor: string | null,
 ): Promise<ResultadoDeEdicaoDeCaso> {
   exigirEquipe(sessao)
@@ -344,7 +458,18 @@ export async function atualizarCaso(
 
   try {
     await prisma.$transaction(async (transacao) => {
-      await transacao.caso.update({ where: { id }, data: dados })
+      const { honorarios, ...camposDoCaso } = dados
+
+      // As parcelas são substituídas por inteiro: elas descrevem a cláusula
+      // de pagamento do contrato, e editar meia cláusula não faz sentido.
+      await transacao.caso.update({
+        where: { id },
+        data: {
+          ...camposDoCaso,
+          honorariosEmCentavos: honorarios,
+          parcelas: { deleteMany: {}, create: paraGravar(parcelas) },
+        },
+      })
 
       await registrarAuditoria(
         {

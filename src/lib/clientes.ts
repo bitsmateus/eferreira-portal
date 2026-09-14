@@ -30,6 +30,49 @@ import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 // Validação do cadastro
 // ---------------------------------------------------------------------------
 
+/**
+ * Campos que o escritório definiu como obrigatórios em 14/09/2026, e a razão
+ * de a lista mudar conforme o tipo de pessoa.
+ *
+ * Para pessoa física, a qualificação é dela mesma. Para pessoa jurídica, RG,
+ * estado civil, profissão, nacionalidade e nome da mãe **não se aplicam à
+ * empresa** — são do sócio, que o escritório pediu como "o mesmo cadastro da
+ * PF ligado ao cadastro do PJ" e mora no `RepresentanteLegal`. Exigi-los da
+ * empresa impediria cadastrar qualquer CNPJ.
+ *
+ * Data de nascimento ficou de fora: o escritório tirou da lista, e nenhum dos
+ * modelos de documento a usa.
+ *
+ * Bloqueiam a gravação, a pedido do escritório: "é melhor não deixar salvar,
+ * para não criar futuras pendências".
+ */
+const OBRIGATORIOS_COMUNS = [
+  ['email', 'E-mail'],
+  ['telefone', 'Telefone'],
+  ['cep', 'CEP'],
+  ['endereco', 'Endereço'],
+] as const
+
+const OBRIGATORIOS_DA_PESSOA = [
+  ['rg', 'RG'],
+  ['estadoCivil', 'Estado civil'],
+  ['profissao', 'Profissão'],
+  ['nacionalidade', 'Nacionalidade'],
+  ['nomeMae', 'Nome da mãe'],
+] as const
+
+type CampoObrigatorio =
+  | (typeof OBRIGATORIOS_COMUNS)[number][0]
+  | (typeof OBRIGATORIOS_DA_PESSOA)[number][0]
+
+export function obrigatoriosPara(
+  tipoPessoa: TipoPessoa,
+): readonly (readonly [CampoObrigatorio, string])[] {
+  return tipoPessoa === TipoPessoa.FISICA
+    ? [...OBRIGATORIOS_COMUNS, ...OBRIGATORIOS_DA_PESSOA]
+    : OBRIGATORIOS_COMUNS
+}
+
 /** Texto que, em branco, vira nulo — quase todo campo de qualificação é opcional. */
 const opcional = z
   .string()
@@ -111,6 +154,7 @@ export const esquemaDeCliente = z
     estadoCivil: opcional,
     profissao: opcional,
     nacionalidade: opcional,
+    nomeMae: opcional,
     email: emailDoCliente,
     telefone: opcional.transform((valor) =>
       valor === null ? null : normalizarTelefone(valor),
@@ -130,6 +174,17 @@ export const esquemaDeCliente = z
     tipoPessoa:
       campos.documento.tipo === 'CPF' ? TipoPessoa.FISICA : TipoPessoa.JURIDICA,
   }))
+  .superRefine((dados, contexto) => {
+    for (const [campo, rotulo] of obrigatoriosPara(dados.tipoPessoa)) {
+      if (dados[campo] === null) {
+        contexto.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [campo],
+          message: `${rotulo} é obrigatório.`,
+        })
+      }
+    }
+  })
 
 export type DadosDeCliente = z.output<typeof esquemaDeCliente>
 
@@ -300,6 +355,22 @@ export async function obterCliente(sessao: SessaoServidor, id: string) {
           },
         },
       },
+      // O sócio que assina pela empresa, e — quando este cliente é pessoa
+      // física — as empresas pelas quais ele assina.
+      representantes: {
+        orderBy: { criadoEm: 'asc' },
+        include: {
+          pessoaFisica: {
+            select: { id: true, nome: true, documento: true, nomeMae: true, rg: true },
+          },
+        },
+      },
+      empresasQueRepresenta: {
+        orderBy: { criadoEm: 'asc' },
+        include: {
+          pessoaJuridica: { select: { id: true, nome: true, documento: true } },
+        },
+      },
     },
   })
 }
@@ -464,4 +535,129 @@ export async function atualizarCliente(
   }
 
   return { situacao: 'atualizado' }
+}
+
+// ---------------------------------------------------------------------------
+// Representante legal — o "sócio" (Anexo II, 3.5, respondido em 14/09/2026)
+//
+// "Seria o mesmo cadastro da PF mas está ligado ao cadastro do PJ." Por isso
+// não existe função para criar um representante: cria-se um cliente pessoa
+// física normal e vincula-se. Assim a mesma pessoa representa várias empresas
+// sem cadastro duplicado, que é a regra 4 aplicada a este caso.
+// ---------------------------------------------------------------------------
+
+export type ResultadoDeVinculo =
+  | { situacao: 'vinculado' }
+  | { situacao: 'empresa_nao_encontrada' }
+  | { situacao: 'pessoa_nao_encontrada' }
+  /** O documento informado é de outra empresa, não de uma pessoa física. */
+  | { situacao: 'nao_e_pessoa_fisica' }
+  | { situacao: 'ja_vinculado'; nome: string }
+
+export async function vincularRepresentante(
+  sessao: SessaoServidor,
+  pessoaJuridicaId: string,
+  documentoDaPessoaFisica: string,
+  qualificacao: string | null,
+  emailDoAutor: string | null,
+): Promise<ResultadoDeVinculo> {
+  exigirEquipe(sessao)
+
+  const preparado = prepararDocumento(documentoDaPessoaFisica)
+  if (!preparado.ok || preparado.tipo !== 'CPF') {
+    return { situacao: 'nao_e_pessoa_fisica' }
+  }
+
+  // Regra 2: as duas pontas do vínculo passam pelo filtro da sessão.
+  const empresa = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, {
+      id: pessoaJuridicaId,
+      tipoPessoa: TipoPessoa.JURIDICA,
+    }),
+    select: { id: true },
+  })
+  if (empresa === null) return { situacao: 'empresa_nao_encontrada' }
+
+  const pessoa = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, {
+      documento: preparado.documento,
+      tipoPessoa: TipoPessoa.FISICA,
+    }),
+    select: { id: true, nome: true },
+  })
+  if (pessoa === null) return { situacao: 'pessoa_nao_encontrada' }
+
+  const jaExiste = await prisma.representanteLegal.findUnique({
+    where: {
+      pessoaJuridicaId_pessoaFisicaId: {
+        pessoaJuridicaId: empresa.id,
+        pessoaFisicaId: pessoa.id,
+      },
+    },
+    select: { id: true },
+  })
+  if (jaExiste !== null) return { situacao: 'ja_vinculado', nome: pessoa.nome }
+
+  await prisma.$transaction(async (transacao) => {
+    await transacao.representanteLegal.create({
+      data: {
+        pessoaJuridicaId: empresa.id,
+        pessoaFisicaId: pessoa.id,
+        qualificacao,
+      },
+    })
+
+    await registrarAuditoria(
+      {
+        usuarioId: sessao.usuarioId,
+        usuarioEmail: emailDoAutor,
+        acao: AcaoAuditoria.CRIACAO,
+        entidade: 'representante_legal',
+        entidadeId: empresa.id,
+        detalhes: { pessoaFisicaId: pessoa.id, qualificacao },
+      },
+      transacao,
+    )
+  })
+
+  return { situacao: 'vinculado' }
+}
+
+export async function desvincularRepresentante(
+  sessao: SessaoServidor,
+  pessoaJuridicaId: string,
+  pessoaFisicaId: string,
+  emailDoAutor: string | null,
+): Promise<boolean> {
+  exigirEquipe(sessao)
+
+  const empresa = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { id: pessoaJuridicaId }),
+    select: { id: true },
+  })
+  if (empresa === null) return false
+
+  const removidos = await prisma.$transaction(async (transacao) => {
+    const resultado = await transacao.representanteLegal.deleteMany({
+      where: { pessoaJuridicaId: empresa.id, pessoaFisicaId },
+    })
+
+    if (resultado.count > 0) {
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.EXCLUSAO,
+          entidade: 'representante_legal',
+          entidadeId: empresa.id,
+          detalhes: { pessoaFisicaId },
+        },
+        transacao,
+      )
+    }
+
+    return resultado.count
+  })
+
+  return removidos > 0
 }

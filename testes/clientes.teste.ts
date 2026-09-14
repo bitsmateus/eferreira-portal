@@ -4,20 +4,27 @@ import { TipoPessoa } from '@prisma/client'
 import { interpretarBusca, montarLinha, validarCliente } from '@/lib/clientes'
 import { normalizarParaBusca } from '@/lib/formatos'
 
-/** Base válida — cada teste troca só o campo que está sendo exercitado. */
+/**
+ * Base válida — cada teste troca só o campo que está sendo exercitado.
+ *
+ * Vem preenchida porque, desde 14/09/2026, o escritório exige a qualificação
+ * completa da pessoa física. Cadastro incompleto não salva, então uma base
+ * incompleta faria todo teste falhar pelo motivo errado.
+ */
 function campos(troca: Partial<Record<string, string>> = {}) {
   return {
     documento: '529.982.247-25',
     nome: 'Marcos Vinícius Andrade',
-    rg: '',
+    rg: '12.345.678 SSP-SP',
     dataNascimento: '',
-    estadoCivil: '',
-    profissao: '',
-    nacionalidade: '',
-    email: '',
-    telefone: '',
-    cep: '',
-    endereco: '',
+    estadoCivil: 'Casado',
+    profissao: 'Engenheiro civil',
+    nacionalidade: 'Brasileiro',
+    nomeMae: 'Cândida Mariano de Moraes',
+    email: 'marcos@exemplo.com.br',
+    telefone: '(11) 98812-4470',
+    cep: '01310-100',
+    endereco: 'Av. Paulista, 1578',
     ...troca,
   } as Parameters<typeof validarCliente>[0]
 }
@@ -104,15 +111,30 @@ describe('validarCliente — demais campos', () => {
   })
 
   it('transforma campo opcional em branco em nulo', () => {
-    const resultado = validarCliente(campos())
+    // Da pessoa física, só a data de nascimento continua opcional.
+    const fisica = validarCliente(campos({ dataNascimento: '' }))
+    expect(fisica.ok).toBe(true)
+    if (fisica.ok) expect(fisica.dados.dataNascimento).toBeNull()
 
-    expect(resultado.ok).toBe(true)
-    if (!resultado.ok) return
+    // Na jurídica, a qualificação pessoal não se aplica e vira nula.
+    const juridica = validarCliente(
+      campos({
+        documento: '11.222.333/0001-81',
+        nome: 'Construtora Exemplo Ltda',
+        rg: '',
+        estadoCivil: '',
+        profissao: '',
+        nacionalidade: '',
+        nomeMae: '',
+      }),
+    )
 
-    expect(resultado.dados.rg).toBeNull()
-    expect(resultado.dados.email).toBeNull()
-    expect(resultado.dados.telefone).toBeNull()
-    expect(resultado.dados.endereco).toBeNull()
+    expect(juridica.ok).toBe(true)
+    if (!juridica.ok) return
+
+    expect(juridica.dados.rg).toBeNull()
+    expect(juridica.dados.estadoCivil).toBeNull()
+    expect(juridica.dados.nomeMae).toBeNull()
   })
 
   it('normaliza e-mail para minúsculas e recusa e-mail inválido', () => {
@@ -170,6 +192,20 @@ describe('validarCliente — demais campos', () => {
       'email',
       'nome',
     ])
+  })
+
+  // Documento inválido impede saber se é física ou jurídica, então a lista de
+  // obrigatórios nem chega a ser conferida. Um erro de cada vez é melhor do
+  // que despejar nove.
+  it('não acumula erro de obrigatório quando o documento é inválido', () => {
+    const resultado = validarCliente(
+      campos({ documento: '123', rg: '', estadoCivil: '', nomeMae: '' }),
+    )
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+
+    expect(Object.keys(resultado.erros)).toEqual(['documento'])
   })
 })
 
@@ -297,5 +333,109 @@ describe('validarCliente — data de hoje (correção da revisão)', () => {
     }).format(amanha)
 
     expect(validarCliente(campos({ dataNascimento: texto })).ok).toBe(false)
+  })
+})
+
+describe('campos obrigatórios (definidos pelo escritório em 14/09/2026)', () => {
+  /** Cadastro de pessoa física com tudo que o escritório exige. */
+  function pessoaFisicaCompleta(troca: Partial<Record<string, string>> = {}) {
+    return campos({
+      documento: '529.982.247-25',
+      nome: 'Fulano de Tal da Silva',
+      rg: '12.345.678 SSP-SP',
+      estadoCivil: 'Casado',
+      profissao: 'Engenheiro civil',
+      nacionalidade: 'Brasileiro',
+      nomeMae: 'Beltrana de Tal',
+      email: 'fulano@exemplo.com.br',
+      telefone: '(11) 98812-4470',
+      cep: '01310-100',
+      endereco: 'Rua das Flores, 100',
+      ...troca,
+    })
+  }
+
+  it('aceita pessoa física com todos os campos exigidos', () => {
+    const resultado = validarCliente(pessoaFisicaCompleta())
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.nomeMae).toBe('Beltrana de Tal')
+  })
+
+  // O escritório foi explícito: "melhor não deixar salvar, para não criar
+  // futuras pendências".
+  it.each([
+    ['rg', 'RG'],
+    ['estadoCivil', 'Estado civil'],
+    ['profissao', 'Profissão'],
+    ['nacionalidade', 'Nacionalidade'],
+    ['nomeMae', 'Nome da mãe'],
+    ['email', 'E-mail'],
+    ['telefone', 'Telefone'],
+    ['cep', 'CEP'],
+    ['endereco', 'Endereço'],
+  ])('bloqueia pessoa física sem %s', (campo, rotulo) => {
+    const resultado = validarCliente(pessoaFisicaCompleta({ [campo]: '' }))
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+
+    expect(resultado.erros[campo]).toContain(rotulo)
+  })
+
+  it('não exige data de nascimento — o escritório tirou da lista', () => {
+    expect(validarCliente(pessoaFisicaCompleta({ dataNascimento: '' })).ok).toBe(true)
+  })
+
+  // Empresa não tem RG, estado civil nem nome da mãe: isso é do sócio, que
+  // vive no cadastro do representante legal.
+  it('aceita pessoa jurídica sem a qualificação pessoal', () => {
+    const resultado = validarCliente(
+      campos({
+        documento: '11.222.333/0001-81',
+        nome: 'Construtora Exemplo Ltda',
+        rg: '',
+        estadoCivil: '',
+        profissao: '',
+        nacionalidade: '',
+        nomeMae: '',
+        email: 'contato@exemplo.com.br',
+        telefone: '(11) 3255-1090',
+        cep: '01310-100',
+        endereco: 'Av. Exemplo, 1000',
+      }),
+    )
+
+    expect(resultado.ok).toBe(true)
+  })
+
+  it('mas exige contato também da pessoa jurídica', () => {
+    const resultado = validarCliente(
+      campos({
+        documento: '11.222.333/0001-81',
+        nome: 'Construtora Exemplo Ltda',
+        rg: '',
+        estadoCivil: '',
+        profissao: '',
+        nacionalidade: '',
+        nomeMae: '',
+        email: '',
+        telefone: '',
+        cep: '',
+        endereco: '',
+      }),
+    )
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+
+    expect(Object.keys(resultado.erros).sort()).toEqual([
+      'cep',
+      'email',
+      'endereco',
+      'telefone',
+    ])
   })
 })

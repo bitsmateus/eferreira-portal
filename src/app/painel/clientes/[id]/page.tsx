@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { TipoPessoa } from '@prisma/client'
 
 import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
+import { RepresentantesLegais } from '@/componentes/representantes-legais'
 import { EtiquetaDeAcesso, EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { obterCliente } from '@/lib/clientes'
@@ -44,6 +45,8 @@ export default async function PaginaDaFichaDoCliente({
   if (cliente === null) notFound()
 
   const documentos = await listarPastaDoCliente(sessao, cliente.id)
+
+  const ehPessoaJuridica = cliente.tipoPessoa === TipoPessoa.JURIDICA
 
   const temEmail = cliente.email !== null && cliente.email !== ''
   const acessoLiberado = cliente.contratoAssinadoEm !== null
@@ -160,6 +163,23 @@ export default async function PaginaDaFichaDoCliente({
               )}
             </div>
 
+            {ehPessoaJuridica && (
+              <div className="mt-4">
+                <RepresentantesLegais
+                  empresaId={cliente.id}
+                  representantes={cliente.representantes.map((vinculo) => ({
+                    pessoaFisicaId: vinculo.pessoaFisica.id,
+                    nome: vinculo.pessoaFisica.nome,
+                    documento: vinculo.pessoaFisica.documento,
+                    qualificacao: vinculo.qualificacao,
+                    qualificacaoCompleta:
+                      vinculo.pessoaFisica.rg !== null &&
+                      vinculo.pessoaFisica.nomeMae !== null,
+                  }))}
+                />
+              </div>
+            )}
+
             <div className="mt-4">
               <PastaDoCliente clienteId={cliente.id} documentos={documentos} />
             </div>
@@ -196,6 +216,11 @@ export default async function PaginaDaFichaDoCliente({
                 <Dado rotulo="Nacionalidade">
                   {cliente.nacionalidade ?? <span className="text-texto-3">—</span>}
                 </Dado>
+                {!ehPessoaJuridica && (
+                  <Dado rotulo="Nome da mãe">
+                    {cliente.nomeMae ?? <span className="text-texto-3">—</span>}
+                  </Dado>
+                )}
               </div>
             </div>
 

@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { listarResponsaveis, obterCaso } from '@/lib/casos'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
+import { formatarReais } from '@/lib/extenso'
+import { dataParaDiaCivil } from '@/lib/datas'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
 import { salvarEdicaoDeCaso } from '../../acoes'
 import { FormularioDeCaso, type ValoresDoCaso } from '../../formulario-de-caso'
@@ -32,6 +34,14 @@ export default async function PaginaDeEdicaoDeCaso({
     parteContraria: caso.parteContraria ?? '',
     situacao: caso.situacao,
     responsavelId: caso.responsavelId ?? '',
+    honorarios:
+      caso.honorariosEmCentavos === null
+        ? ''
+        : formatarReais(caso.honorariosEmCentavos).replace('R$ ', ''),
+    parcelas: caso.parcelas.map((parcela) => ({
+      valor: formatarReais(parcela.valorEmCentavos).replace('R$ ', ''),
+      vencimento: dataParaDiaCivil(parcela.vencimento),
+    })),
   }
 
   const acao = salvarEdicaoDeCaso.bind(null, caso.id)

@@ -36,6 +36,7 @@ export default async function PaginaDeEdicaoDeCliente({
     estadoCivil: cliente.estadoCivil ?? '',
     profissao: cliente.profissao ?? '',
     nacionalidade: cliente.nacionalidade ?? '',
+    nomeMae: cliente.nomeMae ?? '',
     email: cliente.email ?? '',
     telefone: cliente.telefone ?? '',
     cep: cliente.cep ?? '',

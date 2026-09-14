@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { SituacaoCaso } from '@prisma/client'
 
-import { validarCaso } from '@/lib/casos'
+import { lerParcelas, somaDasParcelasConfere, validarCaso } from '@/lib/casos'
 import {
   formatarCep,
   formatarNumeroDeProcesso,
@@ -17,6 +17,7 @@ function campos(troca: Partial<Record<string, string>> = {}) {
     parteContraria: '',
     situacao: SituacaoCaso.EM_ANDAMENTO,
     responsavelId: '',
+    honorarios: '',
     ...troca,
   } as Parameters<typeof validarCaso>[0]
 }
@@ -148,5 +149,82 @@ describe('validarCaso — situação (correções da revisão)', () => {
     if (!resultado.ok) return
 
     expect(resultado.dados.situacao).toBe(SituacaoCaso.ARQUIVADO)
+  })
+})
+
+describe('honorários e parcelas (regra 12: sem controle de pagamento)', () => {
+  it('lê o valor em centavos, sem erro de arredondamento', () => {
+    const resultado = validarCaso(campos({ honorarios: '1.750,00' }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.honorarios).toBe(175000)
+  })
+
+  it('aceita caso sem honorários — preenche depois', () => {
+    const resultado = validarCaso(campos({ honorarios: '' }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.honorarios).toBeNull()
+  })
+
+  it('recusa valor em formato americano, que daria 100x errado no contrato', () => {
+    expect(validarCaso(campos({ honorarios: '1,750.00' })).ok).toBe(false)
+  })
+
+  it('recusa honorários zerados ou negativos', () => {
+    expect(validarCaso(campos({ honorarios: '0,00' })).ok).toBe(false)
+  })
+
+  it('ignora linha de parcela em branco', () => {
+    const resultado = lerParcelas([
+      { valor: '', vencimento: '' },
+      { valor: '500,00', vencimento: '2026-10-09' },
+      { valor: '', vencimento: '' },
+    ])
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados).toHaveLength(1)
+    expect(resultado.dados[0]?.valorEmCentavos).toBe(50000)
+  })
+
+  it('cobra o vencimento quando o valor foi informado', () => {
+    const resultado = lerParcelas([{ valor: '500,00', vencimento: '' }])
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+
+    expect(resultado.erros['parcelas.0.vencimento']).toMatch(/vencimento/i)
+  })
+
+  it('cobra o valor quando o vencimento foi informado', () => {
+    const resultado = lerParcelas([{ valor: '', vencimento: '2026-10-09' }])
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+
+    expect(resultado.erros['parcelas.0.valor']).toMatch(/inválido/i)
+  })
+
+  // Contrato assinado dizendo dois valores diferentes para a mesma coisa é
+  // problema jurídico, não de interface.
+  it('exige que a soma das parcelas bata com o total', () => {
+    const parcelas = [
+      { valorEmCentavos: 50000, vencimento: new Date('2026-10-09T12:00:00Z') },
+      { valorEmCentavos: 50000, vencimento: new Date('2026-11-09T12:00:00Z') },
+    ]
+
+    expect(somaDasParcelasConfere(100000, parcelas)).toBe(true)
+    expect(somaDasParcelasConfere(175000, parcelas)).toBe(false)
+  })
+
+  it('não cobra a soma quando não há parcelas nem total', () => {
+    expect(somaDasParcelasConfere(null, [])).toBe(true)
+    expect(somaDasParcelasConfere(175000, [])).toBe(true)
   })
 })
