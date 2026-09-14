@@ -131,29 +131,53 @@ fornecedor ou de nuvem tem que ser mudança de configuração, não reescrita.
 - Se faltar informação do cliente (modelo de documento, lista de status, logo),
   **pare e avise** — não invente conteúdo para destravar.
 
-## Pendências com o escritório — cobrar
+## Pendências com o escritório
 
-**3.5 — campos obrigatórios e lista de status de andamento.** Não chegou.
-Trava a metade "andamentos" da Sprint 2. Cobrar a partir de **08/09/2026**.
-São dois pedidos:
+Situação em **14/09/2026**. Cobrança enviada em 09/09, respondida em parte.
 
-1. Os **status de andamento** com os nomes exatamente como o escritório usa,
-   em ordem, dizendo para cada um se o cliente o vê, e qual é o status inicial
-   de um caso novo.
-2. Os **campos obrigatórios** do cadastro. Hoje só CPF/CNPJ e nome (cliente) e
-   assunto (caso) são exigidos. Importa para a Sprint 3: procuração e
-   declaração saem da qualificação, então campo que o documento exige e o
-   cadastro não obriga vira documento incompleto.
+**3.5 — RESPONDIDA.** A lista de status está cadastrada por migração
+(`20260914093800`). O escritório confirmou que o fluxo de acordo (polo passivo)
+está **fora do escopo**, que um caso **não muda de polo**, e que o cliente lê
+**a mensagem resumo** do andamento — por isso não há status interno nem coluna
+de visibilidade. Campos obrigatórios definidos, **sem** data de nascimento, e
+com bloqueio de gravação ("melhor não deixar salvar, para não criar futuras
+pendências").
 
-As outras três (3.1 modelos, 3.3 domínio e credenciais de assinatura, 3.2 logo
-em vetor) continuam abertas e vencem antes do fim das Sprints 2 e 4.
+**3.1 — modelos: chegaram, mas com problema.** Ver
+`docs/modelos-de-documento.md`. Os arquivos são **documentos reais preenchidos**,
+com CPF, RG, nome da mãe e endereço de clientes de verdade — ficam em
+`docs/modelos/`, fora do versionamento. **Pedir versões em branco.**
 
-Enquanto a 3.5 não chega: **não invente status nem torne campo obrigatório por
-conta própria.**
+**3.3 — parcial.** Domínio `eferreira.adv.br` na Locaweb; falta definir o
+subdomínio e o acesso ao DNS. Assinatura pelo **D4Sign**, mas veio a senha de
+login em vez do **token de API** — que é o que a integração usa. A senha foi
+exposta em texto puro no WhatsApp e o escritório foi orientado a trocá-la.
+
+**3.2 — logo em vetor: não veio.** Trava a Sprint 5 e os documentos gerados.
+
+### O que ainda falta perguntar
+
+1. **Nome da mãe** é obrigatório? Os três documentos usam, e não está no
+   cadastro (ver `docs/modelos-de-documento.md`).
+2. **Honorários e parcelas** do contrato: onde ficam, e confirmar que o escopo
+   para aí — sem controle de pagamento (regra 12).
+3. **Termo de acordo extrajudicial**: dentro ou fora? O modelo foi enviado, mas
+   o polo passivo foi declarado fora do escopo.
+4. Contrato e procuração nascem **do caso** ou **do cliente**?
+
+**Enquanto não responderem: não invente conteúdo para destravar.**
 
 ## Estado atual
 
-**Sprint 2 — metade feita** (07/09/2026). A **pasta única do cliente** está de
+**Sprint 2 concluída** (14/09/2026). Os **andamentos** entraram: lançamento com
+data, situação e o texto que o cliente lê, linha do tempo no caso e no painel,
+autor identificado em cada lançamento. A lista de situações vem do banco
+(migração `20260914093800`), não do código — o escritório pode mudá-la sem nova
+versão. Data futura é recusada: andamento registra o que já aconteceu.
+144 testes. O isolamento entre clientes foi verificado contra o banco real,
+incluindo tentativa de ler andamento alheio por id direto.
+
+**A pasta única do cliente** (07/09/2026) está de
 pé: anexo pelo painel, visualização e download, tudo reunido por cliente e
 também filtrado por caso. Nenhum arquivo é público — a chave no armazenamento é
 sorteada pelo servidor e o arquivo só sai por URL assinada de validade curta,
@@ -194,5 +218,6 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: os andamentos, assim que a lista de status chegar. Depois, a
-Sprint 3 — documentos e assinatura, que depende das dependências 3.1 e 3.3.
+Próximo passo: os campos obrigatórios e o representante legal de pessoa
+jurídica (3.5 respondida), e depois a Sprint 3 — que precisa dos modelos em
+branco e do token do D4Sign.

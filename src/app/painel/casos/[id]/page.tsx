@@ -2,12 +2,15 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { LinhaDoTempo } from '@/componentes/linha-do-tempo'
 import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
+import { listarAndamentosDoCaso, listarStatus } from '@/lib/andamentos'
 import { obterCaso } from '@/lib/casos'
 import { listarDocumentosDoCaso } from '@/lib/documentos'
-import { formatarData } from '@/lib/datas'
+import { diaEmSaoPaulo, formatarData } from '@/lib/datas'
+import { FormularioDeAndamento } from './formulario-de-andamento'
 import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
@@ -38,7 +41,19 @@ export default async function PaginaDoCaso({
   const caso = await obterCaso(sessao, id)
   if (caso === null) notFound()
 
-  const documentos = await listarDocumentosDoCaso(sessao, caso.id)
+  const [documentos, andamentos, status] = await Promise.all([
+    listarDocumentosDoCaso(sessao, caso.id),
+    listarAndamentosDoCaso(sessao, caso.id),
+    listarStatus(),
+  ])
+
+  const hoje = diaEmSaoPaulo(new Date())
+
+  // Caso sem nenhum andamento começa na primeira situação da lista do
+  // escritório — que é "Processo Distribuído". Depois disso, quem lança
+  // escolhe: sugerir a situação seguinte seria adivinhar o processo.
+  const statusSugerido =
+    andamentos.length === 0 ? (status[0]?.id ?? '') : ''
 
   const titulo =
     caso.numeroProcesso === null
@@ -80,17 +95,20 @@ export default async function PaginaDoCaso({
           <div>
             <div className="cartao">
               <div className="cartao-cabecalho">
-                <h2>Histórico do processo</h2>
+                <h2>Novo andamento</h2>
               </div>
-              <div className="px-[18px] py-10 text-center">
-                <p className="mb-1 text-[13.5px] font-medium text-texto-2">
-                  Os andamentos ainda não estão liberados.
-                </p>
-                <p className="text-[12.5px] text-texto-3">
-                  O registro de andamento com data e histórico depende da lista de
-                  status do escritório (Anexo II, item 3.5), que ainda não chegou. Nada
-                  de lista inventada aqui.
-                </p>
+              <div className="cartao-corpo">
+                <FormularioDeAndamento
+                  casoId={caso.id}
+                  status={status}
+                  hoje={hoje}
+                  statusSugerido={statusSugerido}
+                />
+
+                <div className="my-[22px] border-t border-borda" />
+
+                <h2 className="mb-4 text-[14px] font-semibold">Histórico do processo</h2>
+                <LinhaDoTempo andamentos={andamentos} />
               </div>
             </div>
 

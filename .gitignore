@@ -26,3 +26,8 @@ backups/
 
 # permissoes locais do Claude Code — nao versionar
 .claude/settings.local.json
+
+# Modelos do escritorio: sao documentos REAIS preenchidos, com CPF, RG,
+# nome da mae e endereco de clientes de verdade. Nao versionar (LGPD).
+# O mapa de campos, sem dado pessoal, esta em docs/modelos-de-documento.md
+docs/modelos/

@@ -63,6 +63,10 @@
     @apply border-info-borda bg-info-fundo text-[#1F3F57];
   }
 
+  .aviso-ok {
+    @apply border-ok-borda bg-ok-fundo text-ok;
+  }
+
   .aviso-erro {
     @apply border-erro-borda bg-erro-fundo text-erro;
   }
