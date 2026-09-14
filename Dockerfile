@@ -60,6 +60,14 @@ RUN npx playwright install --with-deps chromium
 
 EXPOSE 3000
 
-# Migração antes de servir. Se ela falhar, o contêiner não sobe — que é o
-# comportamento certo: aplicação nova com banco velho corrompe dado.
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start"]
+# Migração e semente antes de servir.
+#
+# Se a migração falhar, o contêiner não sobe — que é o comportamento certo:
+# aplicação nova com banco velho corrompe dado.
+#
+# A semente roda em toda subida porque ela é idempotente: confere se o usuário
+# já existe e, se existir, não toca nele. Rodar sempre é o que garante que uma
+# instalação nova já nasce com administrador — sem depender de alguém lembrar
+# de abrir um terminal no painel. As senhas vêm das variáveis SEMENTE_*; sem
+# elas, a semente sorteia e imprime no log da primeira subida.
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run prisma:semear && npm run start"]
