@@ -171,3 +171,44 @@ no log do servidor, e a tela continua dizendo o mesmo de sempre.
    preencher o gatilho sozinha.
 4. **Logo em vetor** (3.2): a área do cliente usa o desenho do protótipo, como o
    resto do sistema.
+
+---
+
+## O e-mail é Gmail, e isso tem uma pegadinha (14/09/2026)
+
+O escritório informou a conta: **`contato@eferreira.adv.br`**, em domínio
+próprio — ou seja, Google Workspace. Servidor, porta, usuário e remetente já
+estão preenchidos no `.env.example`.
+
+**A senha da conta não funciona no SMTP.** O Google recusa autenticação com a
+senha comum; é preciso:
+
+1. ativar a **verificação em duas etapas** na conta;
+2. gerar uma **senha de app** em `myaccount.google.com/apppasswords`;
+3. usar essa senha de dezesseis caracteres em `SMTP_SENHA`.
+
+Com a senha comum, a resposta é sempre `535-5.7.8 Username and Password not
+accepted`, e nenhuma outra configuração resolve.
+
+### Como conferir sem adivinhar
+
+```
+npm run email:teste
+```
+
+Manda o mesmo e-mail que o cliente recebe, com um código de mentira, usando o
+mesmo transporte da aplicação. Se o servidor recusar, o script traduz o erro —
+inclusive este caso do Google, que é o mais comum.
+
+Existe porque a falha de e-mail é **silenciosa de propósito**: a tela de
+entrada responde sempre a mesma coisa, exista o cadastro ou não, e o mesmo vale
+se o SMTP estiver fora. É a resposta certa para quem está do outro lado, e
+péssima para quem está configurando.
+
+### Duas coisas a conferir depois do primeiro envio
+
+- **Se cair no spam**, o domínio precisa de SPF e DKIM apontando para o Google.
+  Código de acesso no spam é cliente que não entra.
+- **O remetente precisa ser a própria conta** (ou um alias confirmado nela).
+  O Gmail reescreve endereços de terceiros, e o cliente recebe um "em nome de"
+  que faz qualquer pessoa desconfiar do código.

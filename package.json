@@ -19,7 +19,8 @@
     "prisma:semear": "tsx prisma/seed.ts",
     "banco:backup": "tsx scripts/backup.ts",
     "banco:teste-restauracao": "tsx scripts/teste-de-restauracao.ts",
-    "test:banco": "vitest run --config vitest.banco.config.ts"
+    "test:banco": "vitest run --config vitest.banco.config.ts",
+    "email:teste": "tsx scripts/teste-de-email.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",

@@ -157,10 +157,15 @@ trocar `escritorio.ts` não basta — a imagem precisa ser substituída.
 obrigatórios definidos com bloqueio de gravação, fluxo de acordo fora do
 escopo, cliente lê a mensagem resumo.
 
-**3.6 — RESOLVIDA no desenho, pendente na implantação.** O escritório tem SMTP
-próprio e a entrada do cliente está de pé sobre ele. Faltam as credenciais:
-servidor, porta, usuário, senha e o endereço remetente. **Sem elas nenhum
-cliente entra.** Ver `docs/area-do-cliente.md`.
+**3.6 — RESOLVIDA.** O e-mail é **Gmail** (Google Workspace), na conta
+`contato@eferreira.adv.br`. Servidor, porta, usuário e remetente já estão no
+`.env.example`; falta só a senha entrar no `.env` e no EasyPanel.
+
+**A senha comum da conta não serve.** O Google recusa SMTP com senha de conta:
+é preciso verificação em duas etapas e uma **senha de app** de dezesseis
+caracteres. Com a senha comum a resposta é sempre "535-5.7.8 Username and
+Password not accepted", e nenhuma configuração resolve. Para conferir sem
+adivinhar: `npm run email:teste`. Ver `docs/area-do-cliente.md`.
 
 **3.7 — RESOLVIDA, com trabalho novo.** Não haverá lista prévia de
 colaboradores: o escritório quer **criar, editar e excluir usuários dentro da
@@ -175,8 +180,9 @@ recebe só os clientes novos.
   Locaweb apontando para `187.127.54.204`, uma VPS Hostinger
   (`srv1911163.hstgr.cloud`) com o EasyPanel já instalado e respondendo. Falta
   criar os projetos e publicar.
-- **Token de API do D4Sign:** o escritório foi conferir. A senha de login que
-  mandaram antes não serve para integração.
+- **Token de API e cryptKey do D4Sign: EM MÃOS** (14/09/2026). Falta saber se
+  são de **sandbox** ou de **produção** — um não funciona no lugar do outro — e
+  falta a integração em si, que é a última peça da Sprint 3.
 - **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
   construída depois. A chave dela sai com acesso total, por decisão do
   escritório. Nada a gerar por ora.
