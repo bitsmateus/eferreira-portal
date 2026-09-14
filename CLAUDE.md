@@ -143,10 +143,10 @@ de visibilidade. Campos obrigatórios definidos, **sem** data de nascimento, e
 com bloqueio de gravação ("melhor não deixar salvar, para não criar futuras
 pendências").
 
-**3.1 — modelos: chegaram, mas com problema.** Ver
-`docs/modelos-de-documento.md`. Os arquivos são **documentos reais preenchidos**,
-com CPF, RG, nome da mãe e endereço de clientes de verdade — ficam em
-`docs/modelos/`, fora do versionamento. **Pedir versões em branco.**
+**3.1 — RESPONDIDA.** Os modelos viraram HTML em branco com marcadores em
+`src/modelos/`, e o sistema já gera procuração, declaração e contrato em PDF.
+O termo de acordo ficou fora do escopo, por decisão do escritório. Ver
+`docs/modelos-de-documento.md`.
 
 **3.3 — parcial.** Domínio `eferreira.adv.br` na Locaweb; falta definir o
 subdomínio e o acesso ao DNS. Assinatura pelo **D4Sign**, mas veio a senha de
@@ -157,17 +157,33 @@ exposta em texto puro no WhatsApp e o escritório foi orientado a trocá-la.
 
 ### O que ainda falta perguntar
 
-1. **Nome da mãe** é obrigatório? Os três documentos usam, e não está no
-   cadastro (ver `docs/modelos-de-documento.md`).
-2. **Honorários e parcelas** do contrato: onde ficam, e confirmar que o escopo
-   para aí — sem controle de pagamento (regra 12).
-3. **Termo de acordo extrajudicial**: dentro ou fora? O modelo foi enviado, mas
-   o polo passivo foi declarado fora do escopo.
-4. Contrato e procuração nascem **do caso** ou **do cliente**?
+1. **A cláusula 9ª aparece duas vezes** no contrato do escritório
+   ("Autorização para recebimento" e "Foro"). Transcrito como está — regra 10
+   proíbe reescrever texto jurídico. Precisa de correção deles.
+2. **Dois endereços profissionais diferentes** nos modelos. Adotado o do
+   contrato; ver `src/lib/escritorio.ts`.
+3. **Token de API do D4Sign**, para enviar à assinatura. A senha de login que
+   mandaram não serve para integração.
+4. **Subdomínio do portal** e acesso ao DNS na Locaweb.
+5. **Logo em vetor** (3.2): sem ela, o cabeçalho dos documentos sai em texto.
 
 **Enquanto não responderem: não invente conteúdo para destravar.**
 
 ## Estado atual
+
+**Sprint 3 — geração de documentos feita** (14/09/2026). Procuração, declaração
+e contrato saem em PDF a partir dos modelos do escritório, com prévia na tela
+montada pela **mesma função** que gera o arquivo. Documento com cadastro
+incompleto não é gerado: a tela diz o que falta e leva ao lugar de preencher.
+O PDF é arquivado na pasta do cliente e sai pela mesma porta autorizada dos
+demais. **Falta a assinatura eletrônica**, que depende do token do D4Sign.
+
+Cadastro ganhou o que os documentos exigem: nome da mãe, campos obrigatórios
+que bloqueiam a gravação, representante legal de pessoa jurídica, e honorários
+com parcelas (sem nada de pagamento — regra 12). 202 testes.
+
+**Implantação:** o servidor precisa de `npx playwright install --with-deps
+chromium`. Sem o navegador, a geração falha em execução, mas o build passa.
 
 **Sprint 2 concluída** (14/09/2026). Os **andamentos** entraram: lançamento com
 data, situação e o texto que o cliente lê, linha do tempo no caso e no painel,

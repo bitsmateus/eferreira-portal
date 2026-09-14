@@ -4,15 +4,17 @@ Recebidos em **14/09/2026** (dependência 3.1 do Anexo II). Quatro arquivos
 `.docx`: procuração, declaração de hipossuficiência, contrato de prestação de
 serviços advocatícios e termo de acordo extrajudicial.
 
-> **Os arquivos não estão no repositório, de propósito.** O escritório enviou
-> documentos **reais preenchidos**, não modelos em branco: eles contêm nome
-> completo, CPF, RG, nome da mãe e endereço residencial de clientes de verdade,
-> além dos dados bancários do escritório. Versionar isso gravaria dado pessoal
-> de terceiro no histórico do git para sempre, sem necessidade. Os `.docx` ficam
-> em `docs/modelos/`, que está no `.gitignore`.
+> **Os arquivos não estão no repositório.** O escritório enviou os modelos
+> **preenchidos com dados fictícios**, para servirem de base — foi o que ele
+> informou. Os quatro `.docx` ficam em `docs/modelos/`, no `.gitignore`, como
+> referência de consulta.
 >
-> **Pedir ao escritório versões em branco**, com os trechos variáveis marcados.
-> É o que deve entrar no repositório.
+> Eles não entram no versionamento porque não precisam: o que o sistema usa são
+> os modelos **em branco**, em `src/modelos/`, com marcadores no lugar dos
+> dados. Esses sim estão versionados. Manter os preenchidos fora evita a
+> pergunta "isto é fictício mesmo?" toda vez que alguém abrir o repositório —
+> os sete CPFs e CNPJs dos exemplos passam no dígito verificador, e o CNPJ com
+> a chave PIX é a conta real do escritório.
 
 Este arquivo é a transcrição **apenas da estrutura**: quais campos cada
 documento consome, sem nenhum valor real.
@@ -111,14 +113,63 @@ ligado ao cadastro do PJ" descrito pelo escritório.
 
 ---
 
-## O que falta perguntar
+## Respondido pelo escritório em 14/09/2026
 
-1. **Modelos em branco**, com os trechos variáveis marcados, para substituir os
-   documentos reais.
-2. **Nome da mãe** entra como obrigatório? (os três documentos precisam dele)
-3. **Honorários e parcelas**: confirmar que ficam no cadastro do caso, e que o
-   escopo para nisso — sem controle de pagamento.
-4. **Termo de acordo**: está dentro ou fora? A resposta sobre status disse que o
-   polo passivo está fora, mas o modelo foi enviado.
-5. O documento é **por caso** ou **por cliente**? O contrato cita um processo
-   específico, o que sugere que contrato e procuração nascem de um caso.
+1. **Usar os modelos enviados**, tirando os dados. Feito.
+2. **Nome da mãe é obrigatório.** Feito — bloqueia a gravação da pessoa física.
+3. **Honorários e parcelas** ficam no cadastro do caso, "nada vinculado
+   referente a pagamentos, somente a adicionar". Feito, com a fronteira da
+   regra 12 escrita no próprio schema.
+4. **Termo de acordo extrajudicial: fora do escopo.** Não foi implementado.
+
+## O que ainda falta perguntar
+
+1. **A numeração repetida da cláusula 9ª** no contrato. Precisa de correção do
+   escritório; o sistema não reescreve texto jurídico.
+2. **Qual dos dois endereços profissionais é o correto** (ver
+   `src/lib/escritorio.ts`).
+3. O documento é **por caso** ou **por cliente**? Hoje o contrato exige um caso
+   — porque cita o objeto da ação e os honorários — e procuração e declaração
+   são do cliente. Confirmar se é assim que o escritório trabalha.
+4. **Logo em vetor** (dependência 3.2). Enquanto não chega, o cabeçalho e o
+   rodapé dos documentos saem com o nome em texto.
+5. **Token de API do D4Sign**, para o envio à assinatura.
+
+---
+
+## Como os modelos viraram sistema (14/09/2026)
+
+Os três modelos em uso estão em `src/modelos/`, como HTML com marcadores
+`{{campo}}`, mais um `estilo.css` compartilhado. O termo de acordo ficou fora,
+por decisão do escritório.
+
+O mesmo HTML e o mesmo CSS servem à prévia na tela e ao PDF — a prévia é
+montada pela **mesma função** que a geração usa (`montarPrevia`), justamente
+para que não exista um caminho que possa divergir do outro.
+
+**Defeito do original, preservado:** o contrato tem duas cláusulas numeradas
+como **9ª** ("Autorização para recebimento" e "Foro"). Corrigir seria
+reescrever texto jurídico por conta própria, o que a regra 10 proíbe. Precisa
+voltar ao escritório.
+
+**Divergência do original, resolvida por ora:** os modelos trazem dois
+endereços profissionais diferentes (Av. Paulista/São Paulo na procuração, Rua
+Olegário Paiva/Mogi das Cruzes no contrato). Adotei o do contrato, que é mais
+completo e coerente com o foro citado. Está marcado em `src/lib/escritorio.ts`.
+
+**Pessoa jurídica:** o documento sai com nome e CNPJ da empresa, mas a
+qualificação pessoal (nacionalidade, estado civil, nome da mãe, RG) vem do
+**representante legal** vinculado. Empresa sem sócio vinculado não gera
+documento, e a tela diz isso.
+
+### O que a implantação precisa
+
+O PDF é gerado com Playwright (Chromium). Além do `npm ci`, o servidor precisa
+do navegador:
+
+```
+npx playwright install --with-deps chromium
+```
+
+Sem isso, a geração falha em tempo de execução — o build passa normalmente,
+porque o navegador só é necessário na hora de gerar.

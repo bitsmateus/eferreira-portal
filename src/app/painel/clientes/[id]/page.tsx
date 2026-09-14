@@ -74,6 +74,12 @@ export default async function PaginaDaFichaDoCliente({
               Editar
             </Link>
             <Link
+              href={`/painel/clientes/${cliente.id}/gerar`}
+              className="botao botao-secundario"
+            >
+              Gerar documento
+            </Link>
+            <Link
               href={`/painel/clientes/${cliente.id}/casos/novo`}
               className="botao"
             >
