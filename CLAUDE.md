@@ -180,9 +180,18 @@ recebe só os clientes novos.
   Locaweb apontando para `187.127.54.204`, uma VPS Hostinger
   (`srv1911163.hstgr.cloud`) com o EasyPanel já instalado e respondendo. Falta
   criar os projetos e publicar.
-- **Token de API e cryptKey do D4Sign: EM MÃOS** (14/09/2026). Falta saber se
-  são de **sandbox** ou de **produção** — um não funciona no lugar do outro — e
-  falta a integração em si, que é a última peça da Sprint 3.
+- **D4Sign: credenciais de PRODUÇÃO em mãos e conferidas** (14/09/2026). A
+  conta responde, tem **26 cofres** e **32 envios restantes** de 50 créditos.
+  Conferir com `npm run d4sign:conta`.
+
+  **Não existe ensaio:** todo envio consome um crédito do escritório (custo de
+  terceiro, Cláusula 6ª) e manda e-mail de assinatura de verdade para quem
+  estiver na lista.
+
+  Falta **escolher o cofre** (`D4SIGN_COFRE`). A conta é compartilhada com
+  documentos de muitos clientes, já separados por área — "Procurações Civeis",
+  "contratos eFerreira advogados". A recomendação é criar um cofre próprio do
+  portal, para o que o sistema gera ficar separável e auditável.
 - **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
   construída depois. A chave dela sai com acesso total, por decisão do
   escritório. Nada a gerar por ora.
