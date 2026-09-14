@@ -175,7 +175,13 @@ exposta em texto puro no WhatsApp e o escritório foi orientado a trocá-la.
 5. **Logo em vetor** (3.2): sem ela, o cabeçalho dos documentos sai em texto.
 6. **Credenciais do SMTP** (3.6): servidor, porta, usuário, senha e remetente.
    É por elas que o código de acesso do cliente sai.
-7. **A tela de entrada do cliente não mostra o e-mail mascarado** que o
+7. **Quais serviços vão consumir a API** (dependência 3.3, segunda metade:
+   "os serviços que consumirão a nova API, com as respectivas credenciais e
+   documentação, quando houver"). A API está pronta e documentada; falta saber
+   para quem gerar chave, e com qual permissão.
+8. **A permissão "Baixar documentos"** aparece no protótipo, mas o item 3.b não
+   prevê endpoint de download por API — não foi implementada. Confirmar.
+9. **A tela de entrada do cliente não mostra o e-mail mascarado** que o
    protótipo desenhou — mostrar responderia, a qualquer um, se um CPF é
    cliente do escritório. Diferença visível; combinar na demonstração. Ver
    `docs/area-do-cliente.md`.
@@ -183,6 +189,38 @@ exposta em texto puro no WhatsApp e o escritório foi orientado a trocá-la.
 **Enquanto não responderem: não invente conteúdo para destravar.**
 
 ## Estado atual
+
+**Sprint 5 — a API do escritório está de pé** (14/09/2026). Anexo I, 3.b e
+3.c: consulta por CPF ou CNPJ com o número do processo e o andamento, cadastro
+e atualização de clientes, casos e andamentos, credenciais próprias com
+permissão por chave, documentação em `docs/api.md` e ambiente de testes.
+
+A validação é **a mesma do painel** — `validarCliente`, `validarCaso`,
+`validarAndamento`. Se a tela recusa um cadastro, a API recusa também, com a
+mesma mensagem; regra própria de API viraria, um dia, duas opiniões sobre o que
+é cadastro válido.
+
+A chave tem a forma `ef_live_<identificador>_<segredo>` e **aparece uma vez
+só** — no banco existe só o hash. O identificador é público e indexado, o
+segredo é SHA-256 comparado em tempo constante (e não Argon2id: o segredo são
+192 bits sorteados, e hash lento em toda requisição seria ele próprio o jeito
+de derrubar o serviço). Revogar vale na hora.
+
+**O ambiente de testes é a instalação de homologação**, não um modo dentro da
+mesma instalação: chave de teste que escreve no banco de produção não é
+ambiente de testes. `AMBIENTE_DA_API` define o prefixo, e o padrão é o de
+testes — instalação mal configurada erra para o lado inofensivo.
+
+Cada credencial tem um usuário próprio, sem e-mail e sem senha, e é ele que
+assina o andamento lançado pela API: na linha do tempo aparece "API · <nome da
+chave>" (regra 6). Regra 12 continua valendo — o lançamento é manual, feito por
+quem chama; ligar isto a um robô de tribunal é a fase 2.
+
+**282 testes** (232 unitários, 50 contra o banco). Os da API entram pelas rotas
+de verdade, porque é na rota que a permissão da chave é conferida.
+
+**Falta da Sprint 5 a aplicação da identidade visual**, travada na dependência
+3.2 — a logo em vetor não chegou.
 
 **Sprint 4 concluída** (14/09/2026). **A área do cliente está de pé.** O
 cliente entra em `/consultar` com CPF ou CNPJ e um código de seis dígitos
@@ -272,6 +310,7 @@ o teste de restauração. Telas: só login e painel vazio.
 Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
-Próximo passo: a Sprint 5 — logo e identidade (travada na dependência 3.2) e a
-API com credenciais do escritório (livre). O envio à assinatura eletrônica
-continua parado no token de API do D4Sign.
+Próximo passo: a Sprint 6 — demonstração, aceite e produção. Ela depende das
+três pendências que sobraram: logo em vetor (3.2), domínio e DNS (3.3) e as
+credenciais do SMTP (3.6). O envio à assinatura eletrônica continua parado no
+token de API do D4Sign.

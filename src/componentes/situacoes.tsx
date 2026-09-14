@@ -6,6 +6,7 @@
 import { SituacaoCaso } from '@prisma/client'
 
 import { Etiqueta } from '@/componentes/etiqueta'
+import { ROTULO_DA_SITUACAO } from '@/lib/situacao-do-caso'
 
 /**
  * Acesso do cliente (Anexo I, 1.d).
@@ -34,7 +35,4 @@ export function EtiquetaDeSituacaoDoCaso({ situacao }: { situacao: SituacaoCaso 
   )
 }
 
-export const ROTULO_DA_SITUACAO: Record<SituacaoCaso, string> = {
-  EM_ANDAMENTO: 'Em andamento',
-  ARQUIVADO: 'Arquivado',
-}
+export { ROTULO_DA_SITUACAO }

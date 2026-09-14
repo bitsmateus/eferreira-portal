@@ -47,6 +47,18 @@ enum TipoDocumento {
   ANEXO
 }
 
+/// O que uma credencial da API pode fazer (Anexo I, 3.c: "controle de
+/// autenticação e de permissões de acesso à API").
+///
+/// São duas, e não três: o protótipo desenha também "Baixar documentos", mas o
+/// item 3.b lista apenas consulta e cadastro/atualização. Endpoint de download
+/// por API não existe, e permissão para endpoint que não existe é configuração
+/// morta que engana quem lê a tela. Confirmar na demonstração.
+enum PermissaoApi {
+  CONSULTAR
+  ESCREVER
+}
+
 enum AcaoAuditoria {
   CRIACAO
   ATUALIZACAO
@@ -89,6 +101,10 @@ model Usuario {
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+
+  /// Preenchido quando este usuário é o "autor" de uma credencial da API.
+  credencialDaApi    CredencialApi?  @relation("UsuarioDaCredencial")
+  credenciaisCriadas CredencialApi[] @relation("CredencialCriadaPor")
 
   clientesCadastrados Cliente[]   @relation("ClienteCriadoPor")
   casosResponsavel    Caso[]      @relation("CasoResponsavel")
@@ -391,6 +407,65 @@ model Documento {
   @@index([clienteId])
   @@index([casoId])
   @@map("documento")
+}
+
+// ---------------------------------------------------------------------------
+// Credencial da API — Anexo I, itens 3.b e 3.c.
+//
+// A chave tem a forma `ef_live_<identificador>_<segredo>`. O identificador é
+// público e indexado: é por ele que a requisição acha a linha em uma consulta
+// só. O segredo nunca é guardado — só o hash dele.
+//
+// SHA-256, e não Argon2id, de propósito. Argon2 existe para segredo escolhido
+// por gente, que é curto e previsível; aqui o segredo são 192 bits sorteados
+// por CSPRNG, que não se quebra por força bruta. E um hash lento rodando em
+// toda requisição de API seria, ele próprio, o jeito de derrubar o serviço.
+// ---------------------------------------------------------------------------
+
+model CredencialApi {
+  id String @id @default(cuid())
+
+  /// Como o escritório chama esta chave: "Site institucional", "Integração X".
+  nome String
+
+  /// `ef_live_` em produção, `ef_test_` no ambiente de testes. Ver
+  /// AMBIENTE_DA_API em .env.example e docs/api.md.
+  prefixo String
+
+  /// Parte pública da chave. É o que a requisição usa para localizar a linha.
+  identificador String @unique
+
+  /// SHA-256 do segredo, comparado em tempo constante.
+  segredoHash String
+
+  /// Últimos quatro caracteres, só para alguém reconhecer a chave na lista.
+  final String
+
+  permissoes PermissaoApi[]
+
+  /// Nulo = ativa. A chave nunca é apagada: o histórico de auditoria aponta
+  /// para ela e precisa continuar dizendo quem fez o quê.
+  revogadoEm DateTime?
+
+  ultimoUsoEm DateTime?
+
+  /// O usuário em nome de quem a API escreve.
+  ///
+  /// Andamento exige autor (regra 6) e `autorId` é chave estrangeira — uma
+  /// chave de API sem usuário próprio não teria como lançar andamento sem
+  /// mentir sobre quem lançou. Este usuário não tem e-mail nem senha, então
+  /// não entra por tela nenhuma.
+  usuarioId String  @unique
+  usuario   Usuario @relation("UsuarioDaCredencial", fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  criadoPorId String?
+  criadoPor   Usuario? @relation("CredencialCriadaPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([revogadoEm])
+  @@map("credencial_api")
 }
 
 // ---------------------------------------------------------------------------
