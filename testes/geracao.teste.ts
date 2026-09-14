@@ -34,7 +34,12 @@ describe('quais documentos o sistema gera', () => {
 
 describe('montarPagina', () => {
   it('embute o CSS e declara o português', () => {
-    const pagina = montarPagina('<p>corpo</p>', 'body{margin:0}', 'Procuração')
+    const pagina = montarPagina(
+      '<p>corpo</p>',
+      'body{margin:0}',
+      'Procuração',
+      'data:image/png;base64,TIMBRE',
+    )
 
     expect(pagina).toContain('<!doctype html>')
     expect(pagina).toContain('lang="pt-BR"')
@@ -42,11 +47,16 @@ describe('montarPagina', () => {
     expect(pagina).toContain('body{margin:0}')
     expect(pagina).toContain('<p>corpo</p>')
     expect(pagina).toContain('<title>Procuração</title>')
+    // O papel timbrado do escritório entra embutido, atrás do texto.
+    expect(pagina).toContain('data:image/png;base64,TIMBRE')
+    expect(pagina).toContain('class="papel-timbrado"')
   })
 
   // A prévia e o PDF passam por aqui. Se a folha de estilo não entrasse, o
   // documento sairia sem formatação e ninguém notaria até imprimir.
   it('sempre traz a folha de estilo', () => {
-    expect(montarPagina('<p>x</p>', '@page{size:A4}', 't')).toContain('@page{size:A4}')
+    expect(montarPagina('<p>x</p>', '@page{size:A4}', 't', '')).toContain(
+      '@page{size:A4}',
+    )
   })
 })

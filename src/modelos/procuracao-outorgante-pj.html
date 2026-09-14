@@ -1,0 +1,23 @@
+<!--
+  Qualificação do OUTORGANTE pessoa jurídica.
+
+  Transcrito do arquivo enviado pelo escritório em 14/09/2026. Repare que a
+  empresa e o sócio aparecem lado a lado, cada um com os seus dados: a empresa
+  com razão social e CNPJ, o sócio com nome, RG e CPF próprios. Não se funde
+  um no outro — a procuração precisa dizer quem assinou por quem.
+
+  Diferente do modelo de pessoa física, aqui NÃO entram estado civil nem nome
+  da mãe. É assim no original.
+-->
+<p class="qualificacao">
+  <span class="rotulo-parte">Outorgante:</span>
+  <span class="maiusculas">{{cliente.nome}}</span>, pessoa jurídica de direito
+  privado, inscrita no CNPJ nº {{cliente.documentoFormatado}}, com sede na
+  {{cliente.endereco}}, {{cliente.cidade}}/{{cliente.uf}}, CEP
+  {{cliente.cepFormatado}}, neste ato representada por seu
+  {{representante.qualificacao}}
+  <span class="maiusculas">{{representante.nome}}</span>,
+  {{representante.nacionalidade}}, portador do RG nº {{representante.rg}} e
+  inscrito no CPF sob o nº {{representante.documentoFormatado}} conforme atos
+  constitutivos da sociedade.
+</p>

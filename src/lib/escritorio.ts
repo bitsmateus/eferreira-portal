@@ -11,22 +11,29 @@
  * do sistema, o que não é razoável a longo prazo.
  *
  * ─────────────────────────────────────────────────────────────────────────
- * DIVERGÊNCIA AINDA ABERTA — decisão provisória de 14/09/2026
+ * DIVERGÊNCIA DE ENDEREÇO — RESOLVIDA em 14/09/2026
  *
- * Os modelos trazem DOIS endereços profissionais diferentes:
+ * Os modelos antigos traziam dois endereços profissionais diferentes. O
+ * escritório confirmou por escrito qual vale:
  *
- *   procuração → "Gerônimo Barbosa da Silva, 159, CEP 01310-100, São Paulo/SP"
- *   contrato   → "Rua Olegario Paiva, 180, 4º andar, sala 411,
- *                 Mogi das Cruzes/SP, CEP 08780-040"
+ *   "Rua Olegário Paiva, 180, 4º andar, sala 411 — Mogi das Cruzes/SP —
+ *    CEP 08780-040 — este é o correto"
  *
- * O escritório respondeu: "a princípio siga o de São Paulo, deixamos pendente
- * isso". Adotado o da procuração, portanto — e a pendência continua aberta,
- * porque os dois vieram dos próprios modelos do escritório e um deles está
- * errado em algum documento já assinado.
+ * A procuração nova (arquivo de 14/09/2026) traz o mesmo endereço, agora com
+ * o bairro: Centro. É esse o adotado aqui.
  *
- * ATENÇÃO: o endereço mudou de cidade, mas a COMARCA do foro não. A cláusula
- * de foro do contrato cita São Paulo, e ela é texto jurídico do escritório
- * (regra 10) — não se mexe nela por causa de um campo de endereço.
+ * ATENÇÃO: a CIDADE DA ASSINATURA não sai daqui. O escritório definiu que ela
+ * vem do cadastro do CLIENTE — "o que define a cidade/estado da assinatura é o
+ * cadastro do cliente". Ver `cliente.cidade` em `src/lib/modelos.ts`.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * OS DOIS CONTATOS SÃO DIFERENTES, E É DE PROPÓSITO
+ *
+ * O papel timbrado e o contrato trazem o telefone e o e-mail do ESCRITÓRIO;
+ * a procuração nova traz o WhatsApp e o e-mail pessoais do ADVOGADO. Não é
+ * divergência: são quatro dados distintos, e cada documento cita os seus.
+ * Guardados separadamente para nenhum acabar no lugar do outro.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -35,20 +42,25 @@ export const ESCRITORIO = {
   razaoSocial: 'Sergio E. Ferreira Sociedade Individual de Advocacia',
   registroOab: '69.212',
 
-  advogado: 'Dr. Sérgio E. Ferreira',
+  advogado: 'Dr. Sergio Evangelista Ferreira',
   /** Qualificação pessoal do advogado, como consta na procuração. */
   advogadoQualificacao: 'brasileiro, solteiro, advogado',
   oab: '378.532',
+  /** Contatos pessoais do advogado, citados na procuração. */
+  emailDoAdvogado: 'sergioferreira@eferreira.adv.br',
+  whatsapp: '11 93806.3696',
 
-  // Endereço da procuração, adotado em 14/09/2026 por decisão do escritório.
-  endereco: 'Gerônimo Barbosa da Silva, 159',
-  cidade: 'São Paulo',
+  endereco: 'Rua Olegário Paiva, nº 180, 4º andar, Sala 411, Centro',
+  cidade: 'Mogi das Cruzes',
   uf: 'SP',
-  cep: '01310-100',
+  cep: '08780-040',
+  /** Comarca do foro, como consta na cláusula de foro do contrato. */
   comarca: 'São Paulo - SP',
 
-  telefone: '11 – 4580.3696',
+  // Contatos do escritório, como aparecem no papel timbrado.
+  telefone: '(11) 4580-3696',
   email: 'contato@eferreira.adv.br',
+  site: 'eferreira.adv.br',
 
   // Conta de recebimento citada na cláusula 2.2 do contrato. É a mesma que
   // aparece impressa em todo contrato assinado pelo escritório.

@@ -173,3 +173,101 @@ npx playwright install --with-deps chromium
 
 Sem isso, a geração falha em tempo de execução — o build passa normalmente,
 porque o navegador só é necessário na hora de gerar.
+
+---
+
+## Segunda rodada — 14/09/2026, fim da tarde
+
+O escritório mandou **uma procuração nova** ("1.Procuração ad judicia et extra
+CREDIT.docx") com o pedido de "utiliza esta procuração como base", e respondeu
+o que estava pendente. O que mudou:
+
+### O papel timbrado de verdade estava dentro do arquivo
+
+O `.docx` traz, no cabeçalho, uma **imagem de página inteira**: o monograma no
+alto, a marca d'água ao centro e, no pé, o nome do advogado, a OAB, o telefone,
+o e-mail e o site. É o timbre que o escritório usa no Word.
+
+Ele agora é o timbre dos documentos gerados (`src/modelos/timbre.png`), com as
+mesmas margens do arquivo original — 4,14cm no topo, 3cm nas laterais, 2,75cm
+no pé — e se repete em **todas** as páginas. Conferido: um contrato de quatro
+páginas sai com o timbre nas quatro.
+
+Isso fecha a dependência 3.2 sem arquivo novo. O desenho que eu havia feito a
+partir do protótipo foi descartado: este é o original.
+
+**Consequência:** telefone, e-mail e site aparecem no rodapé **pela imagem**.
+Se mudarem, trocar `src/lib/escritorio.ts` não basta — a imagem precisa ser
+substituída.
+
+### O endereço profissional, resolvido
+
+> "Rua Olegário Paiva, 180, 4º andar, sala 411 — Mogi das Cruzes/SP —
+> CEP 08780-040, este é o correto"
+
+A procuração nova traz o mesmo endereço, com o bairro (Centro). Adotado.
+
+### A cidade da assinatura vem do cliente
+
+> "o que define a cidade/estado da assinatura é o cadastro do cliente"
+
+O modelo novo confirma sozinho: a sede do outorgante é em São Paulo, o
+escritório fica em Mogi das Cruzes, e o documento é assinado **em São Paulo**.
+
+Para isso o cadastro ganhou **cidade** e **UF** como campos próprios,
+obrigatórios. O campo de endereço passou a guardar só logradouro, número,
+complemento e bairro. Os três documentos usam `{{localDaAssinatura}}`.
+
+### Quatro contatos diferentes, e nenhum é engano
+
+| Onde aparece | Qual |
+|---|---|
+| Rodapé do timbre e contrato | (11) 4580-3696 · contato@eferreira.adv.br |
+| Corpo da procuração nova | 11 93806.3696 (WhatsApp) · sergioferreira@eferreira.adv.br |
+
+São o telefone e o e-mail **do escritório** contra o WhatsApp e o e-mail
+**pessoais do advogado**. Guardados em campos separados.
+
+### A procuração tem duas variantes
+
+O escritório confirmou: "ela pode ser PJ ou PF dependendo do tipo de cliente do
+contrato". O texto dos poderes é um só; o que muda é a qualificação do
+outorgante e a assinatura:
+
+```
+src/modelos/procuracao.html                  texto comum
+├── procuracao-outorgante-pf.html            qualificação da pessoa física
+├── procuracao-outorgante-pj.html            empresa + sócio
+├── procuracao-assinatura-pf.html            o próprio outorgante
+└── procuracao-assinatura-pj.html            a empresa, "Por: <sócio>"
+```
+
+Na variante de pessoa jurídica a empresa e o sócio **não se fundem**: a empresa
+entra com razão social e CNPJ, e o sócio logo depois, com nome, RG e CPF
+próprios. O modelo antigo fundia os dois, e a procuração não dizia quem
+assinou.
+
+> **ATENÇÃO — o bloco de pessoa física precisa de conferência.** Ele não veio
+> no arquivo novo, que é de um cliente PJ. Foi mantido o texto do modelo
+> anterior do escritório, encaixado no texto novo. É texto deles, mas de outra
+> versão.
+
+### A prévia passou a ser o PDF
+
+Enquanto a prévia era HTML em fluxo contínuo, ela não tinha como mostrar onde
+cada página termina — e a assinatura aparecia por cima do rodapé impresso do
+papel. Um defeito que **só existia na prévia**: no arquivo, a assinatura vai
+para a página seguinte.
+
+Agora a prévia é o próprio PDF, gerado pela mesma função e aberto no
+visualizador do navegador. Não há mais como a tela mostrar uma coisa e o
+arquivo sair outra.
+
+### O que ainda falta perguntar
+
+1. **Conferir o bloco de pessoa física** da procuração (acima).
+2. **A declaração e o contrato continuam com o texto antigo.** Se a procuração
+   foi reescrita, os outros dois talvez também precisem de versão nova.
+3. **A cláusula 9ª repetida** no contrato: o escritório mandou seguir "a versão
+   enviada mesmo, sem alterações". Registrado, e o sistema faz assim — mas o
+   defeito continua no documento que vai para assinatura.

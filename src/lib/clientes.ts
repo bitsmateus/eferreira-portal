@@ -23,6 +23,7 @@ import {
   normalizarParaBusca,
   normalizarTelefone,
   somenteDigitos,
+  ufValida,
 } from '@/lib/formatos'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 
@@ -51,6 +52,8 @@ const OBRIGATORIOS_COMUNS = [
   ['telefone', 'Telefone'],
   ['cep', 'CEP'],
   ['endereco', 'Endereço'],
+  ['cidade', 'Cidade'],
+  ['uf', 'UF'],
 ] as const
 
 const OBRIGATORIOS_DA_PESSOA = [
@@ -72,6 +75,24 @@ export function obrigatoriosPara(
     ? [...OBRIGATORIOS_COMUNS, ...OBRIGATORIOS_DA_PESSOA]
     : OBRIGATORIOS_COMUNS
 }
+
+const unidadeFederativa = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .transform((valor, contexto) => {
+    if (valor === '') return null
+
+    if (!ufValida(valor)) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'UF inválida. Use a sigla de dois caracteres, como SP.',
+      })
+      return z.NEVER
+    }
+
+    return valor
+  })
 
 /** Texto que, em branco, vira nulo — quase todo campo de qualificação é opcional. */
 const opcional = z
@@ -165,6 +186,12 @@ export const esquemaDeCliente = z
       .trim()
       .max(240, 'Endereço longo demais.')
       .transform((valor) => (valor === '' ? null : valor)),
+    cidade: z
+      .string()
+      .trim()
+      .max(120, 'Nome de cidade longo demais.')
+      .transform((valor) => (valor === '' ? null : valor)),
+    uf: unidadeFederativa,
   })
   .transform((campos) => ({
     ...campos,

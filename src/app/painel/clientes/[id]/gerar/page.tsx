@@ -14,7 +14,6 @@ import {
   montarPrevia,
   type TipoGeravel,
 } from '@/lib/geracao'
-import { estiloDosDocumentos, montarPagina } from '@/lib/pdf'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
 import { FormularioDeGeracao } from './formulario'
 
@@ -46,11 +45,12 @@ export default async function PaginaDeGeracao({
   const previa =
     tipo === null ? null : await montarPrevia(sessao, cliente.id, tipo, casoId)
 
-  // A prévia é a MESMA página que vira PDF, montada pela mesma função. Se um
-  // dia divergirem, é porque alguém criou um segundo caminho — não crie.
-  const paginaDaPrevia =
+  // A prévia é o PDF de verdade, gerado pela mesma função e pelo mesmo
+  // Chromium — inclusive as quebras de página. Se um dia aparecer um segundo
+  // caminho que desenha o documento de outro jeito, ele vai mentir; não crie.
+  const enderecoDaPrevia =
     previa?.situacao === 'pronto'
-      ? montarPagina(previa.html, await estiloDosDocumentos(), previa.titulo)
+      ? `/painel/clientes/${cliente.id}/gerar/previa?tipo=${tipo}&casoId=${casoId ?? ''}`
       : null
 
   return (
@@ -190,19 +190,18 @@ export default async function PaginaDeGeracao({
               <h2>Prévia</h2>
               {previa?.situacao === 'pronto' && (
                 <span className="ml-auto text-[12px] text-texto-2">
-                  é isto que sai no PDF
+                  é o PDF, não um desenho dele
                 </span>
               )}
             </div>
 
-            {paginaDaPrevia !== null ? (
-              // Em iframe, e não solto na página: o CSS dos documentos define
-              // `body` e `@page`, e injetá-lo aqui reescreveria o painel
-              // inteiro. Isolado, ainda por cima, a prévia renderiza sob as
-              // mesmas regras que o Chromium usa para gerar o PDF.
+            {enderecoDaPrevia !== null ? (
+              // O visualizador de PDF do próprio navegador. Mostra a
+              // paginação, o papel timbrado repetido em cada folha e as
+              // quebras exatamente como vão sair — porque é o arquivo.
               <iframe
                 title="Prévia do documento"
-                srcDoc={paginaDaPrevia}
+                src={enderecoDaPrevia}
                 className="h-[80vh] w-full border-0 bg-prata-100"
               />
             ) : (

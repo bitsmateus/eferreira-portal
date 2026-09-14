@@ -47,7 +47,26 @@ export type ClienteParaDocumento = {
   rg: string | null
   email: string | null
   endereco: string | null
+  cidade: string | null
+  uf: string | null
   cep: string | null
+}
+
+/**
+ * O sócio que assina pela empresa.
+ *
+ * Na procuração nova ele **não** é fundido ao cliente: a empresa aparece com
+ * razão social e CNPJ, e ele logo depois, com nome, RG e CPF próprios — "neste
+ * ato representada por seu sócio FULANO". São duas pessoas no mesmo parágrafo,
+ * e misturá-las produziria uma procuração em que ninguém sabe quem assinou.
+ */
+export type RepresentanteParaDocumento = {
+  nome: string
+  documento: string
+  nacionalidade: string | null
+  rg: string | null
+  /** "sócio", "sócio administrador", "presidente" — como no contrato social. */
+  qualificacao: string | null
 }
 
 export type CasoParaDocumento = {
@@ -141,6 +160,7 @@ function ouNulo(valor: string | null): string | null {
  */
 export function valoresDoDocumento(
   cliente: ClienteParaDocumento,
+  representante: RepresentanteParaDocumento | null,
   caso: CasoParaDocumento | null,
   emitidoEm: Date,
 ): Record<string, string | null> {
@@ -153,9 +173,26 @@ export function valoresDoDocumento(
     'cliente.documentoFormatado': formatarDocumento(cliente.documento),
     'cliente.email': ouNulo(cliente.email),
     'cliente.endereco': ouNulo(cliente.endereco),
+    'cliente.cidade': ouNulo(cliente.cidade),
+    'cliente.uf': ouNulo(cliente.uf),
     'cliente.cepFormatado': cliente.cep === null ? null : formatarCep(cliente.cep),
 
+    // A cidade da assinatura sai do cadastro do CLIENTE, não do escritório —
+    // decisão do escritório em 14/09/2026, e é o que o modelo novo faz: sede
+    // do outorgante em São Paulo, escritório em Mogi das Cruzes, documento
+    // assinado em São Paulo.
+    localDaAssinatura: ouNulo(cliente.cidade),
     dataPorExtenso: formatarDataExtenso(emitidoEm),
+  }
+
+  if (representante !== null) {
+    valores['representante.nome'] = ouNulo(representante.nome)
+    valores['representante.documentoFormatado'] = formatarDocumento(
+      representante.documento,
+    )
+    valores['representante.nacionalidade'] = ouNulo(representante.nacionalidade)
+    valores['representante.rg'] = ouNulo(representante.rg)
+    valores['representante.qualificacao'] = ouNulo(representante.qualificacao)
   }
 
   for (const [chave, valor] of Object.entries(ESCRITORIO)) {
@@ -213,7 +250,15 @@ const ROTULO_DO_MARCADOR: Record<string, string> = {
   'cliente.rg': 'RG',
   'cliente.email': 'e-mail',
   'cliente.endereco': 'endereço',
+  'cliente.cidade': 'cidade',
+  'cliente.uf': 'UF',
   'cliente.cepFormatado': 'CEP',
+  localDaAssinatura: 'cidade do cliente (é ela que sai na assinatura)',
+  'representante.nome': 'nome do sócio',
+  'representante.documentoFormatado': 'CPF do sócio',
+  'representante.nacionalidade': 'nacionalidade do sócio',
+  'representante.rg': 'RG do sócio',
+  'representante.qualificacao': 'qualificação do sócio (sócio, presidente)',
   'caso.assunto': 'assunto do caso',
   'honorarios.valorFormatado': 'valor dos honorários',
   'honorarios.valorPorExtenso': 'valor dos honorários',
@@ -264,6 +309,28 @@ export function preencherModelo(
   }
 
   return { ok: true, html }
+}
+
+/**
+ * Encaixa as partes variáveis do modelo.
+ *
+ * A procuração muda de bloco conforme o cliente seja pessoa física ou
+ * jurídica: a qualificação do outorgante e a assinatura. Em vez de duplicar
+ * o modelo inteiro — e ficar com dois textos de poderes que um dia divergem
+ * sem ninguém perceber —, o modelo traz `{{>outorgante}}` e
+ * `{{>assinatura}}`, e cada pedaço é um arquivo próprio em `src/modelos/`,
+ * legível e corrigível pelo escritório como qualquer outro.
+ *
+ * As partes entram ANTES dos marcadores, para que os `{{campo}}` de dentro
+ * delas sejam preenchidos no mesmo passo que os do modelo.
+ */
+const PARTE = /\{\{>\s*([a-zA-Z0-9_-]+)\s*\}\}/g
+
+export function aplicarPartes(
+  modelo: string,
+  partes: Record<string, string>,
+): string {
+  return modelo.replace(PARTE, (inteiro, nome: string) => partes[nome] ?? inteiro)
 }
 
 /** Lista os marcadores que um modelo usa. Serve para conferir cobertura. */

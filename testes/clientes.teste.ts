@@ -25,6 +25,8 @@ function campos(troca: Partial<Record<string, string>> = {}) {
     telefone: '(11) 98812-4470',
     cep: '01310-100',
     endereco: 'Av. Paulista, 1578',
+    cidade: 'São Paulo',
+    uf: 'SP',
     ...troca,
   } as Parameters<typeof validarCliente>[0]
 }

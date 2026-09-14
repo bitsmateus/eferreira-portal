@@ -44,6 +44,8 @@ function lerCampos(dados: FormData): CamposDeCliente {
     telefone: texto(dados, 'telefone'),
     cep: texto(dados, 'cep'),
     endereco: texto(dados, 'endereco'),
+    cidade: texto(dados, 'cidade'),
+    uf: texto(dados, 'uf'),
   }
 }
 

@@ -13,7 +13,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Browser } from 'playwright'
 
-import { cabecalhoDoDocumento, rodapeDoDocumento } from '@/lib/timbre'
+import { fundoTimbrado, timbreEmBase64 } from '@/lib/timbre'
 
 let navegadorMemorizado: Browser | null = null
 
@@ -55,17 +55,23 @@ export async function lerModelo(nome: string): Promise<string> {
 
 /** Embrulha o corpo do documento na página completa, com o CSS embutido. */
 /**
- * Monta a página inteira: timbre, corpo do documento, timbre.
+ * Monta a página inteira: o papel timbrado do escritório por baixo, o texto do
+ * documento por cima.
  *
- * O cabeçalho e o rodapé entram AQUI, e não nos modelos, porque o que está em
- * `src/modelos/` é texto jurídico do escritório — que a regra 10 proíbe
- * alterar. Papel timbrado não é texto jurídico, e separá-los permite mexer em
- * um sem nunca encostar no outro.
+ * O timbre entra AQUI, e não nos modelos, porque o que está em `src/modelos/`
+ * é texto jurídico do escritório — que a regra 10 proíbe alterar. Papel
+ * timbrado não é texto jurídico, e separá-los permite mexer em um sem nunca
+ * encostar no outro.
  *
  * Como a prévia na tela usa esta mesma função, o operador vê o documento
  * timbrado exatamente como ele sai no PDF.
  */
-export function montarPagina(corpo: string, estilo: string, titulo: string): string {
+export function montarPagina(
+  corpo: string,
+  estilo: string,
+  titulo: string,
+  timbre: string,
+): string {
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -73,8 +79,16 @@ export function montarPagina(corpo: string, estilo: string, titulo: string): str
 <title>${titulo}</title>
 <style>${estilo}</style>
 </head>
-<body>${cabecalhoDoDocumento()}${corpo}${rodapeDoDocumento()}</body>
+<body><main class="documento">${fundoTimbrado(timbre)}${corpo}</main></body>
 </html>`
+}
+
+/** Atalho para quem só quer a página pronta, com o timbre já lido do disco. */
+export async function montarPaginaTimbrada(
+  corpo: string,
+  titulo: string,
+): Promise<string> {
+  return montarPagina(corpo, await estiloDosDocumentos(), titulo, await timbreEmBase64())
 }
 
 /**

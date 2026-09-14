@@ -26,11 +26,12 @@ import { enviarArquivo, gerarChaveDeArquivo, removerArquivo } from '@/lib/armaze
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import {
   MODELO_DO_TIPO,
+  aplicarPartes,
   preencherModelo,
   valoresDoDocumento,
   type ClienteParaDocumento,
 } from '@/lib/modelos'
-import { estiloDosDocumentos, gerarPdf, lerModelo, montarPagina } from '@/lib/pdf'
+import { gerarPdf, lerModelo, montarPaginaTimbrada } from '@/lib/pdf'
 import { formatarDocumento } from '@/lib/documento'
 
 /** Tipos que o sistema sabe gerar. Anexo entra por upload, não por geração. */
@@ -57,6 +58,30 @@ export type ResultadoDaPrevia =
   | { situacao: 'caso_obrigatorio' }
   /** O cadastro está incompleto: a lista diz exatamente o que falta. */
   | { situacao: 'faltam_dados'; faltando: string[]; ondePreencher: string }
+
+/**
+ * Lê o modelo e encaixa as partes que mudam com o tipo de pessoa.
+ *
+ * Só a procuração tem variantes hoje: o escritório confirmou em 14/09/2026 que
+ * "ela pode ser PJ ou PF dependendo do tipo de cliente do contrato". O contrato
+ * e a declaração continuam com um texto só.
+ */
+async function montarModelo(
+  tipo: TipoGeravel,
+  tipoPessoa: TipoPessoa,
+): Promise<string> {
+  const modelo = await lerModelo(MODELO_DO_TIPO[tipo] ?? '')
+
+  if (tipo !== TipoDocumento.PROCURACAO) return modelo
+
+  const sufixo = tipoPessoa === TipoPessoa.FISICA ? 'pf' : 'pj'
+  const [outorgante, assinatura] = await Promise.all([
+    lerModelo(`procuracao-outorgante-${sufixo}`),
+    lerModelo(`procuracao-assinatura-${sufixo}`),
+  ])
+
+  return aplicarPartes(modelo, { outorgante, assinatura })
+}
 
 /**
  * Monta o documento preenchido, sem gravar nada. É o que a tela de prévia usa
@@ -94,10 +119,9 @@ export async function montarPrevia(
 
   if (casoId !== null && caso === null) return { situacao: 'nao_encontrado' }
 
-  // Empresa não assina sozinha: quem assina é o representante legal, e é a
-  // qualificação DELE que entra no documento. O nome e o CPF que aparecem
-  // continuam sendo os da empresa.
-  const representante = cliente.representantes[0]?.pessoaFisica ?? null
+  // Empresa não assina sozinha: quem assina é o representante legal.
+  const vinculo = cliente.representantes[0] ?? null
+  const representante = vinculo?.pessoaFisica ?? null
 
   if (cliente.tipoPessoa === TipoPessoa.JURIDICA && representante === null) {
     return {
@@ -107,6 +131,9 @@ export async function montarPrevia(
     }
   }
 
+  // O contrato e a declaração ainda usam os modelos antigos, em que a
+  // qualificação pessoal do sócio ocupa o lugar da da empresa. A procuração
+  // nova não funde mais os dois — ver `procuracao-outorgante-pj.html`.
   const paraDocumento: ClienteParaDocumento =
     representante === null
       ? cliente
@@ -120,8 +147,21 @@ export async function montarPrevia(
         }
 
   const preenchido = preencherModelo(
-    await lerModelo(MODELO_DO_TIPO[tipo] ?? ''),
-    valoresDoDocumento(paraDocumento, caso, new Date()),
+    await montarModelo(tipo, cliente.tipoPessoa),
+    valoresDoDocumento(
+      paraDocumento,
+      representante === null
+        ? null
+        : {
+            nome: representante.nome,
+            documento: representante.documento,
+            nacionalidade: representante.nacionalidade,
+            rg: representante.rg,
+            qualificacao: vinculo?.qualificacao ?? null,
+          },
+      caso,
+      new Date(),
+    ),
   )
 
   if (!preenchido.ok) {
@@ -159,12 +199,7 @@ export async function gerarDocumento(
 
   if (previa.situacao !== 'pronto') return previa
 
-  const paginaHtml = montarPagina(
-    previa.html,
-    await estiloDosDocumentos(),
-    previa.titulo,
-  )
-  const pdf = await gerarPdf(paginaHtml)
+  const pdf = await gerarPdf(await montarPaginaTimbrada(previa.html, previa.titulo))
 
   const cliente = await prisma.cliente.findFirst({
     where: filtroDeClientes(sessao, { id: clienteId }),

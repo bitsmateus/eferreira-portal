@@ -8,9 +8,12 @@
  * Papel A4 com margens de documento jurídico, texto justificado e serifado.
  */
 
+/* As margens são as do arquivo do escritório: 4,14cm no topo (para caber o
+   monograma do timbre), 3cm nas laterais e 2,75cm no pé (para o rodapé
+   impresso do papel). Medidas conferidas no .docx enviado em 14/09/2026. */
 @page {
   size: A4;
-  margin: 2.5cm 2.5cm 2cm 3cm;
+  margin: 4.14cm 3cm 2.75cm 3cm;
 }
 
 * {
@@ -27,49 +30,32 @@ body {
   hyphens: auto;
 }
 
-/* Cabeçalho e rodapé com a marca (regra 10). O desenho é o do protótipo, que
-   o escritório aprovou como identidade definitiva em 14/09/2026 — o HTML dele
-   está em src/lib/timbre.ts, não nos modelos, porque modelo é texto jurídico
-   e timbre não é. */
-.marca-cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45cm;
-  margin-bottom: 1.2cm;
-  padding-bottom: 0.4cm;
-  border-bottom: 1px solid #000;
-  line-height: 1.2;
+/* O papel timbrado do escritório, atrás de tudo.
+
+   `position: fixed` é o que faz a imagem se repetir em TODAS as páginas do
+   PDF — é como o Chromium trata elemento fixo ao imprimir. Um background no
+   body sairia só na primeira página, e o contrato tem três.
+
+   O deslocamento negativo desfaz as margens do @page: na impressão, elemento
+   fixo é posicionado a partir da área útil, e a folha timbrada precisa
+   começar na borda física do papel. */
+.papel-timbrado {
+  position: fixed;
+  top: -4.14cm;
+  left: -3cm;
+  width: 21cm;
+  height: 29.7cm;
+  z-index: -1;
 }
 
-.marca-cabecalho .simbolo {
-  width: 1.15cm;
-  height: 1.15cm;
-  flex: none;
-}
+/* Não existe bloco `@media screen` aqui, e é de propósito.
 
-.marca-cabecalho .marca-texto {
-  text-align: left;
-}
+   A prévia da tela não é mais este HTML: é o PDF gerado, aberto no
+   visualizador do navegador. Enquanto era HTML em fluxo contínuo, ela não
+   tinha como mostrar onde cada página termina, e a assinatura aparecia por
+   cima do rodapé impresso do papel — um defeito que só existia na prévia.
 
-.marca-cabecalho .nome {
-  font-size: 15pt;
-  font-weight: bold;
-  letter-spacing: 0.12em;
-}
-
-.marca-cabecalho .complemento {
-  font-size: 8.5pt;
-  letter-spacing: 0.3em;
-}
-
-.marca-rodape {
-  margin-top: 1.2cm;
-  padding-top: 0.3cm;
-  border-top: 1px solid #000;
-  font-size: 8.5pt;
-  text-align: center;
-}
+   Ver src/app/painel/clientes/[id]/gerar/previa/route.ts. */
 
 h1 {
   margin: 0 0 1cm;
@@ -148,4 +134,10 @@ ol.clausulas {
 
 .item {
   margin-bottom: 0.35cm;
+}
+
+/* "Por: FULANO" e a qualificação dele, sob a razão social na assinatura da
+   pessoa jurídica. */
+.assinatura .por {
+  font-size: 11pt;
 }

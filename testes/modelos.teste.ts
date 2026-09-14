@@ -5,6 +5,7 @@ import { TipoPessoa } from '@prisma/client'
 
 import {
   MODELOS,
+  aplicarPartes,
   condicoesDePagamento,
   marcadoresDoModelo,
   preencherModelo,
@@ -13,8 +14,27 @@ import {
   type ClienteParaDocumento,
 } from '@/lib/modelos'
 
-function lerModelo(nome: string): string {
+function lerArquivo(nome: string): string {
   return readFileSync(join(process.cwd(), 'src', 'modelos', `${nome}.html`), 'utf8')
+}
+
+/**
+ * Monta o modelo como `geracao.ts` monta: o arquivo principal mais as partes
+ * que mudam com o tipo de pessoa. Se os dois caminhos divergirem, o teste
+ * deixa de valer — por isso a lógica é a mesma, e não uma cópia simplificada.
+ */
+function lerModelo(
+  nome: string,
+  tipoPessoa: TipoPessoa = TipoPessoa.FISICA,
+): string {
+  const modelo = lerArquivo(nome)
+  if (nome !== MODELOS.PROCURACAO) return modelo
+
+  const sufixo = tipoPessoa === TipoPessoa.FISICA ? 'pf' : 'pj'
+  return aplicarPartes(modelo, {
+    outorgante: lerArquivo(`procuracao-outorgante-${sufixo}`),
+    assinatura: lerArquivo(`procuracao-assinatura-${sufixo}`),
+  })
 }
 
 const cliente: ClienteParaDocumento = {
@@ -26,8 +46,31 @@ const cliente: ClienteParaDocumento = {
   nomeMae: 'Beltrana de Tal',
   rg: '12.345.678 SSP-SP',
   email: 'fulano@exemplo.com.br',
-  endereco: 'Rua das Flores, 100, Centro, Mogi das Cruzes/SP',
+  endereco: 'Rua das Flores, 100, Centro',
+  cidade: 'Mogi das Cruzes',
+  uf: 'SP',
   cep: '08780040',
+}
+
+/** Uma empresa e o sócio que assina por ela, para a variante de pessoa jurídica. */
+const empresa: ClienteParaDocumento = {
+  ...cliente,
+  nome: 'Exemplo Consultoria Ltda',
+  tipoPessoa: TipoPessoa.JURIDICA,
+  documento: '11222333000181',
+  // A empresa não tem nome da mãe nem estado civil — quem tem é o sócio.
+  nomeMae: null,
+  estadoCivil: null,
+  nacionalidade: null,
+  rg: null,
+}
+
+const socio = {
+  nome: 'Sicrano de Tal',
+  documento: '39053344705',
+  nacionalidade: 'brasileiro',
+  rg: '22.588.089-1 SSP-SP',
+  qualificacao: 'sócio',
 }
 
 const caso: CasoParaDocumento = {
@@ -47,7 +90,7 @@ describe('preencherModelo', () => {
   it('preenche a procuração inteira, sem sobrar marcador', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.PROCURACAO),
-      valoresDoDocumento(cliente, null, emitidoEm),
+      valoresDoDocumento(cliente, null, null, emitidoEm),
     )
 
     expect(resultado.ok).toBe(true)
@@ -64,7 +107,7 @@ describe('preencherModelo', () => {
   it('preenche a declaração inteira', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.DECLARACAO),
-      valoresDoDocumento(cliente, null, emitidoEm),
+      valoresDoDocumento(cliente, null, null, emitidoEm),
     )
 
     expect(resultado.ok).toBe(true)
@@ -75,7 +118,7 @@ describe('preencherModelo', () => {
   it('preenche o contrato inteiro, com honorários e parcelas', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.CONTRATO),
-      valoresDoDocumento(cliente, caso, emitidoEm),
+      valoresDoDocumento(cliente, null, caso, emitidoEm),
     )
 
     expect(resultado.ok).toBe(true)
@@ -91,7 +134,7 @@ describe('preencherModelo', () => {
   it('recusa gerar quando falta o nome da mãe, e diz o que falta', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.PROCURACAO),
-      valoresDoDocumento({ ...cliente, nomeMae: null }, null, emitidoEm),
+      valoresDoDocumento({ ...cliente, nomeMae: null }, null, null, emitidoEm),
     )
 
     expect(resultado.ok).toBe(false)
@@ -103,7 +146,7 @@ describe('preencherModelo', () => {
   it('trata campo só de espaços como ausente', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.PROCURACAO),
-      valoresDoDocumento({ ...cliente, rg: '   ' }, null, emitidoEm),
+      valoresDoDocumento({ ...cliente, rg: '   ' }, null, null, emitidoEm),
     )
 
     expect(resultado.ok).toBe(false)
@@ -116,6 +159,7 @@ describe('preencherModelo', () => {
       lerModelo(MODELOS.PROCURACAO),
       valoresDoDocumento(
         { ...cliente, nomeMae: null, rg: null, nacionalidade: null },
+        null,
         null,
         emitidoEm,
       ),
@@ -134,6 +178,7 @@ describe('preencherModelo', () => {
       valoresDoDocumento(
         { ...cliente, nome: 'Fulano <script>alert(1)</script>' },
         null,
+        null,
         emitidoEm,
       ),
     )
@@ -149,16 +194,31 @@ describe('preencherModelo', () => {
 describe('os modelos e o dicionário estão em dia', () => {
   // Marcador novo no HTML sem valor correspondente quebraria a geração só na
   // hora do uso. Este teste falha antes.
-  it('todo marcador dos três modelos tem valor', () => {
-    const valores = valoresDoDocumento(cliente, caso, emitidoEm)
+  it('todo marcador dos modelos tem valor, nas duas variantes', () => {
+    const valores = valoresDoDocumento(empresa, socio, caso, emitidoEm)
 
-    for (const modelo of Object.values(MODELOS)) {
-      for (const marcador of marcadoresDoModelo(lerModelo(modelo))) {
+    const montados = [
+      ...Object.values(MODELOS).map((modelo) => [modelo, lerModelo(modelo)] as const),
+      [
+        'procuracao (jurídica)',
+        lerModelo(MODELOS.PROCURACAO, TipoPessoa.JURIDICA),
+      ] as const,
+    ]
+
+    for (const [nome, modelo] of montados) {
+      for (const marcador of marcadoresDoModelo(modelo)) {
         expect(
           Object.prototype.hasOwnProperty.call(valores, marcador),
-          `${modelo}: marcador {{${marcador}}} não tem valor`,
+          `${nome}: marcador {{${marcador}}} não tem valor`,
         ).toBe(true)
       }
+    }
+  })
+
+  // Parte não encaixada sairia impressa no documento assinado.
+  it('nenhum modelo montado deixa parte por encaixar', () => {
+    for (const tipoPessoa of [TipoPessoa.FISICA, TipoPessoa.JURIDICA]) {
+      expect(lerModelo(MODELOS.PROCURACAO, tipoPessoa)).not.toContain('{{>')
     }
   })
 
@@ -231,7 +291,7 @@ describe('caso sem parte contrária', () => {
   it('fecha a frase do objeto sem deixar "contra" solto', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.CONTRATO),
-      valoresDoDocumento(cliente, { ...caso, parteContraria: null }, emitidoEm),
+      valoresDoDocumento(cliente, null, { ...caso, parteContraria: null }, emitidoEm),
     )
 
     expect(resultado.ok).toBe(true)

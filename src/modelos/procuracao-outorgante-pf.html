@@ -1,0 +1,19 @@
+<!--
+  Qualificação do OUTORGANTE pessoa física.
+
+  ATENÇÃO: este bloco NÃO veio no arquivo de 14/09/2026, que é de um cliente
+  pessoa jurídica. Ele foi mantido do modelo anterior do escritório, que era
+  de pessoa física, e encaixado no texto novo — o escritório confirmou que a
+  procuração "pode ser PJ ou PF dependendo do tipo de cliente do contrato".
+
+  É texto do escritório, mas de outra versão. Precisa de conferência deles.
+-->
+<p class="qualificacao">
+  <span class="rotulo-parte">Outorgante:</span>
+  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
+  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
+  número: {{cliente.rg}}, inscrito(a) no CPF sob o número:
+  {{cliente.documentoFormatado}}, residente e domiciliado à
+  {{cliente.endereco}}, {{cliente.cidade}}/{{cliente.uf}}, CEP:
+  {{cliente.cepFormatado}}.
+</p>

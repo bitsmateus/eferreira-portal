@@ -207,7 +207,9 @@ Permissão: `ESCREVER`.
 | `nome` | sim | nome completo ou razão social |
 | `email` | sim | é por ele que o cliente recebe o código de acesso ao portal |
 | `telefone` | sim | |
-| `endereco` | sim | |
+| `endereco` | sim | logradouro, número, complemento e bairro — **sem a cidade** |
+| `cidade` | sim | é dela que sai a cidade da assinatura dos documentos |
+| `uf` | sim | sigla de dois caracteres, como `SP` |
 | `cep` | sim | |
 | `rg` | sim | RG com órgão emissor, ou inscrição estadual |
 | `estadoCivil` | pessoa física | |
@@ -230,7 +232,9 @@ curl -s -X POST https://HOMOLOGACAO/api/v1/clientes \
     "nome": "Nome do cliente",
     "email": "cliente@exemplo.com.br",
     "telefone": "11 98888-7777",
-    "endereco": "Rua Exemplo, 100, São Paulo/SP",
+    "endereco": "Rua Exemplo, 100, Centro",
+    "cidade": "São Paulo",
+    "uf": "SP",
     "cep": "01310-100",
     "rg": "12.345.678-9 SSP-SP",
     "estadoCivil": "solteiro",

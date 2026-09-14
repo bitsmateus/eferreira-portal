@@ -152,7 +152,15 @@ model Cliente {
   email    String?
   telefone String?
   cep      String?
+  /// Logradouro, número, complemento e bairro. A cidade vive à parte.
   endereco String?
+  /// Cidade e UF separadas do resto do endereço porque não são só endereço:
+  /// é delas que sai a CIDADE DA ASSINATURA dos documentos. O escritório
+  /// definiu em 14/09/2026 que "o que define a cidade/estado da assinatura é
+  /// o cadastro do cliente" — e o modelo novo da procuração confirma, com a
+  /// sede do outorgante em São Paulo e o escritório em Mogi das Cruzes.
+  cidade   String?
+  uf       String?
 
   /// Gatilho do Anexo I, 1.d: o acesso do cliente só é liberado depois que o
   /// contrato foi assinado. Nulo = cliente não entra.

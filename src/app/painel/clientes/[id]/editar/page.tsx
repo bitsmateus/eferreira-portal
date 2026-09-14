@@ -41,6 +41,8 @@ export default async function PaginaDeEdicaoDeCliente({
     telefone: cliente.telefone ?? '',
     cep: cliente.cep ?? '',
     endereco: cliente.endereco ?? '',
+    cidade: cliente.cidade ?? '',
+    uf: cliente.uf ?? '',
   }
 
   // O id é fixado no servidor. Ainda assim, `atualizarCliente` reconfere o

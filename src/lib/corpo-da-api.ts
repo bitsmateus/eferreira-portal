@@ -33,6 +33,8 @@ export function camposDeClienteDoCorpo(
     telefone: comoTexto(corpo['telefone']),
     cep: comoTexto(corpo['cep']),
     endereco: comoTexto(corpo['endereco']),
+    cidade: comoTexto(corpo['cidade']),
+    uf: comoTexto(corpo['uf']),
   }
 }
 

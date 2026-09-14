@@ -140,11 +140,16 @@ dependências do Anexo II, **sete estão resolvidas**.
 `src/modelos/`; o sistema gera procuração, declaração e contrato em PDF. O
 termo de acordo ficou fora do escopo. Ver `docs/modelos-de-documento.md`.
 
-**3.2 — RESOLVIDA.** A logo em vetor **não vem, e não precisa**: o escritório
-confirmou que "a logo e a identidade visual é o que já está, não precisa
-ajustar nada". O desenho do protótipo é, portanto, a marca definitiva. Ela foi
-aplicada ao cabeçalho e ao rodapé dos documentos gerados (regra 10), em traço
-preto — ver `src/lib/timbre.ts`.
+**3.2 — RESOLVIDA, e melhor do que se esperava.** O **papel timbrado de
+verdade** estava dentro do `.docx` da procuração enviada em 14/09: imagem de
+página inteira, com o monograma no alto, a marca d'água ao centro e os
+contatos no pé. É o que o escritório usa no Word, e agora é o timbre dos
+documentos gerados — em todas as páginas, com as margens do arquivo original.
+Ver `src/lib/timbre.ts` e `src/modelos/timbre.png`.
+
+O desenho que eu havia feito a partir do protótipo foi descartado.
+**Atenção:** telefone, e-mail e site saem no rodapé pela IMAGEM. Se mudarem,
+trocar `escritorio.ts` não basta — a imagem precisa ser substituída.
 
 **3.4 — RESOLVIDA.** Assinatura eletrônica pelo D4Sign.
 
@@ -164,10 +169,12 @@ própria ferramenta**. Isso é a tela de Usuários, que ainda não existe.
 **3.8 — RESOLVIDA.** Sem migração de histórico. O sistema começa vazio e
 recebe só os clientes novos.
 
-**3.3 — parcial, e é o que sobrou.**
+**3.3 — quase fechada.**
 
-- **Subdomínio: `portal.eferreira.adv.br`**, definido. Falta montar o registro
-  de DNS na Locaweb, o que depende do endereço do servidor do EasyPanel.
+- **Subdomínio: `portal.eferreira.adv.br` — RESOLVIDO e no ar.** Registro A na
+  Locaweb apontando para `187.127.54.204`, uma VPS Hostinger
+  (`srv1911163.hstgr.cloud`) com o EasyPanel já instalado e respondendo. Falta
+  criar os projetos e publicar.
 - **Token de API do D4Sign:** o escritório foi conferir. A senha de login que
   mandaram antes não serve para integração.
 - **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
@@ -179,15 +186,30 @@ recebe só os clientes novos.
 
 1. **A cláusula 9ª repetida fica como está.** "Siga a versão enviada mesmo, sem
    alterações." É o que o sistema já faz — regra 10.
-2. **Endereço profissional: o de São Paulo** (Gerônimo Barbosa da Silva, 159).
-   "A princípio siga o de São Paulo, deixamos pendente isso." A divergência
-   entre os dois modelos **continua aberta** e está marcada em
-   `src/lib/escritorio.ts`. A comarca do foro não mudou.
-3. **Documento por caso ou por cliente: fica como está** — contrato por caso,
+2. **Endereço profissional: RESOLVIDO.** "Rua Olegário Paiva, 180, 4º andar,
+   sala 411 — Mogi das Cruzes/SP — CEP 08780-040, este é o correto." A
+   procuração nova traz o mesmo endereço, com o bairro.
+3. **A cidade da assinatura vem do cadastro do CLIENTE**, não do escritório.
+   Por isso o cadastro ganhou os campos **cidade** e **UF**, obrigatórios, e o
+   campo de endereço passou a guardar só logradouro, número, complemento e
+   bairro.
+4. **A procuração tem duas variantes**, PF e PJ, conforme o tipo de cliente.
+   O texto dos poderes é um só; mudam a qualificação e a assinatura.
+5. **Documento por caso ou por cliente: fica como está** — contrato por caso,
    procuração e declaração por cliente.
-4. **A tela de entrada do cliente continua sem o e-mail mascarado.** Aprovado.
-5. **O cadastro continua sem o seletor "Tipo"** — derivado do documento.
-6. **Não há download de documentos pela API.** Confirmado.
+6. **A tela de entrada do cliente continua sem o e-mail mascarado.** Aprovado.
+7. **O cadastro continua sem o seletor "Tipo"** — derivado do documento.
+8. **Não há download de documentos pela API.** Confirmado.
+
+### O que ainda falta perguntar
+
+1. **O bloco de pessoa física da procuração precisa de conferência.** Ele não
+   veio no arquivo novo, que é de cliente PJ; foi mantido o texto do modelo
+   anterior do escritório, encaixado no texto novo.
+2. **A declaração e o contrato continuam com o texto antigo.** Se a procuração
+   foi reescrita, os outros dois talvez também precisem de versão nova.
+3. **A cláusula 9ª repetida** continua no contrato que vai para assinatura.
+   Registrado que é para seguir assim, mas o defeito é deles.
 
 ### A senha do D4Sign
 
@@ -229,11 +251,26 @@ quem chama; ligar isto a um robô de tribunal é a fase 2.
 **282 testes** (232 unitários, 50 contra o banco). Os da API entram pelas rotas
 de verdade, porque é na rota que a permissão da chave é conferida.
 
-**A identidade visual foi aprovada como está** (14/09/2026): o escritório
-respondeu que a logo é a que já existe no sistema. Ela entrou no cabeçalho e no
-rodapé dos documentos gerados, em traço preto — o timbre saiu dos modelos e
-vive em `src/lib/timbre.ts`, porque o que está em `src/modelos/` é texto
-jurídico do escritório e a regra 10 proíbe encostar nele.
+**A identidade visual entrou de verdade** (14/09/2026). O papel timbrado do
+escritório estava dentro do `.docx` da procuração nova — imagem de página
+inteira, com monograma, marca d'água e contatos no pé. É ele que vai atrás de
+todo documento gerado, em todas as páginas, com as margens do arquivo
+original. O timbre saiu dos modelos e vive em `src/lib/timbre.ts`, porque o
+que está em `src/modelos/` é texto jurídico do escritório e a regra 10 proíbe
+encostar nele.
+
+**A procuração foi reescrita sobre o modelo novo do escritório**, com duas
+variantes: pessoa física e pessoa jurídica. Na de PJ a empresa e o sócio não se
+fundem mais — a empresa entra com razão social e CNPJ, o sócio logo depois com
+nome, RG e CPF próprios. O texto dos poderes é um só, em arquivo único.
+
+**A prévia passou a ser o PDF de verdade**, aberto no visualizador do
+navegador. Enquanto era HTML contínuo, ela não mostrava onde cada página
+termina e a assinatura aparecia por cima do rodapé impresso — defeito que só
+existia na prévia. Ver `docs/modelos-de-documento.md`.
+
+**O cadastro ganhou cidade e UF**, obrigatórios: é do cliente que sai a cidade
+da assinatura dos documentos, por decisão do escritório.
 
 **Falta da Sprint 5 a tela de Usuários**, pedida na mesma rodada: o escritório
 não vai mandar lista de colaboradores, quer criar, editar e excluir os acessos

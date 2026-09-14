@@ -1,52 +1,72 @@
 <!--
-  PROCURAÇÃO — modelo oficial da E. Ferreira Advogados.
+  PROCURAÇÃO AD JUDICIA ET EXTRA — modelo oficial da E. Ferreira Advogados.
 
-  Transcrito do arquivo .docx enviado pelo escritório em 14/09/2026, com os
-  dados de exemplo substituídos por marcadores. Regra 10: o texto jurídico é
-  do escritório e NÃO se altera — nem para "melhorar" a redação, nem para
-  corrigir concordância. Se algo precisar mudar, o escritório manda a nova
-  versão.
+  Transcrito do arquivo "1.Procuração ad judicia et extra CREDIT.docx", enviado
+  pelo escritório em 14/09/2026 com o pedido de "utiliza esta procuração como
+  base". Substitui o modelo anterior por inteiro: o texto dos poderes é outro,
+  mais longo, e cita o artigo 105 do Código de Processo Civil.
 
-  Marcadores no formato {{campo}}. Ver src/lib/modelos.ts para a lista
-  completa e de onde cada um vem.
+  Regra 10: o texto jurídico é do escritório e NÃO se altera — nem para
+  "melhorar" a redação, nem para corrigir concordância. Se algo precisar mudar,
+  o escritório manda a nova versão.
+
+  O arquivo enviado é de um cliente PESSOA JURÍDICA. O escritório confirmou que
+  "ela pode ser PJ ou PF dependendo do tipo de cliente do contrato", então a
+  qualificação do outorgante e a assinatura são partes trocáveis, encaixadas
+  mais abaixo a partir dos arquivos:
+
+    outorgante  →  procuracao-outorgante-pf.html
+                   procuracao-outorgante-pj.html
+    assinatura  →  procuracao-assinatura-pf.html
+                   procuracao-assinatura-pj.html
+
+  ATENÇÃO — o bloco de pessoa física NÃO veio neste arquivo. Ele foi mantido
+  do modelo anterior do escritório, que era de pessoa física. É texto deles,
+  mas de outra versão: precisa de conferência.
+
+  NÃO escreva a sintaxe de parte nem a de marcador dentro de um comentário:
+  as partes são encaixadas antes de os comentários serem removidos, e um
+  arquivo inteiro colado dentro de um comentário fecha o comentário no meio,
+  derramando o resto dele no documento assinado. Aconteceu.
+
+  Ver src/lib/modelos.ts para a lista de campos.
 -->
-<h1>Procuração</h1>
+<h1>Procuração Ad Judicia Et Extra</h1>
+
+{{>outorgante}}
 
 <p class="qualificacao">
-  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
-  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
-  número: {{cliente.rg}}, inscrito(a) no CPF sob o número:
-  {{cliente.documentoFormatado}}, Residente e domiciliado à
-  {{cliente.endereco}}, CEP: {{cliente.cepFormatado}}.
+  <span class="rotulo-parte">Outorgado:</span>
+  <span class="maiusculas">{{escritorio.advogado}}</span>,
+  {{escritorio.advogadoQualificacao}}, inscrito na OAB/{{escritorio.uf}} sob o
+  nº {{escritorio.oab}}, com escritório profissional na
+  {{escritorio.endereco}}, {{escritorio.cidade}} – {{escritorio.uf}}, CEP
+  {{escritorio.cep}}, endereço eletrônico: {{escritorio.emailDoAdvogado}} e
+  whatsapp: {{escritorio.whatsapp}}
 </p>
 
 <p>
-  <span class="rotulo-parte">Outorgados:</span> {{escritorio.advogado}},
-  {{escritorio.advogadoQualificacao}}, inscrito na Ordem dos Advogados do
-  Brasil, Seção de São Paulo, sob o número {{escritorio.oab}}, com escritório
-  profissional na {{escritorio.endereco}}, CEP {{escritorio.cep}},
-  {{escritorio.cidade}}, {{escritorio.uf}}, e-mail: {{escritorio.email}}.
+  <span class="rotulo-parte">Poderes:</span> A OUTORGANTE nomeia e constitui o
+  OUTORGADO seu bastante procurador e advogado, conferindo-lhe os poderes da
+  cláusula AD JUDICIA ET EXTRA, para representá-la ativa ou passivamente, em
+  qualquer juízo, tribunal, instância ou grau de jurisdição, podendo propor
+  ações, apresentar defesas, contestações, reconvenções, impugnações,
+  manifestações e recursos, acompanhar processos e procedimentos, requerer
+  tutelas provisórias e medidas incidentais, produzir provas, participar de
+  audiências, praticar atos de cumprimento e execução de decisões judiciais e,
+  de modo geral, praticar todos os atos necessários à defesa dos direitos e
+  interesses da OUTORGANTE. Confere, ainda, poderes especiais, nos termos do
+  artigo 105 do Código de Processo Civil, para confessar, reconhecer a
+  procedência do pedido, transigir, desistir, renunciar ao direito sobre o qual
+  se funda a ação, receber, dar quitação, firmar compromisso e assinar
+  declaração de hipossuficiência econômica, quando cabível. O OUTORGADO poderá,
+  ainda, representar a OUTORGANTE perante órgãos e entidades públicas ou
+  privadas quando necessário à atuação jurídica decorrente deste mandato, bem
+  como substabelecer, no todo ou em parte, com ou sem reserva de poderes. O
+  presente mandato permanecerá válido até sua expressa revogação pela
+  OUTORGANTE.
 </p>
 
-<p>
-  <span class="rotulo-parte">Poderes:</span> Pelo presente instrumento de
-  mandato o outorgante nomeia e constitui os outorgados seus bastantes
-  procuradores e advogados para o foro em geral, em qualquer juízo ou grau de
-  jurisdição, conferindo-lhes os poderes da cláusula AD JUDICIA ET EXTRA,
-  podendo para tanto, promover todas as ações e atos necessários para a defesa
-  dos interesses do OUTORGANTE, interpondo recursos, ações e medidas
-  incidentes, representando-o fora do juízo perante terceiros, sejam
-  particulares ou repartições públicas, emersas ou órgãos estatais, requerendo
-  o que de direito, conferindo ainda, poderes especiais para confessar, receber
-  e dar quitação, firmar acordos e compromissos, podendo os outorgados agir
-  conjunta ou isoladamente, independente de ordem de nomeação, substabelecer
-  com ou sem reserva de iguais poderes, dando tudo por bom, firme e valioso.
-</p>
+<p class="local-e-data">{{localDaAssinatura}}, {{dataPorExtenso}}.</p>
 
-<p class="local-e-data">{{escritorio.cidade}}, {{dataPorExtenso}}</p>
-
-<div class="assinatura">
-  <div class="linha"></div>
-  <div class="nome">{{cliente.nome}}</div>
-</div>
-
+{{>assinatura}}

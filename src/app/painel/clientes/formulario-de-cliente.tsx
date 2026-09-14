@@ -11,7 +11,11 @@ import {
 } from 'react'
 import { useFormStatus } from 'react-dom'
 
-import { formatarCep, formatarTelefone } from '@/lib/formatos'
+import {
+  UNIDADES_FEDERATIVAS,
+  formatarCep,
+  formatarTelefone,
+} from '@/lib/formatos'
 import { formatarDocumento, normalizarDocumento, tipoDoDocumento } from '@/lib/documento'
 import { conferirDocumento, type EstadoDoCliente } from './acoes'
 
@@ -28,6 +32,8 @@ export type ValoresDoCliente = {
   telefone: string
   cep: string
   endereco: string
+  cidade: string
+  uf: string
 }
 
 export const VALORES_VAZIOS: ValoresDoCliente = {
@@ -43,6 +49,8 @@ export const VALORES_VAZIOS: ValoresDoCliente = {
   telefone: '',
   cep: '',
   endereco: '',
+  cidade: '',
+  uf: '',
 }
 
 type Props = {
@@ -447,9 +455,44 @@ export function FormularioDeCliente({
                 id="endereco"
                 name="endereco"
                 className="campo-entrada"
+                placeholder="Rua, número, complemento e bairro"
                 defaultValue={valores.endereco}
               />
+              <p className="dica">Sem a cidade — ela vai nos campos abaixo.</p>
             </Campo>
+
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <Campo nome="cidade" rotulo="Cidade" erro={erros['cidade']}>
+                  <input
+                    id="cidade"
+                    name="cidade"
+                    className="campo-entrada"
+                    defaultValue={valores.cidade}
+                  />
+                  <p className="dica">
+                    É esta cidade que sai na assinatura dos documentos.
+                  </p>
+                </Campo>
+              </div>
+              <div className="w-[110px]">
+                <Campo nome="uf" rotulo="UF" erro={erros['uf']}>
+                  <select
+                    id="uf"
+                    name="uf"
+                    className="campo-entrada"
+                    defaultValue={valores.uf}
+                  >
+                    <option value="">—</option>
+                    {UNIDADES_FEDERATIVAS.map((sigla) => (
+                      <option key={sigla} value={sigla}>
+                        {sigla}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              </div>
+            </div>
 
             <div className="flex items-center gap-2.5">
               <BotaoSalvar rotulo={rotuloDoBotao} />

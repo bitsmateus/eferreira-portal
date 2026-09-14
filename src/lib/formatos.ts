@@ -97,3 +97,23 @@ export function formatarTamanho(bytes: number): string {
   const megas = bytes / (1024 * 1024)
   return `${megas.toFixed(1).replace('.', ',')} MB`
 }
+
+/**
+ * As 27 unidades federativas.
+ *
+ * Lista fechada porque a UF vai impressa em documento assinado, e "S.P.", "sp"
+ * e "Sao Paulo" no mesmo campo viram três grafias da mesma coisa em três
+ * procurações do mesmo cliente.
+ *
+ * Mora aqui, e não em `clientes.ts`, porque o formulário precisa dela para
+ * montar o seletor — e formulário roda no navegador, onde o Prisma não entra.
+ */
+export const UNIDADES_FEDERATIVAS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
+  'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',
+  'SP', 'SE', 'TO',
+] as const
+
+export function ufValida(valor: string): boolean {
+  return (UNIDADES_FEDERATIVAS as readonly string[]).includes(valor)
+}
