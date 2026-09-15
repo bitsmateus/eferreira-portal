@@ -162,8 +162,7 @@ do próprio escritório.
 obrigatórios definidos com bloqueio de gravação, fluxo de acordo fora do
 escopo, cliente lê a mensagem resumo.
 
-**3.6 — RESOLVIDA na decisão, PENDENTE na senha.** O e-mail é **Gmail**
-(Google Workspace),
+**3.6 — RESOLVIDA.** O e-mail é **Gmail** (Google Workspace),
 na conta `contato@eferreira.adv.br`. Servidor, porta, usuário e remetente já
 estão no `.env.example`, e a senha de app já entrou no `.env` local e no
 EasyPanel (ver adiante).
@@ -174,16 +173,18 @@ caracteres. Com a senha comum a resposta é sempre "535-5.7.8 Username and
 Password not accepted", e nenhuma configuração resolve. Para conferir sem
 adivinhar: `npm run email:teste`. Ver `docs/area-do-cliente.md`.
 
-**ATENÇÃO — esta parte estava escrita errada e foi corrigida em 15/09/2026.**
-O `.env` local **não tem nenhuma variável `SMTP_*`**, e `npm run email:teste`
-responde "SMTP não configurado". A senha de app **não** entrou aqui, e o teste
-de envio **não** chegou a passar. Se ela está no EasyPanel, isso não foi
-verificado desta máquina.
+**Situação conferida no EasyPanel em 15/09/2026, e ela é boa:** a senha de
+app de dezesseis caracteres **está** em `SMTP_SENHA` nos dois projetos, e o
+Google **aceita** o login — conferido pelo aperto de mão SMTP completo
+(conectar, STARTTLS, autenticar, encerrar), sem entregar mensagem a ninguém.
+Servidor `smtp.gmail.com:587`, usuário `contato@eferreira.adv.br`.
 
-Enquanto `SMTP_SENHA` não existir de fato, **nenhum cliente entra no portal**:
-o código de acesso não sai, e a tela responde o mesmo de sempre justamente
-para não revelar nada — o que esconde também este defeito. Conferir com
-`npm run email:teste`, que é o único jeito de saber sem adivinhar.
+**O que estava errado era a parte do `.env` local**, e continua: não há
+nenhuma variável `SMTP_*` aqui, e por isso `npm run email:teste` responde
+"SMTP não configurado" **nesta máquina**. Em desenvolvimento, o e-mail que
+sairia é impresso no terminal — comportamento desenhado, não defeito. Quem
+quiser testar envio de verdade localmente copia as variáveis do EasyPanel
+para o `.env` (que está no `.gitignore` — regra 8).
 
 **3.7 — RESOLVIDA, e a tela já existe.** Não haverá lista prévia de
 colaboradores: o escritório quer **criar, editar e excluir usuários dentro da
@@ -208,9 +209,10 @@ recebe só os clientes novos.
 - **Backup:** falta ativar o backup automático do Postgres no EasyPanel e
   repetir `npm run banco:teste-restauracao` em produção (já foi executado com
   sucesso em desenvolvimento, antes de existir dado real).
-- **SMTP: PENDENTE.** A conta e a configuração estão definidas e no
-  `.env.example`; falta a **senha de app** do Gmail em `SMTP_SENHA`, aqui e
-  no EasyPanel. Ver a correção na dependência 3.6, acima.
+- **SMTP: RESOLVIDO e conferido em produção e homologação** (15/09/2026).
+  `SMTP_SENHA` está nos dois projetos e o Gmail aceita o login. Ver a
+  dependência 3.6, acima. Falta só o primeiro envio de verdade, que só
+  acontece quando existir um cliente com e-mail cadastrado.
 
 A infraestrutura de base: dois projetos no EasyPanel, `eferreira-producao` e
 `eferreira-homologacao`, cada um com **Postgres 16** e **MinIO**. O servidor
@@ -243,6 +245,19 @@ Environment.
   A conta é compartilhada com documentos de muitos clientes, já separados
   por área — "Procurações Civeis", "contratos eFerreira advogados" —, e o
   cofre escolhido é o genérico do escritório.
+
+  **RISCO ABERTO, encontrado em 15/09/2026: a HOMOLOGAÇÃO está com o token de
+  PRODUÇÃO da D4Sign**, apontando para `secure.d4sign.com.br` e para o mesmo
+  cofre "Escritorio". Um teste feito no ambiente de testes gastaria crédito de
+  verdade, mandaria e-mail de verdade e deixaria documento de mentira dentro
+  do cofre real do escritório — onde nada pode ser apagado.
+
+  É o oposto do que a Sprint 5 decidiu para a API ("chave de teste que escreve
+  no banco de produção não é ambiente de testes"). Duas saídas: um token de
+  sandbox da D4Sign para a homologação, ou **deixar `D4SIGN_TOKEN_API` vazio
+  lá** — sem token a instalação simplesmente não assina, e a tela explica.
+  Decisão do escritório; enquanto não vier, não testar assinatura em
+  homologação.
 - **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
   construída depois. A chave dela sai com acesso total, por decisão do
   escritório. Nada a gerar por ora.
