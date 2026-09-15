@@ -7,12 +7,36 @@
  */
 
 import Link from 'next/link'
+import { SituacaoDoEnvio, TipoDocumento } from '@prisma/client'
 
 import { Etiqueta } from '@/componentes/etiqueta'
+import type { EnvioEmAndamento } from '@/lib/assinaturas'
 import { formatarData } from '@/lib/datas'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import type { LinhaDeDocumento } from '@/lib/documentos'
 import { formatarNumeroDeProcesso, formatarTamanho } from '@/lib/formatos'
+
+/**
+ * O que a pasta mostra sobre a assinatura eletrônica de cada documento.
+ *
+ * NO_COFRE aparece como "não enviado", e não como erro: aquele PDF está no
+ * cofre do escritório sem ter saído, e quem abrir a tela pode tentar de novo.
+ * Esconder isso deixaria um documento solto no cofre sem ninguém saber.
+ */
+const ETIQUETA_DO_ENVIO: Record<
+  SituacaoDoEnvio,
+  { tom: 'ok' | 'atencao' | 'erro' | 'info'; texto: string }
+> = {
+  NO_COFRE: { tom: 'atencao', texto: 'Não enviado' },
+  AGUARDANDO: { tom: 'info', texto: 'Aguardando assinatura' },
+  ASSINADO: { tom: 'ok', texto: 'Assinado' },
+  CANCELADO: { tom: 'erro', texto: 'Cancelado' },
+}
+
+/** Anexo não se assina, e o PDF que já voltou assinado também não. */
+function vaiParaAssinatura(tipo: TipoDocumento, assinadoEm: Date | null): boolean {
+  return tipo !== TipoDocumento.ANEXO && assinadoEm === null
+}
 
 /** Rótulo curto do ícone, a partir do tipo de conteúdo. */
 function selo(tipoConteudo: string): string {
@@ -25,12 +49,15 @@ function selo(tipoConteudo: string): string {
 export function PastaDoCliente({
   clienteId,
   documentos,
+  /** O envio para assinatura de cada documento, por id do documento. */
+  envios,
   /** Na ficha do caso a pasta mostra só o que é daquele caso. */
   titulo = 'Pasta do cliente',
   mostrarVinculo = true,
 }: {
   clienteId: string
   documentos: readonly LinhaDeDocumento[]
+  envios?: ReadonlyMap<string, EnvioEmAndamento>
   titulo?: string
   mostrarVinculo?: boolean
 }) {
@@ -72,7 +99,14 @@ export function PastaDoCliente({
         </div>
       ) : (
         <div className="px-[18px] py-1.5">
-          {documentos.map((documento) => (
+          {documentos.map((documento) => {
+            const envio = envios?.get(documento.id) ?? null
+            const etiquetaDoEnvio =
+              envio === null || documento.assinadoEm !== null
+                ? null
+                : ETIQUETA_DO_ENVIO[envio.situacao]
+
+            return (
             <div
               key={documento.id}
               className="flex flex-wrap items-center gap-3 border-b border-prata-100 py-3 last:border-b-0"
@@ -110,6 +144,17 @@ export function PastaDoCliente({
                 {documento.assinadoEm !== null && (
                   <Etiqueta tom="ok">Assinado</Etiqueta>
                 )}
+                {etiquetaDoEnvio !== null && (
+                  <Etiqueta tom={etiquetaDoEnvio.tom}>{etiquetaDoEnvio.texto}</Etiqueta>
+                )}
+                {vaiParaAssinatura(documento.tipo, documento.assinadoEm) && (
+                  <Link
+                    href={`/painel/documentos/${documento.id}/assinatura`}
+                    className="botao botao-secundario botao-pequeno"
+                  >
+                    {envio === null ? 'Assinar' : 'Ver assinatura'}
+                  </Link>
+                )}
                 <a
                   href={`/painel/documentos/${documento.id}/arquivo`}
                   target="_blank"
@@ -126,7 +171,8 @@ export function PastaDoCliente({
                 </a>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

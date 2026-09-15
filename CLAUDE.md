@@ -151,13 +151,19 @@ O desenho que eu havia feito a partir do protótipo foi descartado.
 **Atenção:** telefone, e-mail e site saem no rodapé pela IMAGEM. Se mudarem,
 trocar `escritorio.ts` não basta — a imagem precisa ser substituída.
 
-**3.4 — RESOLVIDA.** Assinatura eletrônica pelo D4Sign.
+**3.4 — RESOLVIDA e IMPLEMENTADA** (15/09/2026). Assinatura eletrônica pelo
+D4Sign, de ponta a ponta: enviar, acompanhar, receber o assinado de volta na
+pasta do cliente e — no contrato — liberar o acesso ao portal sozinho. Ver
+`docs/assinatura-eletronica.md`. **O primeiro envio de verdade ainda não foi
+feito**: ele gasta um crédito e manda e-mail real, e deve ir para um endereço
+do próprio escritório.
 
 **3.5 — RESOLVIDA.** Lista de status por migração (`20260914093800`), campos
 obrigatórios definidos com bloqueio de gravação, fluxo de acordo fora do
 escopo, cliente lê a mensagem resumo.
 
-**3.6 — RESOLVIDA de ponta a ponta.** O e-mail é **Gmail** (Google Workspace),
+**3.6 — RESOLVIDA na decisão, PENDENTE na senha.** O e-mail é **Gmail**
+(Google Workspace),
 na conta `contato@eferreira.adv.br`. Servidor, porta, usuário e remetente já
 estão no `.env.example`, e a senha de app já entrou no `.env` local e no
 EasyPanel (ver adiante).
@@ -168,10 +174,16 @@ caracteres. Com a senha comum a resposta é sempre "535-5.7.8 Username and
 Password not accepted", e nenhuma configuração resolve. Para conferir sem
 adivinhar: `npm run email:teste`. Ver `docs/area-do-cliente.md`.
 
-**A senha de app entrou no `.env` local e o `npm run email:teste` passou**
-(14/09/2026): conexão STARTTLS na porta 587, login aceito, e-mail entregue.
-Falta só repetir — a mesma senha de dezesseis caracteres, marcada como secreta
-— no EasyPanel, em `eferreira-producao` e `eferreira-homologacao`.
+**ATENÇÃO — esta parte estava escrita errada e foi corrigida em 15/09/2026.**
+O `.env` local **não tem nenhuma variável `SMTP_*`**, e `npm run email:teste`
+responde "SMTP não configurado". A senha de app **não** entrou aqui, e o teste
+de envio **não** chegou a passar. Se ela está no EasyPanel, isso não foi
+verificado desta máquina.
+
+Enquanto `SMTP_SENHA` não existir de fato, **nenhum cliente entra no portal**:
+o código de acesso não sai, e a tela responde o mesmo de sempre justamente
+para não revelar nada — o que esconde também este defeito. Conferir com
+`npm run email:teste`, que é o único jeito de saber sem adivinhar.
 
 **3.7 — RESOLVIDA, e a tela já existe.** Não haverá lista prévia de
 colaboradores: o escritório quer **criar, editar e excluir usuários dentro da
@@ -196,9 +208,9 @@ recebe só os clientes novos.
 - **Backup:** falta ativar o backup automático do Postgres no EasyPanel e
   repetir `npm run banco:teste-restauracao` em produção (já foi executado com
   sucesso em desenvolvimento, antes de existir dado real).
-- **SMTP: RESOLVIDO de ponta a ponta** (14/09/2026). A senha de app do Gmail
-  foi testada com `npm run email:teste` (STARTTLS na porta 587, e-mail
-  entregue) e replicada como secreta no EasyPanel, nos dois projetos.
+- **SMTP: PENDENTE.** A conta e a configuração estão definidas e no
+  `.env.example`; falta a **senha de app** do Gmail em `SMTP_SENHA`, aqui e
+  no EasyPanel. Ver a correção na dependência 3.6, acima.
 
 A infraestrutura de base: dois projetos no EasyPanel, `eferreira-producao` e
 `eferreira-homologacao`, cada um com **Postgres 16** e **MinIO**. O servidor
@@ -275,6 +287,34 @@ o risco é do painel do D4Sign do escritório, não do portal.
 **Enquanto uma dependência não responder: não invente conteúdo para destravar.**
 
 ## Estado atual
+
+**A assinatura eletrônica está de pé** (15/09/2026), fechando a Sprint 3 e a
+dependência 3.4. O ciclo agora vai de ponta a ponta: gerar, enviar, o cliente
+assina no e-mail, o PDF assinado volta para a pasta e — sendo o contrato — o
+acesso ao portal se abre **sozinho**, que é o gatilho do Anexo I, 1.d. O cartão
+"Acesso do cliente" continua existindo para o contrato assinado em papel.
+
+**Em produção não há ensaio**, e o desenho inteiro gira em torno disso: cada
+envio gasta um crédito do escritório (Cláusula 6ª) e manda e-mail de verdade,
+sem desfazer. Por isso gerar não envia; o envio tem tela de confirmação com o
+endereço de cada signatário e o saldo à vista; a confirmação tem dois cliques;
+e conferir se já assinaram é leitura, que não custa nada.
+
+**Nada apaga nada no cofre do escritório** (pedido de 14/09/2026). Não há
+chamada de exclusão, e um envio que sobe o PDF e falha antes de sair vira
+`NO_COFRE` em vez de sumir — a tela diz que aquele PDF ficou lá, que nenhum
+e-mail saiu e que nenhum crédito foi gasto, e tentar de novo **reaproveita** o
+documento em vez de subir outra cópia.
+
+O documento original **não é substituído** pelo assinado: ficam os dois na
+pasta. Sobrescrever pouparia uma linha na tela e destruiria a única forma de
+conferir, depois, que o que foi assinado é o que foi mandado.
+
+**334 testes** (266 unitários, 68 contra o banco). Os novos cobrem quem assina
+cada documento — inclusive que a pessoa jurídica manda para o sócio e não para
+a empresa —, todas as recusas que acontecem **antes** de gastar um crédito, e
+que o token e a `cryptKey` não vazam na mensagem de erro (a D4Sign autentica
+pela query da URL e ecoa a URL em alguns erros — regra 8).
 
 **A tela de Usuários está de pé** (14/09/2026), fechando o que faltava da
 Sprint 5 (dependência 3.7). Só o administrador acessa `/painel/usuarios` —

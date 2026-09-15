@@ -43,9 +43,12 @@ como "liberado" quem não pode receber o código seria mentira na tela. É a mes
 regra que o escritório pediu em 14/09: "melhor não deixar salvar, para não criar
 futuras pendências".
 
-Quando o **D4Sign** entrar (dependência 3.3, travada no token de API), é o
-retorno da assinatura que vai chamar a mesma função. Até lá — e para o contrato
-assinado em papel — quem informa é o operador.
+Desde **15/09/2026 isto acontece sozinho**: quando o contrato volta assinado
+da D4Sign, a conferência da assinatura chama a mesma função e o acesso se abre
+sem ninguém digitar data nenhuma. Ver `docs/assinatura-eletronica.md`.
+
+O cartão continua aqui, e continua necessário: **contrato assinado em papel
+também existe**, e data errada também.
 
 ---
 
@@ -163,14 +166,13 @@ no log do servidor, e a tela continua dizendo o mesmo de sempre.
 
 ## O que ainda falta
 
-1. **Credenciais do SMTP** do escritório. Ele confirmou que tem o serviço; falta
-   servidor, porta, usuário, senha e qual endereço vai como remetente.
-2. **Subdomínio do portal** e o acesso ao DNS na Locaweb (dependência 3.3). O
-   endereço que o cliente vai digitar sai daí.
-3. **Token de API do D4Sign** (3.3), para que a assinatura eletrônica passe a
-   preencher o gatilho sozinha.
-4. **Logo em vetor** (3.2): a área do cliente usa o desenho do protótipo, como o
-   resto do sistema.
+Só uma coisa, e é a que impede o cliente de entrar: **a senha de app do
+Gmail** em `SMTP_SENHA`. Sem ela o código não sai e a área do cliente fica
+publicada e inútil. Conferir com `npm run email:teste`.
+
+Resolvidos desde então: o subdomínio (`portal.eferreira.adv.br`, no ar), o
+token do D4Sign (assinatura eletrônica entregue em 15/09/2026) e a identidade
+visual (o papel timbrado de verdade do escritório).
 
 ---
 

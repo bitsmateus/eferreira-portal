@@ -8,8 +8,9 @@
  * porta autorizada, com a mesma chave opaca e a mesma auditoria (regras 5 e
  * 6). Não existe atalho de download direto.
  *
- * A assinatura eletrônica é a etapa seguinte e depende do token do D4Sign,
- * que o escritório ainda não enviou.
+ * Gerar NÃO envia para assinatura. São dois passos, de propósito: o envio
+ * gasta um crédito do escritório e manda e-mail de verdade, e isso não se
+ * desfaz. Ver `src/lib/assinaturas.ts` e `docs/assinatura-eletronica.md`.
  */
 
 import { AcaoAuditoria, TipoDocumento, TipoPessoa } from '@prisma/client'

@@ -8,6 +8,7 @@ import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { RepresentantesLegais } from '@/componentes/representantes-legais'
 import { EtiquetaDeAcesso, EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
+import { enviosDoCliente } from '@/lib/assinaturas'
 import { obterCliente } from '@/lib/clientes'
 import { listarPastaDoCliente } from '@/lib/documentos'
 import { dataParaDiaCivil, diaEmSaoPaulo, formatarData } from '@/lib/datas'
@@ -46,6 +47,7 @@ export default async function PaginaDaFichaDoCliente({
   if (cliente === null) notFound()
 
   const documentos = await listarPastaDoCliente(sessao, cliente.id)
+  const envios = await enviosDoCliente(sessao, cliente.id)
 
   const ehPessoaJuridica = cliente.tipoPessoa === TipoPessoa.JURIDICA
 
@@ -188,7 +190,11 @@ export default async function PaginaDaFichaDoCliente({
             )}
 
             <div className="mt-4">
-              <PastaDoCliente clienteId={cliente.id} documentos={documentos} />
+              <PastaDoCliente
+                clienteId={cliente.id}
+                documentos={documentos}
+                envios={envios}
+              />
             </div>
           </div>
 

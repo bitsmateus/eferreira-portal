@@ -324,3 +324,50 @@ export async function enderecoDoAssinado(
 
   return resposta.url ?? null
 }
+
+/**
+ * O PDF assinado, em bytes, pronto para ser arquivado na pasta do cliente.
+ *
+ * São duas etapas porque a D4Sign devolve um endereço temporário em vez do
+ * arquivo: primeiro se pede o endereço, depois se busca o conteúdo. O endereço
+ * é de uso único e curto — não se guarda, não se mostra na tela e não vai para
+ * o banco.
+ *
+ * O teto de tamanho não é desconfiança da D4Sign: é que este conteúdo entra
+ * inteiro na memória do servidor, e um limite explícito é mais barato do que
+ * descobrir o problema com o processo derrubado.
+ */
+export const TAMANHO_MAXIMO_DO_ASSINADO = 40 * 1024 * 1024
+
+export async function baixarAssinado(
+  configuracao: ConfiguracaoD4Sign,
+  uuidDocumento: string,
+): Promise<Uint8Array | null> {
+  const url = await enderecoDoAssinado(configuracao, uuidDocumento)
+  if (url === null || url === '') return null
+
+  const resposta = await fetch(url)
+
+  if (!resposta.ok) {
+    // A URL vem da D4Sign e pode ir para o log: ela não carrega as credenciais
+    // (elas ficam na chamada anterior), mas dá acesso ao documento assinado.
+    // Por isso a mensagem diz o que houve sem repetir o endereço.
+    throw new FalhaNaD4Sign(
+      resposta.status,
+      'A D4Sign deu um endereço para o documento assinado, mas ele não abriu.',
+    )
+  }
+
+  const declarado = Number(resposta.headers.get('content-length') ?? '')
+  if (Number.isFinite(declarado) && declarado > TAMANHO_MAXIMO_DO_ASSINADO) {
+    throw new FalhaNaD4Sign(200, 'O documento assinado é grande demais.')
+  }
+
+  const conteudo = new Uint8Array(await resposta.arrayBuffer())
+
+  if (conteudo.byteLength > TAMANHO_MAXIMO_DO_ASSINADO) {
+    throw new FalhaNaD4Sign(200, 'O documento assinado é grande demais.')
+  }
+
+  return conteudo
+}

@@ -39,9 +39,9 @@ function Botao({
  * e não tinha onde responder. É aqui que se responde — e é esta data que abre
  * a porta do portal para o cliente.
  *
- * Quando o D4Sign entrar (dependência 3.3, travada no token de API), quem vai
- * preencher isto é o retorno da assinatura. Até lá, e para o contrato assinado
- * em papel, quem informa é o operador.
+ * Desde 15/09/2026, o contrato assinado pela D4Sign preenche isto sozinho —
+ * a conferência da assinatura chama a mesma função. Este cartão continua aqui
+ * para o contrato assinado EM PAPEL e para corrigir data errada.
  */
 export function AcessoDoCliente({
   clienteId,

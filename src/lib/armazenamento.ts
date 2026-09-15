@@ -110,6 +110,30 @@ export async function urlTemporariaDeLeitura(
   return getSignedUrl(cliente(), comando, { expiresIn: validadeEmSegundos() })
 }
 
+/**
+ * Lê o arquivo inteiro para a memória.
+ *
+ * Existe para a assinatura eletrônica, que precisa **mandar os bytes** do PDF
+ * para a D4Sign — a URL assinada não serve, porque ela é curta e de uso
+ * externo, e o que a plataforma quer é o arquivo no corpo do pedido.
+ *
+ * Carregar tudo na memória é aceitável aqui e só aqui: o que se assina são os
+ * documentos gerados pelo próprio sistema, que são PDFs de poucas páginas. Não
+ * use isto para servir arquivo a navegador — para isso existe
+ * `urlTemporariaDeLeitura`, que não passa o conteúdo pelo servidor.
+ */
+export async function lerArquivo(chave: string): Promise<Uint8Array> {
+  const resposta = await cliente().send(
+    new GetObjectCommand({ Bucket: balde(), Key: chave }),
+  )
+
+  if (resposta.Body === undefined) {
+    throw new Error(`O arquivo ${chave} não tem conteúdo no armazenamento.`)
+  }
+
+  return new Uint8Array(await resposta.Body.transformToByteArray())
+}
+
 /** Usado para desfazer o envio quando a gravação no banco falha. */
 export async function removerArquivo(chave: string): Promise<void> {
   await cliente().send(new DeleteObjectCommand({ Bucket: balde(), Key: chave }))

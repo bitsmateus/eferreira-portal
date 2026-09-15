@@ -8,6 +8,7 @@ import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { listarAndamentosDoCaso, listarStatus } from '@/lib/andamentos'
 import { obterCaso } from '@/lib/casos'
+import { enviosDoCliente } from '@/lib/assinaturas'
 import { listarDocumentosDoCaso } from '@/lib/documentos'
 import { diaEmSaoPaulo, formatarData } from '@/lib/datas'
 import { FormularioDeAndamento } from './formulario-de-andamento'
@@ -41,10 +42,11 @@ export default async function PaginaDoCaso({
   const caso = await obterCaso(sessao, id)
   if (caso === null) notFound()
 
-  const [documentos, andamentos, status] = await Promise.all([
+  const [documentos, andamentos, status, envios] = await Promise.all([
     listarDocumentosDoCaso(sessao, caso.id),
     listarAndamentosDoCaso(sessao, caso.id),
     listarStatus(),
+    enviosDoCliente(sessao, caso.cliente.id),
   ])
 
   const hoje = diaEmSaoPaulo(new Date())
@@ -116,6 +118,7 @@ export default async function PaginaDoCaso({
               <PastaDoCliente
                 clienteId={caso.cliente.id}
                 documentos={documentos}
+                envios={envios}
                 titulo="Documentos deste caso"
                 mostrarVinculo={false}
               />

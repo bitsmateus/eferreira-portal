@@ -6,10 +6,10 @@
  * `contratoAssinadoEm` era lido e nunca escrito, e portanto nenhum cliente
  * jamais entraria. É esta função que destranca a porta.
  *
- * Quando a integração com o D4Sign existir (dependência 3.3, travada no token
- * de API), é ela que vai chamar `registrarAssinatura` ao receber o documento
- * assinado de volta. Enquanto isso, quem registra é o operador, com a data que
- * consta no documento — o que também cobre o contrato assinado em papel.
+ * Desde 15/09/2026 a assinatura eletrônica chama `registrarAssinatura` sozinha
+ * quando o CONTRATO volta assinado da D4Sign — ver `src/lib/assinaturas.ts`
+ * (no plural). Esta tela continua existindo e continua necessária: contrato
+ * assinado EM PAPEL também existe, e erro de data também.
  *
  * Regra 6: registrar e revogar são escritas, e escrita sem autor identificado
  * não serve de prova. As duas passam pela auditoria.

@@ -40,6 +40,20 @@ enum SituacaoCaso {
   ARQUIVADO
 }
 
+/// Onde um documento está no caminho da assinatura eletrônica (D4Sign).
+///
+/// NO_COFRE existe por causa de uma falha possível e feia: o PDF sobe para o
+/// cofre do escritório e o passo seguinte — a lista de signatários, ou o envio
+/// — é recusado. O documento fica lá, e esta integração não apaga nada (pedido
+/// expresso do escritório, 14/09/2026). Sem este estado, ele sumiria do sistema
+/// e continuaria existindo no cofre, sem ninguém saber de onde veio.
+enum SituacaoDoEnvio {
+  NO_COFRE
+  AGUARDANDO
+  ASSINADO
+  CANCELADO
+}
+
 enum TipoDocumento {
   CONTRATO
   PROCURACAO
@@ -106,10 +120,11 @@ model Usuario {
   credencialDaApi    CredencialApi?  @relation("UsuarioDaCredencial")
   credenciaisCriadas CredencialApi[] @relation("CredencialCriadaPor")
 
-  clientesCadastrados Cliente[]   @relation("ClienteCriadoPor")
-  casosResponsavel    Caso[]      @relation("CasoResponsavel")
-  andamentosLancados  Andamento[] @relation("AndamentoAutor")
-  documentosEnviados  Documento[] @relation("DocumentoEnviadoPor")
+  clientesCadastrados Cliente[]             @relation("ClienteCriadoPor")
+  casosResponsavel    Caso[]                @relation("CasoResponsavel")
+  andamentosLancados  Andamento[]           @relation("AndamentoAutor")
+  documentosEnviados  Documento[]           @relation("DocumentoEnviadoPor")
+  assinaturasPedidas  EnvioParaAssinatura[] @relation("EnvioPedidoPor")
   registrosAuditoria  Auditoria[]
 
   @@index([perfil])
@@ -412,6 +427,13 @@ model Documento {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
+  /// Envios deste documento para assinatura. Plural porque uma tentativa
+  /// recusada não apaga a anterior — o histórico é parte do rastro (regra 6).
+  envios EnvioParaAssinatura[] @relation("DocumentoEnviado")
+
+  /// Preenchido quando ESTE documento é o PDF assinado que voltou da D4Sign.
+  origemDaAssinatura EnvioParaAssinatura? @relation("DocumentoAssinado")
+
   @@index([clienteId])
   @@index([casoId])
   @@map("documento")
@@ -474,6 +496,63 @@ model CredencialApi {
 
   @@index([revogadoEm])
   @@map("credencial_api")
+}
+
+// ---------------------------------------------------------------------------
+// Envio para assinatura eletrônica — Anexo II, item 3.4 (resolvido: D4Sign).
+//
+// Um documento gerado que foi para a plataforma de assinatura. Guardar isto no
+// banco não é conveniência: sem o `uuidDocumento`, o portal não tem como
+// perguntar depois se aquele documento já foi assinado, e o PDF assinado nunca
+// voltaria para a pasta do cliente.
+//
+// CADA LINHA AQUI CUSTOU UM CRÉDITO do escritório (Cláusula 6ª) e disparou
+// e-mail de verdade. Não existe ensaio: por isso o envio é um passo explícito,
+// com tela de confirmação, e nunca um efeito colateral da geração do PDF.
+// ---------------------------------------------------------------------------
+
+model EnvioParaAssinatura {
+  id String @id @default(cuid())
+
+  /// O documento gerado que foi enviado — o PDF sem assinatura.
+  documentoId String
+  documento   Documento @relation("DocumentoEnviado", fields: [documentoId], references: [id], onDelete: Cascade)
+
+  /// O identificador do documento dentro da D4Sign. É por ele que se pergunta
+  /// se já assinaram e é por ele que se baixa o assinado.
+  uuidDocumento String @unique
+  /// O cofre em que ele foi criado, guardado junto: a variável de ambiente
+  /// pode mudar, e depois ninguém saberia onde este documento foi parar.
+  cofre         String
+
+  situacao         SituacaoDoEnvio @default(NO_COFRE)
+  /// O texto cru que a D4Sign devolveu na última consulta. Guardado porque a
+  /// tradução para `situacao` é nossa, e situação nova deles não pode virar
+  /// informação perdida.
+  situacaoNaD4Sign String?
+
+  /// Para quem o e-mail de assinatura foi, com nome e papel. É a resposta à
+  /// pergunta "para qual endereço isto foi?", feita sempre depois do envio.
+  signatarios Json
+
+  enviadoEm   DateTime?
+  conferidoEm DateTime?
+  assinadoEm  DateTime?
+
+  /// O PDF assinado, já arquivado na pasta do cliente. Nulo enquanto não
+  /// voltar. O documento original continua existindo, ao lado deste.
+  documentoAssinadoId String?    @unique
+  documentoAssinado   Documento? @relation("DocumentoAssinado", fields: [documentoAssinadoId], references: [id], onDelete: SetNull)
+
+  pedidoPorId String?
+  pedidoPor   Usuario? @relation("EnvioPedidoPor", fields: [pedidoPorId], references: [id], onDelete: SetNull)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([documentoId])
+  @@index([situacao])
+  @@map("envio_para_assinatura")
 }
 
 // ---------------------------------------------------------------------------
