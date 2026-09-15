@@ -86,8 +86,12 @@ conferida de ponta a ponta.
 | Postgres 16 | no ar | no ar |
 | MinIO | no ar | no ar |
 | Balde `eferreira-documentos` | criado, privado | criado, privado |
-| Aplicação | **no ar** | construída, sem domínio |
-| Domínio | `portal.eferreira.adv.br` | falta registro de DNS |
+| Aplicação | **no ar** | **no ar** |
+| Domínio | `portal.eferreira.adv.br` | `eferreira-homologacao-portal.un0mhh.easypanel.host` |
+
+Homologação responde pelo endereço automático do EasyPanel. Se quiserem
+`homologacao.eferreira.adv.br`, falta só um registro A na Locaweb apontando
+para o mesmo IP — o domínio já está cadastrado no painel, esperando o DNS.
 
 O servidor hospeda outro cliente, no projeto `consensus`. Não se encosta nele.
 
@@ -104,6 +108,10 @@ ambiente novo tropeça nisso.
 define `PORT=3000`. Escolhido o segundo, que é o que o `Dockerfile` expõe. Sem
 isso, o domínio responde 502 com a aplicação saudável por trás — o pior tipo de
 erro para diagnosticar.
+
+E o EasyPanel cria sozinho um domínio `*.easypanel.host` apontando para a 80.
+Ele **também** precisa ser corrigido para 3000, ou fica um endereço público
+devolvendo 502 ao lado de um que funciona. Os dois foram ajustados em 15/09.
 
 **3. O primeiro administrador.** A semente entrou no `CMD` do contêiner, depois
 de `migrate deploy`. Ela é idempotente e roda em toda subida: instalação nova
