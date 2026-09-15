@@ -33,14 +33,56 @@ const DOCUMENTO_DO_CLIENTE = '39053344705'
 let sessaoDoAdmin: SessaoServidor
 let sessaoDeOperador: SessaoServidor
 let administradorId: string
+/** Administradores reais da base, afastados enquanto a suíte roda. */
+let afastados: string[] = []
 
 async function limpar(): Promise<void> {
   await prisma.usuario.deleteMany({ where: { email: { in: EMAILS } } })
   await prisma.cliente.deleteMany({ where: { documento: DOCUMENTO_DO_CLIENTE } })
 }
 
+/**
+ * A trava do último administrador é uma regra sobre o banco INTEIRO, não sobre
+ * as linhas que este teste criou. Numa base de desenvolvimento com o
+ * administrador da semente, "o único administrador ativo" seria mentira, e o
+ * teste falharia por causa do ambiente — passando no CI, que roda em banco
+ * limpo, e falhando na máquina de quem estivesse trabalhando.
+ *
+ * Então a suíte afasta os administradores que já existiam e os devolve no fim.
+ * Desativar é reversível e não apaga nada: ninguém perde acesso de verdade.
+ */
+async function afastarOutrosAdministradores(): Promise<void> {
+  const outros = await prisma.usuario.findMany({
+    where: {
+      perfil: PerfilUsuario.ADMINISTRADOR,
+      situacao: SituacaoUsuario.ATIVO,
+      email: { notIn: EMAILS },
+    },
+    select: { id: true },
+  })
+
+  afastados = outros.map((usuario) => usuario.id)
+
+  if (afastados.length > 0) {
+    await prisma.usuario.updateMany({
+      where: { id: { in: afastados } },
+      data: { situacao: SituacaoUsuario.INATIVO },
+    })
+  }
+}
+
+async function devolverOsAfastados(): Promise<void> {
+  if (afastados.length === 0) return
+  await prisma.usuario.updateMany({
+    where: { id: { in: afastados } },
+    data: { situacao: SituacaoUsuario.ATIVO },
+  })
+  afastados = []
+}
+
 beforeAll(async () => {
   await limpar()
+  await afastarOutrosAdministradores()
 
   const admin = await prisma.usuario.create({
     data: {
@@ -64,6 +106,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await limpar()
+  await devolverOsAfastados()
   await prisma.$disconnect()
 })
 

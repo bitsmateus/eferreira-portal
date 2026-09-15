@@ -23,6 +23,7 @@ import { POST as postCliente } from '@/app/api/v1/clientes/route'
 import { PUT as putCliente } from '@/app/api/v1/clientes/[id]/route'
 import { POST as postCaso } from '@/app/api/v1/casos/route'
 import { POST as postAndamento } from '@/app/api/v1/casos/[id]/andamentos/route'
+import { lerChave } from '@/lib/chave-de-api'
 import { criarCredencial, revogarCredencial } from '@/lib/credenciais'
 import { SemAutorizacao, type SessaoServidor } from '@/lib/autorizacao'
 import { prisma } from '@/lib/prisma'
@@ -74,6 +75,20 @@ function parametros(id: string) {
 
 async function corpoDe(resposta: Response): Promise<Record<string, unknown>> {
   return (await resposta.json()) as Record<string, unknown>
+}
+
+/**
+ * O segredo da chave, lido pela MESMA função que a autenticação usa.
+ *
+ * Partir a chave em `_` aqui já deu falha intermitente no CI: o segredo é
+ * base64url e tem `_` no alfabeto, então `split('_').slice(-1)` às vezes
+ * devolvia um caractere só — e `não contém "9"` é falso para qualquer hash
+ * hexadecimal. O teste passava ou falhava conforme o sorteio.
+ */
+function segredoDa(chave: string): string {
+  const lida = lerChave(chave)
+  if (lida === null) throw new Error('chave em formato inesperado')
+  return lida.segredo
 }
 
 async function limpar(): Promise<void> {
@@ -178,7 +193,7 @@ describe('quem pode gerar credencial', () => {
       select: { segredoHash: true, final: true },
     })
 
-    const segredo = chaveDeLeitura.split('_').slice(-1)[0] ?? ''
+    const segredo = segredoDa(chaveDeLeitura)
     expect(guardada?.segredoHash).not.toContain(segredo)
     expect(guardada?.final).toBe(segredo.slice(-4))
   })
@@ -189,7 +204,7 @@ describe('quem pode gerar credencial', () => {
       select: { detalhes: true },
     })
 
-    const segredo = chaveDeLeitura.split('_').slice(-1)[0] ?? ''
+    const segredo = segredoDa(chaveDeLeitura)
     expect(JSON.stringify(registro?.detalhes)).not.toContain(segredo)
   })
 })
