@@ -217,21 +217,20 @@ Os segredos gerados (senhas do Postgres e do MinIO) **só existem no EasyPanel**
 — nunca passaram pelo repositório. Ficam visíveis em cada serviço, na aba
 Environment.
 
-- **D4Sign: credenciais de PRODUÇÃO em mãos e conferidas** (14/09/2026). A
-  conta responde, tem **26 cofres** e **32 envios restantes** de 50 créditos.
-  Conferir com `npm run d4sign:conta`.
+- **D4Sign: RESOLVIDO de ponta a ponta** (14/09/2026). Token de produção e
+  crypt key já estão no EasyPanel e foram conferidos localmente com
+  `npm run d4sign:conta` (só leitura — não gasta crédito nem manda e-mail):
+  ambiente de produção, **26 cofres**, e o cofre configurado em
+  `D4SIGN_COFRE` bate exatamente com o **"Escritorio"** da conta. Restam
+  **31 envios** de 50 créditos.
 
-  **Não existe ensaio:** todo envio consome um crédito do escritório (custo de
-  terceiro, Cláusula 6ª) e manda e-mail de assinatura de verdade para quem
-  estiver na lista.
+  **Não existe ensaio:** todo envio de verdade (fora do `d4sign:conta`)
+  consome um crédito do escritório (custo de terceiro, Cláusula 6ª) e manda
+  e-mail de assinatura de verdade para quem estiver na lista.
 
-  **O cofre já foi escolhido: "Escritorio"** (`D4SIGN_COFRE`, commitado em
-  `.env.example`). A conta é compartilhada com documentos de muitos clientes,
-  já separados por área — "Procurações Civeis", "contratos eFerreira
-  advogados" —, e este é o cofre genérico do escritório. **Falta o
-  `D4SIGN_TOKEN_API` e o `D4SIGN_CRYPT_KEY` entrarem no `.env`/EasyPanel** —
-  são secretos, nunca passam pelo repositório; confirmar com o escritório se
-  já foram cadastrados.
+  A conta é compartilhada com documentos de muitos clientes, já separados
+  por área — "Procurações Civeis", "contratos eFerreira advogados" —, e o
+  cofre escolhido é o genérico do escritório.
 - **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
   construída depois. A chave dela sai com acesso total, por decisão do
   escritório. Nada a gerar por ora.
@@ -453,10 +452,10 @@ Teste de restauração do backup: **executado com sucesso**, antes de existir
 dado real (`npm run banco:teste-restauracao`).
 
 **A aplicação já está publicada e no ar em produção**
-(`https://portal.eferreira.adv.br` — ver `docs/03-implantacao-easypanel.md`) e
-o **SMTP está resolvido de ponta a ponta**, senha de app testada e replicada
-no EasyPanel. Próximo passo: a **Sprint 6** — demonstração, aceite e
-produção. O que ainda falta de terceiros: o `D4SIGN_TOKEN_API` e o
-`D4SIGN_CRYPT_KEY` no `.env`/EasyPanel (o cofre já está escolhido), o
-registro de DNS de `homologacao.eferreira.adv.br` e o backup automático do
-Postgres em produção com o teste de restauração repetido lá.
+(`https://portal.eferreira.adv.br` — ver `docs/03-implantacao-easypanel.md`),
+o **SMTP está resolvido de ponta a ponta** e o **D4Sign também**: token e
+crypt key de produção conferidos com `npm run d4sign:conta`, cofre
+"Escritorio" batendo com `D4SIGN_COFRE`. Próximo passo: a **Sprint 6** —
+demonstração, aceite e produção. O que ainda falta de terceiros: o registro
+de DNS de `homologacao.eferreira.adv.br` e o backup automático do Postgres
+em produção com o teste de restauração repetido lá.
