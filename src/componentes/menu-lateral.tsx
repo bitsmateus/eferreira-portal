@@ -5,7 +5,12 @@ import { usePathname } from 'next/navigation'
 
 /**
  * O menu do protótipo. Os itens ainda sem tela ficam visíveis e apagados, com
- * a sprint que os traz — é mais honesto com quem usa do que esconder.
+ * o motivo — é mais honesto com quem usa do que esconder.
+ *
+ * "Documentos" dizia "Entra na Sprint 3" muito depois de a Sprint 3 ter
+ * entregue a geração de documentos. Um aviso que envelhece e ninguém percebe
+ * é pior do que nenhum: quem lê conclui que o sistema está atrasado. O texto
+ * agora diz onde os documentos ESTÃO, que é o que a pessoa quer saber.
  */
 const MENU = [
   {
@@ -17,7 +22,12 @@ const MENU = [
     itens: [
       { icone: '◉', rotulo: 'Clientes', href: '/painel/clientes' },
       { icone: '▦', rotulo: 'Casos', href: '/painel/casos' },
-      { icone: '▣', rotulo: 'Documentos', href: null, sprint: 'Sprint 3' },
+      {
+        icone: '▣',
+        rotulo: 'Documentos',
+        href: null,
+        motivo: 'Cada documento fica na pasta do cliente a que pertence',
+      },
     ],
   },
   {
@@ -59,7 +69,7 @@ export function MenuLateral() {
               return (
                 <div
                   key={item.rotulo}
-                  title={`Entra na ${'sprint' in item ? item.sprint : 'próxima sprint'}`}
+                  title={'motivo' in item ? item.motivo : 'Entra numa próxima etapa'}
                   className="flex cursor-default items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] text-[#B9B9C0] opacity-40"
                 >
                   {conteudo}

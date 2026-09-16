@@ -324,6 +324,21 @@ export default async function PaginaDaAssinatura({
           </div>
         )}
 
+        {/*
+          Conferir o PDF antes de gastar o crédito.
+          A tela dizia o NOME do arquivo e não dava como abri-lo — e é o último
+          momento em que dá para descobrir que se gerou o documento do caso
+          errado. Depois do envio o crédito foi e o cliente já recebeu.
+        */}
+        <a
+          href={`/painel/documentos/${documento.id}/arquivo`}
+          target="_blank"
+          rel="noreferrer"
+          className="botao botao-secundario botao-pequeno mb-4 inline-flex"
+        >
+          Conferir o documento antes de enviar
+        </a>
+
         <p className="mb-3 text-[12.5px] leading-relaxed text-texto-2">
           Quem recebe o e-mail de assinatura:
         </p>
