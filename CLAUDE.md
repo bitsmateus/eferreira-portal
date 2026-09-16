@@ -307,6 +307,33 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**A busca de endereço pelo CEP está de pé** (16/09/2026) — era o item 1 da
+lista de melhorias e o maior ganho de tempo disponível. Digitado o CEP, o
+sistema preenche endereço, cidade e UF. Não é só digitação poupada: é em
+cidade e UF que o erro custa caro, porque é delas que sai a cidade da
+assinatura dos documentos.
+
+A regra é uma só e vale sempre: **a busca preenche campo vazio e não encosta
+em campo preenchido**. Quem corrigiu um endereço à mão não vê a correção
+sumir por ter mexido no CEP depois. Conferido em produção nos três casos que
+importam: cadastro do zero, campo já escrito e CEP inexistente.
+
+O número e o complemento ficam por conta de quem cadastra — o CEP não os
+conhece —, e por isso o endereço entra como "Avenida Paulista, ", com a
+vírgula esperando. "Avenida Paulista, Bela Vista" pareceria pronto e iria
+assim para a procuração, sem número. O bairro vai na dica, para entrar depois
+do número, na ordem certa.
+
+**É conveniência, nunca autoridade:** falha de rede, tempo esgotado ou CEP
+inexistente devolvem nada, e a tela segue como sempre foi. Cadastrar cliente
+não pode depender de um serviço de terceiro estar no ar. O serviço é o
+ViaCEP — público, sem chave, sem segredo —, a consulta passa pelo servidor e
+exige sessão da equipe, e trocar de fornecedor é mexer só em `src/lib/cep.ts`.
+
+**Armadilha registrada:** o ViaCEP responde **HTTP 200** para CEP inexistente,
+com `{"erro":"true"}` — e o `true` vem como **texto**, não como booleano.
+Quem tratar só o status ou só o booleano grava endereço vazio no cadastro.
+
 **Passeio de operador em produção** (16/09/2026): o sistema foi dirigido de
 ponta a ponta como uma pessoa o usaria, errando de propósito. Funcionou tudo
 — pessoa física e jurídica, caso com honorários parcelados, andamento,
@@ -330,9 +357,7 @@ Quatro defeitos vieram junto, e todos já estão corrigidos e no ar:
 **O que ficou como melhoria, por ordem de valor.** Nada disso é obrigação de
 contrato; é o que faria diferença no uso diário:
 
-1. **Busca de endereço pelo CEP.** Hoje CEP, rua, bairro, cidade e UF são
-   digitados um a um em todo cliente. É o maior ganho de tempo disponível, e
-   reduz erro justamente em cidade/UF, que vão para os documentos.
+1. ~~Busca de endereço pelo CEP.~~ **FEITA em 16/09/2026** — ver acima.
 2. **Uma tela de Documentos de verdade.** Agora que a assinatura existe, a
    pergunta diária é "quais contratos estão aguardando assinatura?", e ela só
    se responde abrindo cliente por cliente.
