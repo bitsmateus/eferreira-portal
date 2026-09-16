@@ -303,6 +303,26 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**PRODUÇÃO está com o código novo** (16/09/2026, commit `596e934`). Antes
+disso ela rodava o commit de 14/09 e estava **sete commits atrás** — sem a
+tela de Usuários e sem a assinatura eletrônica. Conferido entrando no painel:
+`/painel/usuarios`, `/painel/api` e `/painel/clientes` respondem 200.
+
+A migração `20260915151745_assinatura_eletronica` subiu junto, e isso não é
+suposição: o `CMD` do Dockerfile encadeia
+`migrate deploy && prisma:semear && start` com `&&`, então uma migração
+falhada impediria a aplicação de subir. Ela está servindo.
+
+**O EasyPanel NÃO faz deploy automático no push.** A origem é um repositório
+git comum, não a integração do GitHub: depois de cada `git push` alguém
+precisa disparar o deploy no painel, ou o que está no ar continua velho — foi
+exatamente o que aconteceu entre 14 e 16/09.
+
+**HOMOLOGAÇÃO continua no commit de 14/09**, de propósito: ela ainda está com
+o token de PRODUÇÃO da D4Sign (ver o risco aberto, acima), e publicar a tela
+de assinatura lá antes de resolver isso é dar um botão que gasta crédito de
+verdade num ambiente chamado "testes".
+
 **A assinatura eletrônica está de pé** (15/09/2026), fechando a Sprint 3 e a
 dependência 3.4. O ciclo agora vai de ponta a ponta: gerar, enviar, o cliente
 assina no e-mail, o PDF assinado volta para a pasta e — sendo o contrato — o
