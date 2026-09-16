@@ -307,6 +307,38 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Mais uma rodada de defeitos do uso real, todos corrigidos** (16/09/2026) —
+sequência direta da rodada anterior, achados assim que o escritório voltou a
+testar depois do deploy:
+
+1. **A correção do envio para assinatura tinha uma segunda falha**, essa só
+   visível contra a D4Sign de verdade: `definirSignatarios` esperava a
+   resposta do `createlist` como um array solto, mas ela vem como
+   `{ message: [{ key_signer, email, act, ... }] }` — um objeto por
+   signatário confirmado. Com a checagem errada, `Array.isArray(resposta)`
+   dava sempre falso e TODO envio passou a ser recusado, mesmo quando a
+   D4Sign tinha cadastrado o signatário certinho. Corrigido para olhar
+   `resposta.message` e conferir que cada entrada trouxe o `key_signer` — o
+   sinal de verdade de que a D4Sign confirmou o cadastro.
+
+2. **"Em casos, clico em excluir e nada acontece."** Três componentes
+   tinham a mesma doença: a recusa da exclusão (caso ou cliente com
+   andamento/documento) precisa aparecer na tela, mas cada um perdia essa
+   mensagem de um jeito diferente — `menu-do-caso.tsx` fechava o menu em vez
+   de reabri-lo (mesmo defeito que `menu-do-cliente.tsx` já tinha corrigido,
+   só faltou replicar), e os dois botões de exclusão da ficha
+   (`excluir-caso-botao.tsx`, `excluir-cliente-botao.tsx`) ficavam presos na
+   tela de confirmação, que nunca mostra o motivo da recusa. Os três agora
+   saem da confirmação assim que a ação responde, seja qual for o resultado.
+
+3. **A marca d'água do timbre ficou mais fraca.** Ela chegava a 58% de
+   escurecimento no arquivo original — forte o bastante para, num contrato
+   de várias cláusulas, cruzar no meio de um parágrafo e parecer um traço
+   solto no meio do texto (o que o escritório reportou como documento
+   "quebrado"). Reduzida a 25% da intensidade original, só na faixa central
+   onde ela vive — cabeçalho e rodapé (ambos medidos e conferidos) não foram
+   tocados. Ver o comentário em `src/lib/timbre.ts`.
+
 **Três defeitos achados no uso real, todos corrigidos** (16/09/2026):
 
 1. **O envio para assinatura recusava com "This file not have signers"**,

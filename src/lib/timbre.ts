@@ -18,6 +18,21 @@
  * imagem que precisa ser trocada — `src/lib/escritorio.ts` sozinho não basta.
  * ─────────────────────────────────────────────────────────────────────────
  *
+ * ─────────────────────────────────────────────────────────────────────────
+ * A MARCA D'ÁGUA FICOU MAIS FRACA (16/09/2026)
+ *
+ * No arquivo original, a marca d'água central chegava a 58% de escurecimento
+ * (148 de 255) — forte o bastante para, num contrato de várias cláusulas,
+ * cruzar bem no meio de um parágrafo e parecer um traço horizontal solto no
+ * meio do texto. Pedido do escritório: mantê-la, só que bem mais sutil.
+ *
+ * O cabeçalho (monograma) e o rodapé (advogado, OAB, contato) não foram
+ * tocados — só a faixa central (aprox. 2,9cm a 27,7cm do topo, onde não há
+ * nada além da marca d'água) teve a escuridão de cada pixel reduzida a 25%
+ * do valor original. Cabeçalho e rodapé continuam exatamente como vieram do
+ * escritório.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
  * A imagem entra embutida em base64 e não por caminho de arquivo. São ~76 KB
  * de texto, e em troca o HTML é autossuficiente: a prévia dentro do `iframe` e
  * o Chromium que imprime o PDF renderizam sem depender de o servidor servir um
