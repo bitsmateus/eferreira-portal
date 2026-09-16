@@ -18,7 +18,13 @@ const config: NextConfig = {
         source: '/:caminho*',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'X-Frame-Options', value: 'DENY' },
+          // SAMEORIGIN, não DENY: a prévia de documento em
+          // src/app/painel/clientes/[id]/gerar/page.tsx embute o PDF da
+          // própria rota num <iframe> — DENY bloqueava isso mesmo sendo a
+          // mesma origem, e o navegador não mostra erro nenhum, só um
+          // quadro em branco. SAMEORIGIN continua recusando qualquer site
+          // de fora tentar embutir o portal.
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           {
             key: 'Strict-Transport-Security',
