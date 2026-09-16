@@ -19,7 +19,8 @@ import {
   formatarTelefone,
 } from '@/lib/formatos'
 import { formatarDocumento, normalizarDocumento, tipoDoDocumento } from '@/lib/documento'
-import { conferirDocumento, type EstadoDoCliente } from './acoes'
+import { enderecoParaOCampo } from '@/lib/cep'
+import { conferirDocumento, consultarCep, type EstadoDoCliente } from './acoes'
 
 export type ValoresDoCliente = {
   documento: string
@@ -118,6 +119,18 @@ function BotaoSalvar({ rotulo }: { rotulo: string }) {
   )
 }
 
+/** A busca de endereço enquanto se digita o CEP. */
+type BuscaDoCep =
+  | { estado: 'parado' }
+  | { estado: 'procurando' }
+  | { estado: 'nao_achou' }
+  | {
+      estado: 'achou'
+      endereco: { logradouro: string; bairro: string; cidade: string; uf: string }
+      /** Quais campos esta busca preencheu — os que estavam vazios. */
+      preenchidos: string[]
+    }
+
 /** O reconhecimento do passo 2, enquanto se digita o CPF ou CNPJ. */
 type Reconhecimento =
   | { estado: 'vazio' }
@@ -173,6 +186,8 @@ export function FormularioDeCliente({
   const [reconhecimento, setReconhecimento] = useState<Reconhecimento>({
     estado: 'vazio',
   })
+  const [buscaDoCep, setBuscaDoCep] = useState<BuscaDoCep>({ estado: 'parado' })
+  const ultimoCep = useRef('')
   const [, iniciarConsulta] = useTransition()
   /** Número da última consulta disparada, para descartar resposta atrasada. */
   const ultimaConsulta = useRef(0)
@@ -245,6 +260,100 @@ export function FormularioDeCliente({
 
     return () => clearTimeout(relogio)
   }, [campos.documento, reconhecerAoDigitar])
+
+  /**
+   * A BUSCA PELO CEP NUNCA APAGA O QUE A PESSOA ESCREVEU.
+   *
+   * Só preenche campo vazio. É a regra que torna o comportamento previsível:
+   * quem corrigiu um endereço à mão não vê a correção sumir porque mexeu no
+   * CEP depois, e quem está cadastrando do zero tem tudo preenchido.
+   *
+   * O número e o complemento ficam por conta de quem cadastra — o CEP não os
+   * conhece —, e o bairro aparece na dica para ser acrescentado, em vez de
+   * entrar no meio do texto e parecer pronto sem o número.
+   */
+  useEffect(() => {
+    const digitos = normalizarDocumento(campos.cep)
+
+    if (digitos.length !== 8) {
+      setBuscaDoCep({ estado: 'parado' })
+      return
+    }
+
+    // O mesmo CEP não é consultado duas vezes: formatar no blur muda o texto
+    // do campo sem mudar o CEP.
+    if (digitos === ultimoCep.current) return
+
+    setBuscaDoCep({ estado: 'procurando' })
+
+    const relogio = setTimeout(() => {
+      iniciarConsulta(async () => {
+        const achado = await consultarCep(digitos)
+        ultimoCep.current = digitos
+
+        if (achado === null) {
+          setBuscaDoCep({ estado: 'nao_achou' })
+          return
+        }
+
+        const preenchidos: string[] = []
+        setCampos((atual) => {
+          const novo = { ...atual }
+          const sugestaoDeEndereco = enderecoParaOCampo(achado)
+
+          if (atual.endereco.trim() === '' && sugestaoDeEndereco !== '') {
+            novo.endereco = sugestaoDeEndereco
+            preenchidos.push('endereço')
+          }
+          if (atual.cidade.trim() === '') {
+            novo.cidade = achado.cidade
+            preenchidos.push('cidade')
+          }
+          if (atual.uf.trim() === '') {
+            novo.uf = achado.uf
+            preenchidos.push('UF')
+          }
+          return novo
+        })
+
+        setBuscaDoCep({ estado: 'achou', endereco: achado, preenchidos })
+      })
+    }, 500)
+
+    return () => clearTimeout(relogio)
+  }, [campos.cep])
+
+  const dicaDoCep = (() => {
+    if (buscaDoCep.estado === 'procurando') {
+      return <p className="dica">Procurando o endereço…</p>
+    }
+    if (buscaDoCep.estado === 'nao_achou') {
+      return (
+        <p className="dica">
+          Não encontrei este CEP. Preencha o endereço à mão — o cadastro não
+          depende desta busca.
+        </p>
+      )
+    }
+    if (buscaDoCep.estado === 'achou') {
+      const { endereco, preenchidos } = buscaDoCep
+      return (
+        <p className="dica dica-ok">
+          {preenchidos.length === 0
+            ? 'CEP encontrado. Não mexi em nada: os campos já estavam preenchidos.'
+            : `Preenchi ${preenchidos.join(', ')}.`}
+          {endereco.bairro !== '' && (
+            <>
+              {' '}
+              Bairro: <b className="text-texto">{endereco.bairro}</b> — acrescente
+              depois do número.
+            </>
+          )}
+        </p>
+      )
+    }
+    return undefined
+  })()
 
   const dicaDoDocumento = (() => {
     if (reconhecimento.estado === 'consultando') {
@@ -563,6 +672,7 @@ export function FormularioDeCliente({
                   nome="cep"
                   rotulo="CEP"
                   erro={erros['cep']}
+                  dica={dicaDoCep}
                   obrigatorio={obrigatorio('cep')}
                 >
                   <input

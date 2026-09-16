@@ -15,6 +15,7 @@ import {
   validarCliente,
   type CamposDeCliente,
 } from '@/lib/clientes'
+import { buscarEnderecoPorCep, type EnderecoDoCep } from '@/lib/cep'
 import { texto, type ErrosDeCampo } from '@/lib/formulario'
 import { emailDaSessao, exigirSessaoDaEquipe } from '@/lib/sessao'
 
@@ -131,6 +132,22 @@ export async function conferirDocumento(valor: string): Promise<{
     nome: cliente.nome,
     quantidadeDeCasos: cliente.quantidadeDeCasos,
   }
+}
+
+/**
+ * Endereço a partir do CEP, para poupar digitação no cadastro.
+ *
+ * Passa pelo servidor, e não direto do navegador, por dois motivos: a tela
+ * não precisa saber qual serviço de CEP é usado, e trocar de fornecedor fica
+ * sendo mudança em um arquivo só. Exige sessão da equipe como qualquer outra
+ * ação do painel — não é porta aberta para consultar CEP de graça pelo nosso
+ * servidor.
+ *
+ * Devolve null em qualquer falha: cadastrar não pode depender disto.
+ */
+export async function consultarCep(cep: string): Promise<EnderecoDoCep | null> {
+  await exigirSessaoDaEquipe()
+  return buscarEnderecoPorCep(cep)
 }
 
 // ---------------------------------------------------------------------------
