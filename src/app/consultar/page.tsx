@@ -52,18 +52,14 @@ export default function PaginaDeConsulta() {
 
         <FormularioDeConsulta />
 
-        <div className="mt-7 border-t border-borda pt-[18px]">
-          <div className="aviso aviso-info">
-            <span aria-hidden="true">▲</span>
-            <div>
-              O código por e-mail existe por um motivo: sem ele, qualquer pessoa que
-              saiba um CPF ou CNPJ veria o processo daquele cliente. Dado de
-              processo é dado sensível de terceiro.
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-5 text-center text-[11.5px] text-texto-3">
+        {/*
+          O aviso explicando por que o código existe foi tirado da tela, a
+          pedido do escritório (16/09/2026) — a explicação de segurança que
+          interessa a quem desenvolve não precisa aparecer para o cliente que
+          só quer consultar o processo. O motivo em si continua documentado
+          aqui em cima e em docs/area-do-cliente.md.
+        */}
+        <p className="mt-7 border-t border-borda pt-[18px] text-center text-[11.5px] text-texto-3">
           É da equipe do escritório?{' '}
           <a href="/entrar" className="underline underline-offset-2">
             Entrar no painel

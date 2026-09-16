@@ -30,8 +30,26 @@ export default async function LayoutDoPainel({
   })
 
   return (
-    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[232px_1fr]">
-      <aside className="hidden flex-col gap-6 bg-grafite-800 px-3.5 py-5 md:flex">
+    /*
+     * A BARRA LATERAL FICA FIXA, E O JEITO DE GARANTIR ISSO É LIMITAR A
+     * ALTURA DO CONTÊINER INTEIRO.
+     *
+     * Antes, o grid tinha só `min-h-screen`: crescia junto com o conteúdo, e
+     * quando uma tela ficava mais alta que a janela era o DOCUMENTO inteiro
+     * que rolava — barra lateral incluída, porque ela é só mais uma coluna
+     * do mesmo grid. `h-screen` + `overflow-hidden` aqui trava a altura em
+     * exatamente uma tela; quem rola é só o miolo de cada página, no próprio
+     * `overflow-auto` que já existe em cada `page.tsx`.
+     *
+     * `min-h-0` na coluna da direita é o detalhe que faz isso funcionar de
+     * verdade: por padrão, um item de flex-column tem `min-height: auto`, o
+     * que o deixa crescer do tamanho do conteúdo mesmo dentro de um pai de
+     * altura fixa — e aí o `overflow-auto` do miolo nunca chega a entrar em
+     * ação. Zerar o mínimo é o que deixa o navegador cortar ali, em vez de
+     * empurrar a página inteira para baixo.
+     */
+    <div className="grid h-screen grid-cols-1 overflow-hidden md:grid-cols-[232px_1fr]">
+      <aside className="hidden flex-col gap-6 overflow-y-auto bg-grafite-800 px-3.5 py-5 md:flex">
         <Marca />
 
         <MenuLateral />
@@ -53,7 +71,7 @@ export default async function LayoutDoPainel({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-col bg-fundo">
+      <div className="flex min-h-0 min-w-0 flex-col bg-fundo">
         <div className="flex items-center gap-3 bg-grafite-800 px-4 py-3 md:hidden">
           <Marca tamanho="pequena" />
         </div>
