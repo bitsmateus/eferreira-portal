@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { TipoPessoa } from '@prisma/client'
 
 import { interpretarBusca, montarLinha, validarCliente } from '@/lib/clientes'
+import { obrigatoriosPara } from '@/lib/campos-do-cliente'
 import { normalizarParaBusca } from '@/lib/formatos'
 
 /**
@@ -368,23 +369,32 @@ describe('campos obrigatórios (definidos pelo escritório em 14/09/2026)', () =
 
   // O escritório foi explícito: "melhor não deixar salvar, para não criar
   // futuras pendências".
-  it.each([
-    ['rg', 'RG'],
-    ['estadoCivil', 'Estado civil'],
-    ['profissao', 'Profissão'],
-    ['nacionalidade', 'Nacionalidade'],
-    ['nomeMae', 'Nome da mãe'],
-    ['email', 'E-mail'],
-    ['telefone', 'Telefone'],
-    ['cep', 'CEP'],
-    ['endereco', 'Endereço'],
-  ])('bloqueia pessoa física sem %s', (campo, rotulo) => {
+  // A mensagem esperada é a da própria lista, e não um texto repetido aqui:
+  // repetir faria este teste passar com a concordância errada, que é o
+  // defeito que ele existe para impedir ("Nacionalidade é obrigatório").
+  it.each(
+    obrigatoriosPara(TipoPessoa.FISICA).map(([campo, rotulo, mensagem]) => ({
+      campo,
+      rotulo,
+      mensagem,
+    })),
+  )('bloqueia pessoa física sem $rotulo', ({ campo, mensagem }) => {
     const resultado = validarCliente(pessoaFisicaCompleta({ [campo]: '' }))
 
     expect(resultado.ok).toBe(false)
     if (resultado.ok) return
 
-    expect(resultado.erros[campo]).toContain(rotulo)
+    expect(resultado.erros[campo]).toBe(mensagem)
+  })
+
+  // Concordância de verdade: adjetivo no feminino para substantivo feminino.
+  // "Nacionalidade é obrigatório" é o erro que se lê o dia inteiro em sistema
+  // que monta a frase juntando o rótulo com um texto fixo.
+  it('as mensagens concordam em gênero', () => {
+    for (const [, , mensagem] of obrigatoriosPara(TipoPessoa.FISICA)) {
+      const feminino = mensagem.startsWith('A ')
+      expect(mensagem.endsWith(feminino ? 'obrigatória.' : 'obrigatório.')).toBe(true)
+    }
   })
 
   it('não exige data de nascimento — o escritório tirou da lista', () => {

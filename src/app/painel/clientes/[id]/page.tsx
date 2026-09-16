@@ -273,6 +273,24 @@ export default async function PaginaDaFichaDoCliente({
                     </>
                   )}
                 </Dado>
+                {/*
+                  A cidade não é detalhe de endereço: é dela que sai a CIDADE
+                  DA ASSINATURA dos documentos, por decisão do escritório. Ela
+                  ficava de fora desta ficha — o operador preenchia um campo
+                  obrigatório e depois não tinha onde conferir o que gravou.
+                */}
+                <Dado rotulo="Cidade da assinatura">
+                  {cliente.cidade === null && cliente.uf === null ? (
+                    <span className="text-erro">
+                      não informada — os documentos não são gerados sem ela
+                    </span>
+                  ) : (
+                    <>
+                      {cliente.cidade ?? '—'}
+                      {cliente.uf !== null && <> — {cliente.uf}</>}
+                    </>
+                  )}
+                </Dado>
               </div>
             </div>
 

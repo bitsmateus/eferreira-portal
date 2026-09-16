@@ -36,22 +36,28 @@ import { TipoPessoa } from '@prisma/client'
  *
  * Bloqueiam a gravação, a pedido do escritório: "é melhor não deixar salvar,
  * para não criar futuras pendências".
+ *
+ * Cada linha traz o campo, o rótulo e a MENSAGEM PRONTA. A mensagem vem
+ * escrita por extenso, e não montada com
+ * `${rotulo} é obrigatório`, porque em português o adjetivo concorda com o
+ * substantivo: "Nacionalidade é obrigatório" está errado, e num sistema de
+ * escritório de advocacia isso salta aos olhos de quem lê o dia inteiro.
  */
 export const OBRIGATORIOS_COMUNS = [
-  ['email', 'E-mail'],
-  ['telefone', 'Telefone'],
-  ['cep', 'CEP'],
-  ['endereco', 'Endereço'],
-  ['cidade', 'Cidade'],
-  ['uf', 'UF'],
+  ['email', 'E-mail', 'O e-mail é obrigatório.'],
+  ['telefone', 'Telefone', 'O telefone é obrigatório.'],
+  ['cep', 'CEP', 'O CEP é obrigatório.'],
+  ['endereco', 'Endereço', 'O endereço é obrigatório.'],
+  ['cidade', 'Cidade', 'A cidade é obrigatória.'],
+  ['uf', 'UF', 'A UF é obrigatória.'],
 ] as const
 
 export const OBRIGATORIOS_DA_PESSOA = [
-  ['rg', 'RG'],
-  ['estadoCivil', 'Estado civil'],
-  ['profissao', 'Profissão'],
-  ['nacionalidade', 'Nacionalidade'],
-  ['nomeMae', 'Nome da mãe'],
+  ['rg', 'RG', 'O RG é obrigatório.'],
+  ['estadoCivil', 'Estado civil', 'O estado civil é obrigatório.'],
+  ['profissao', 'Profissão', 'A profissão é obrigatória.'],
+  ['nacionalidade', 'Nacionalidade', 'A nacionalidade é obrigatória.'],
+  ['nomeMae', 'Nome da mãe', 'O nome da mãe é obrigatório.'],
 ] as const
 
 export type CampoObrigatorio =
@@ -60,7 +66,7 @@ export type CampoObrigatorio =
 
 export function obrigatoriosPara(
   tipoPessoa: TipoPessoa,
-): readonly (readonly [CampoObrigatorio, string])[] {
+): readonly (readonly [CampoObrigatorio, string, string])[] {
   return tipoPessoa === TipoPessoa.FISICA
     ? [...OBRIGATORIOS_COMUNS, ...OBRIGATORIOS_DA_PESSOA]
     : OBRIGATORIOS_COMUNS

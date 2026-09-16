@@ -163,12 +163,12 @@ export const esquemaDeCliente = z
       campos.documento.tipo === 'CPF' ? TipoPessoa.FISICA : TipoPessoa.JURIDICA,
   }))
   .superRefine((dados, contexto) => {
-    for (const [campo, rotulo] of obrigatoriosPara(dados.tipoPessoa)) {
+    for (const [campo, , mensagem] of obrigatoriosPara(dados.tipoPessoa)) {
       if (dados[campo] === null) {
         contexto.addIssue({
           code: z.ZodIssueCode.custom,
           path: [campo],
-          message: `${rotulo} é obrigatório.`,
+          message: mensagem,
         })
       }
     }
