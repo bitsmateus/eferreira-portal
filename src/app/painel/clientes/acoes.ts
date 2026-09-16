@@ -135,14 +135,29 @@ export async function conferirDocumento(valor: string): Promise<{
   }
 }
 
-export type EstadoDaExclusao = { erro?: string } | undefined
+export type EstadoDaExclusao =
+  | { situacao: 'erro'; mensagem: string }
+  /** Tem rastro: a tela decide se mostra o popup de exclusão forçada. */
+  | {
+      situacao: 'tem_historico'
+      documentos: number
+      andamentos: number
+      contratoAssinado: boolean
+    }
+  | undefined
 
 /**
- * Apaga um cliente que ainda não deixou rastro.
+ * Apaga um cliente.
  *
  * A confirmação viaja no corpo do formulário e é exigida aqui, não só na
  * tela: um POST solto nesta ação não pode apagar cadastro de ninguém. É o
  * mesmo cuidado da revogação de acesso e do envio para assinatura.
+ *
+ * `confirmacao: 'excluir-tudo'` é a exclusão forçada — apaga cliente com
+ * documento, andamento ou contrato assinado, e com eles o histórico do
+ * processo. Só chega a `excluirCliente` com `forcar: true`, que por sua vez
+ * só aceita de quem é ADMINISTRADOR (a tela também exige digitar o nome do
+ * cliente antes de mostrar este botão).
  */
 export async function excluirClienteDaLista(
   clienteId: string,
@@ -151,43 +166,28 @@ export async function excluirClienteDaLista(
 ): Promise<EstadoDaExclusao> {
   const sessao = await exigirSessaoDaEquipe()
 
-  if (texto(dados, 'confirmacao') !== 'excluir') {
-    return { erro: 'Exclusão não confirmada.' }
+  const confirmacao = texto(dados, 'confirmacao')
+  if (confirmacao !== 'excluir' && confirmacao !== 'excluir-tudo') {
+    return { situacao: 'erro', mensagem: 'Exclusão não confirmada.' }
   }
 
   const resultado = await excluirCliente(
     sessao,
     clienteId,
     await emailDaSessao(sessao),
+    { forcar: confirmacao === 'excluir-tudo' },
   )
 
   if (resultado.situacao === 'nao_encontrado') {
-    return { erro: 'Cliente não encontrado.' }
+    return { situacao: 'erro', mensagem: 'Cliente não encontrado.' }
   }
 
   if (resultado.situacao === 'tem_historico') {
-    const partes: string[] = []
-    if (resultado.documentos > 0) {
-      partes.push(
-        resultado.documentos === 1
-          ? '1 documento na pasta'
-          : `${resultado.documentos} documentos na pasta`,
-      )
-    }
-    if (resultado.andamentos > 0) {
-      partes.push(
-        resultado.andamentos === 1
-          ? '1 andamento lançado'
-          : `${resultado.andamentos} andamentos lançados`,
-      )
-    }
-    if (resultado.contratoAssinado) partes.push('contrato assinado')
-
     return {
-      erro:
-        `Este cliente não pode ser excluído porque já tem ${partes.join(', ')}. ` +
-        'Apagar isso destruiria documento e histórico de processo. Se o cadastro ' +
-        'está errado, corrija pela edição.',
+      situacao: 'tem_historico',
+      documentos: resultado.documentos,
+      andamentos: resultado.andamentos,
+      contratoAssinado: resultado.contratoAssinado,
     }
   }
 

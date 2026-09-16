@@ -1,16 +1,19 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
 import { excluirClienteDaLista } from '@/app/painel/clientes/acoes'
+import { descreverHistoricoDoCliente } from '@/lib/clientes'
+import { ModalDeExclusaoForcada } from '@/componentes/modal-exclusao-forcada-de-cliente'
 
 /**
  * O botão de excluir na própria tela de edição do cliente — ao lado de
  * "Salvar alterações" fica errado, então vive no topo da página, ao lado do
  * título. Mesmo padrão de `excluir-caso-botao.tsx`: sem portal, porque aqui
  * não há tabela com rolagem lateral cortando nada, e a mesma trava contra
- * apagar cliente com documento, andamento ou contrato assinado.
+ * apagar cliente com documento, andamento ou contrato assinado — com o
+ * popup de exclusão forçada do administrador, igual ao de `menu-do-cliente.tsx`.
  */
 function BotaoDeConfirmar() {
   const { pending } = useFormStatus()
@@ -24,15 +27,28 @@ function BotaoDeConfirmar() {
 export function ExcluirClienteBotao({
   clienteId,
   nome,
+  souAdministrador,
 }: {
   clienteId: string
   nome: string
+  /** Só o administrador vê a opção de forçar a exclusão de um cliente com histórico. */
+  souAdministrador: boolean
 }) {
   const [confirmando, setConfirmando] = useState(false)
+  const [modalForcadaAberto, setModalForcadaAberto] = useState(false)
   const [estado, excluir] = useActionState(
     excluirClienteDaLista.bind(null, clienteId),
     undefined,
   )
+
+  // A tentativa normal esbarrou no histórico: abre direto o popup de
+  // exclusão forçada em vez de deixar a pessoa clicar de novo.
+  useEffect(() => {
+    if (estado?.situacao === 'tem_historico' && souAdministrador) {
+      setConfirmando(false)
+      setModalForcadaAberto(true)
+    }
+  }, [estado, souAdministrador])
 
   if (confirmando) {
     return (
@@ -62,10 +78,31 @@ export function ExcluirClienteBotao({
       >
         Excluir cliente
       </button>
-      {estado?.erro !== undefined && (
+
+      {estado?.situacao === 'erro' && (
         <p className="max-w-[320px] text-right text-[11.5px] leading-relaxed text-erro">
-          {estado.erro}
+          {estado.mensagem}
         </p>
+      )}
+
+      {estado?.situacao === 'tem_historico' && !souAdministrador && (
+        <p className="max-w-[320px] text-right text-[11.5px] leading-relaxed text-erro">
+          Este cliente não pode ser excluído porque já tem{' '}
+          {descreverHistoricoDoCliente(estado)}. Apagar isso destruiria documento e
+          histórico de processo. Peça a um administrador se for realmente necessário
+          forçar.
+        </p>
+      )}
+
+      {modalForcadaAberto && estado?.situacao === 'tem_historico' && (
+        <ModalDeExclusaoForcada
+          nome={nome}
+          documentos={estado.documentos}
+          andamentos={estado.andamentos}
+          contratoAssinado={estado.contratoAssinado}
+          acao={excluirClienteDaLista.bind(null, clienteId)}
+          aoFechar={() => setModalForcadaAberto(false)}
+        />
       )}
     </div>
   )

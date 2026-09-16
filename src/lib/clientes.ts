@@ -10,10 +10,15 @@
  * por `filtroDeClientes`, montado a partir da sessão do servidor.
  */
 
-import { AcaoAuditoria, type Prisma, TipoPessoa } from '@prisma/client'
+import { AcaoAuditoria, PerfilUsuario, type Prisma, TipoPessoa } from '@prisma/client'
 import { z } from 'zod'
 
-import { exigirEquipe, filtroDeClientes, type SessaoServidor } from '@/lib/autorizacao'
+import {
+  SemAutorizacao,
+  exigirEquipe,
+  filtroDeClientes,
+  type SessaoServidor,
+} from '@/lib/autorizacao'
 import { ehViolacaoDeUnicidade, prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { prepararDocumento } from '@/lib/documento'
@@ -432,6 +437,31 @@ export async function listarClientesParaEscolha(
 // Exclusão
 // ---------------------------------------------------------------------------
 
+/** O que existe, em texto — usado tanto na recusa quanto no popup de exclusão forçada. */
+export function descreverHistoricoDoCliente(historico: {
+  documentos: number
+  andamentos: number
+  contratoAssinado: boolean
+}): string {
+  const partes: string[] = []
+  if (historico.documentos > 0) {
+    partes.push(
+      historico.documentos === 1
+        ? '1 documento na pasta'
+        : `${historico.documentos} documentos na pasta`,
+    )
+  }
+  if (historico.andamentos > 0) {
+    partes.push(
+      historico.andamentos === 1
+        ? '1 andamento lançado'
+        : `${historico.andamentos} andamentos lançados`,
+    )
+  }
+  if (historico.contratoAssinado) partes.push('contrato assinado')
+  return partes.join(', ')
+}
+
 export type ResultadoDaExclusao =
   | { situacao: 'excluido'; nome: string }
   | { situacao: 'nao_encontrado' }
@@ -461,19 +491,29 @@ export type ResultadoDaExclusao =
  *
  * Por isso a recusa vem com números: a pessoa vê o que existe e decide o que
  * fazer, em vez de receber "não é possível" sem explicação.
+ *
+ * `opcoes.forcar` é a válvula de escape para quando a decisão É apagar mesmo
+ * assim — dado de teste que ficou em produção, cadastro que nunca devia ter
+ * virado caso de verdade. Só o ADMINISTRADOR pode usá-la (pedido do
+ * escritório, 16/09/2026): a tela exige confirmação reforçada antes de
+ * chegar até aqui, mas quem decide destruir prova de diligência precisa ser
+ * quem responde pelo escritório, não qualquer operador.
  * ─────────────────────────────────────────────────────────────────────────
  *
- * O que some junto, por cascata: os casos vazios, o usuário de perfil CLIENTE
- * e os códigos de acesso pendentes. Nada disso é prova de coisa alguma.
+ * O que some junto, por cascata: os casos (vazios, ou com andamento e
+ * documento quando `forcar` foi usado), o usuário de perfil CLIENTE e os
+ * códigos de acesso pendentes.
  *
- * O registro de auditoria fica (regra 6), e guarda nome e documento em texto:
- * depois da exclusão a linha do cliente não existe mais para ser consultada,
- * e "excluiu o cliente cmu48..." não diria nada a ninguém.
+ * O registro de auditoria fica (regra 6), e guarda nome, documento e — na
+ * exclusão forçada — os números do que foi apagado, tudo em texto: depois da
+ * exclusão a linha do cliente não existe mais para ser consultada, e
+ * "excluiu o cliente cmu48..." não diria nada a ninguém.
  */
 export async function excluirCliente(
   sessao: SessaoServidor,
   clienteId: string,
   emailDoAutor: string | null,
+  opcoes: { forcar?: boolean } = {},
 ): Promise<ResultadoDaExclusao> {
   exigirEquipe(sessao)
 
@@ -496,14 +536,22 @@ export async function excluirCliente(
   })
 
   const contratoAssinado = cliente.contratoAssinadoEm !== null
+  const temHistorico =
+    cliente._count.documentos > 0 || andamentos > 0 || contratoAssinado
 
-  if (cliente._count.documentos > 0 || andamentos > 0 || contratoAssinado) {
+  if (temHistorico && opcoes.forcar !== true) {
     return {
       situacao: 'tem_historico',
       documentos: cliente._count.documentos,
       andamentos,
       contratoAssinado,
     }
+  }
+
+  if (temHistorico && sessao.perfil !== PerfilUsuario.ADMINISTRADOR) {
+    throw new SemAutorizacao(
+      'Somente o administrador pode forçar a exclusão de um cliente com histórico.',
+    )
   }
 
   await prisma.cliente.delete({ where: { id: cliente.id } })
@@ -519,6 +567,14 @@ export async function excluirCliente(
       nome: cliente.nome,
       documento: cliente.documento,
       casosVaziosRemovidos: cliente._count.casos,
+      ...(temHistorico
+        ? {
+            forcado: true,
+            documentosApagados: cliente._count.documentos,
+            andamentosApagados: andamentos,
+            contratoAssinado,
+          }
+        : {}),
     },
   })
 

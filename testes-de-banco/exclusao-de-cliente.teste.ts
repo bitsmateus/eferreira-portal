@@ -21,11 +21,14 @@ const VAZIO = '52998224725'
 const COM_DOCUMENTO = '11144477735'
 const COM_ANDAMENTO = '11222333000181'
 const COM_CONTRATO = '39053344705'
-const DOCUMENTOS = [VAZIO, COM_DOCUMENTO, COM_ANDAMENTO, COM_CONTRATO]
+const COM_TUDO_FORCADO = '11144477896'
+const DOCUMENTOS = [VAZIO, COM_DOCUMENTO, COM_ANDAMENTO, COM_CONTRATO, COM_TUDO_FORCADO]
 const EMAIL_DO_OPERADOR = 'operador.teste.exclusao@exemplo.invalido'
+const EMAIL_DO_ADMINISTRADOR = 'administrador.teste.exclusao@exemplo.invalido'
 const NOME_DO_STATUS = 'Situação do teste de exclusão'
 
 let operadorId: string
+let administradorId: string
 let statusId: string
 
 function sessaoDaEquipe() {
@@ -37,9 +40,20 @@ function sessaoDaEquipe() {
   }
 }
 
+function sessaoDoAdministrador() {
+  return {
+    usuarioId: administradorId,
+    perfil: PerfilUsuario.ADMINISTRADOR,
+    clienteId: null,
+    contratoAssinado: false,
+  }
+}
+
 async function limpar(): Promise<void> {
   await prisma.cliente.deleteMany({ where: { documento: { in: DOCUMENTOS } } })
-  await prisma.usuario.deleteMany({ where: { email: EMAIL_DO_OPERADOR } })
+  await prisma.usuario.deleteMany({
+    where: { email: { in: [EMAIL_DO_OPERADOR, EMAIL_DO_ADMINISTRADOR] } },
+  })
   await prisma.statusAndamento.deleteMany({ where: { nome: NOME_DO_STATUS } })
 }
 
@@ -72,6 +86,17 @@ beforeAll(async () => {
     select: { id: true },
   })
   operadorId = operador.id
+
+  const administrador = await prisma.usuario.create({
+    data: {
+      nome: 'Administrador do teste de exclusão',
+      email: EMAIL_DO_ADMINISTRADOR,
+      senhaHash: 'nao-usado',
+      perfil: PerfilUsuario.ADMINISTRADOR,
+    },
+    select: { id: true },
+  })
+  administradorId = administrador.id
 
   const status = await prisma.statusAndamento.create({
     data: { nome: NOME_DO_STATUS },
@@ -247,5 +272,94 @@ describe('o que tem rastro não sai', () => {
       expect(resultado.documentos).toBe(0)
       expect(resultado.andamentos).toBe(0)
     }
+  })
+})
+
+describe('exclusão forçada — pedido do escritório (16/09/2026)', () => {
+  async function criarClienteComTudo(documento: string, nome: string) {
+    const cliente = await criarCliente(documento, nome, true)
+    const caso = await prisma.caso.create({
+      data: { clienteId: cliente.id, assunto: 'Caso do teste forçado' },
+      select: { id: true },
+    })
+    await prisma.andamento.create({
+      data: {
+        casoId: caso.id,
+        data: new Date(),
+        statusId,
+        descricao: 'Andamento do teste forçado.',
+        autorId: operadorId,
+      },
+    })
+    await prisma.documento.create({
+      data: {
+        clienteId: cliente.id,
+        tipo: TipoDocumento.CONTRATO,
+        nome: 'Contrato.pdf',
+        chaveArquivo: `documentos/teste-exclusao-forcada-${Date.now()}`,
+        tipoConteudo: 'application/pdf',
+        tamanhoBytes: 10,
+      },
+    })
+    return cliente
+  }
+
+  it('o operador não pode forçar, mesmo pedindo', async () => {
+    const cliente = await criarClienteComTudo(COM_TUDO_FORCADO, 'Só o admin força isto')
+
+    await expect(
+      excluirCliente(sessaoDaEquipe(), cliente.id, EMAIL_DO_OPERADOR, { forcar: true }),
+    ).rejects.toBeInstanceOf(SemAutorizacao)
+
+    // Nada foi tocado: a recusa acontece antes de qualquer escrita.
+    expect(
+      await prisma.cliente.findUnique({ where: { id: cliente.id } }),
+    ).not.toBeNull()
+
+    await prisma.cliente.delete({ where: { id: cliente.id } })
+  })
+
+  it('o administrador força e apaga cliente, caso, andamento e documento juntos', async () => {
+    const cliente = await criarClienteComTudo(COM_TUDO_FORCADO, 'Vai tudo com o admin')
+
+    const resultado = await excluirCliente(
+      sessaoDoAdministrador(),
+      cliente.id,
+      EMAIL_DO_ADMINISTRADOR,
+      { forcar: true },
+    )
+
+    expect(resultado.situacao).toBe('excluido')
+    expect(
+      await prisma.cliente.findUnique({ where: { id: cliente.id } }),
+    ).toBeNull()
+    expect(
+      await prisma.andamento.findMany({ where: { caso: { clienteId: cliente.id } } }),
+    ).toHaveLength(0)
+    expect(
+      await prisma.documento.findMany({ where: { clienteId: cliente.id } }),
+    ).toHaveLength(0)
+  })
+
+  // Regra 6: a linha do cliente, do andamento e do documento não existem mais
+  // para serem consultadas depois — a auditoria é a única prova de que aquele
+  // histórico existiu e de que alguém decidiu apagá-lo mesmo assim.
+  it('a auditoria da exclusão forçada guarda os números do que foi apagado', async () => {
+    const cliente = await criarClienteComTudo(COM_TUDO_FORCADO, 'Fica só na auditoria')
+
+    await excluirCliente(sessaoDoAdministrador(), cliente.id, EMAIL_DO_ADMINISTRADOR, {
+      forcar: true,
+    })
+
+    const registro = await prisma.auditoria.findFirst({
+      where: { entidade: 'cliente', entidadeId: cliente.id, acao: 'EXCLUSAO' },
+      orderBy: { criadoEm: 'desc' },
+    })
+
+    expect(registro).not.toBeNull()
+    const detalhes = JSON.stringify(registro?.detalhes)
+    expect(detalhes).toContain('"forcado":true')
+    expect(detalhes).toContain('"documentosApagados":1')
+    expect(detalhes).toContain('"andamentosApagados":1')
   })
 })

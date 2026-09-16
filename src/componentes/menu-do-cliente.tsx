@@ -6,6 +6,8 @@ import { useActionState, useEffect, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
 import { excluirClienteDaLista } from '@/app/painel/clientes/acoes'
+import { descreverHistoricoDoCliente } from '@/lib/clientes'
+import { ModalDeExclusaoForcada } from '@/componentes/modal-exclusao-forcada-de-cliente'
 
 /** Largura do menu, em pixels — usada para calcular onde ele cabe na tela. */
 const LARGURA_DO_MENU = 230
@@ -46,12 +48,16 @@ function BotaoDeConfirmar() {
 export function MenuDoCliente({
   clienteId,
   nome,
+  souAdministrador,
 }: {
   clienteId: string
   nome: string
+  /** Só o administrador vê a opção de forçar a exclusão de um cliente com histórico. */
+  souAdministrador: boolean
 }) {
   const [aberto, setAberto] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
+  const [modalForcadaAberto, setModalForcadaAberto] = useState(false)
   const [posicao, setPosicao] = useState<{ top: number; left: number } | null>(null)
   const [estado, excluir] = useActionState(
     excluirClienteDaLista.bind(null, clienteId),
@@ -65,12 +71,7 @@ export function MenuDoCliente({
     setConfirmando(false)
   }
 
-  function alternar() {
-    if (aberto) {
-      fechar()
-      return
-    }
-
+  function abrir() {
     const retangulo = botaoRef.current?.getBoundingClientRect()
     if (retangulo === undefined) return
 
@@ -83,6 +84,14 @@ export function MenuDoCliente({
     )
     setPosicao({ top: retangulo.bottom + 4, left: esquerda })
     setAberto(true)
+  }
+
+  function alternar() {
+    if (aberto) {
+      fechar()
+      return
+    }
+    abrir()
   }
 
   // Fechar clicando fora, no Esc, ou rolando qualquer coisa.
@@ -114,10 +123,18 @@ export function MenuDoCliente({
     }
   }, [aberto])
 
-  // A recusa (cliente com histórico) precisa ficar visível: sem isto o menu
-  // fecharia e a pessoa não saberia por que nada aconteceu.
+  // A recusa precisa ficar visível: sem isto o menu fecharia e a pessoa não
+  // saberia por que nada aconteceu. Cliente com histórico e sessão de
+  // administrador pula direto para o popup de exclusão forçada, em vez de
+  // reabrir o menu só para mostrar um texto.
   useEffect(() => {
-    if (estado?.erro !== undefined) alternar()
+    if (estado?.situacao === 'tem_historico' && souAdministrador) {
+      setAberto(false)
+      setConfirmando(false)
+      setModalForcadaAberto(true)
+      return
+    }
+    if (estado !== undefined) abrir()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado])
 
@@ -172,9 +189,23 @@ export function MenuDoCliente({
 
             <div className="my-1 border-t border-prata-100" />
 
-            {estado?.erro !== undefined && (
+            {estado?.situacao === 'erro' && (
               <p className="px-2.5 py-1.5 text-[11.5px] leading-relaxed text-erro">
-                {estado.erro}
+                {estado.mensagem}
+              </p>
+            )}
+
+            {/*
+              Quando é administrador, o efeito acima já fechou o menu e abriu
+              o popup — este texto só aparece para o operador, que não tem
+              como forçar.
+            */}
+            {estado?.situacao === 'tem_historico' && !souAdministrador && (
+              <p className="px-2.5 py-1.5 text-[11.5px] leading-relaxed text-erro">
+                Este cliente não pode ser excluído porque já tem{' '}
+                {descreverHistoricoDoCliente(estado)}. Apagar isso destruiria documento e
+                histórico de processo. Peça a um administrador se for realmente
+                necessário forçar.
               </p>
             )}
 
@@ -207,6 +238,17 @@ export function MenuDoCliente({
           </div>,
           document.body,
         )}
+
+      {modalForcadaAberto && estado?.situacao === 'tem_historico' && (
+        <ModalDeExclusaoForcada
+          nome={nome}
+          documentos={estado.documentos}
+          andamentos={estado.andamentos}
+          contratoAssinado={estado.contratoAssinado}
+          acao={excluirClienteDaLista.bind(null, clienteId)}
+          aoFechar={() => setModalForcadaAberto(false)}
+        />
+      )}
     </>
   )
 }

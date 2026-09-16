@@ -60,7 +60,13 @@ export default async function PaginaDeEdicaoDeCliente({
             <span className="mono">{formatarDocumento(cliente.documento)}</span>
           </>
         }
-        acoes={<ExcluirClienteBotao clienteId={cliente.id} nome={cliente.nome} />}
+        acoes={
+          <ExcluirClienteBotao
+            clienteId={cliente.id}
+            nome={cliente.nome}
+            souAdministrador={sessao.perfil === 'ADMINISTRADOR'}
+          />
+        }
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">

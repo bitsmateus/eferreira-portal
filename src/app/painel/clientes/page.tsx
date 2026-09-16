@@ -236,7 +236,11 @@ export default async function PaginaDeClientes({
                         porque o pseudo-elemento intercepta o clique primeiro.
                       */}
                       <td className="relative z-10 text-right">
-                        <MenuDoCliente clienteId={cliente.id} nome={cliente.nome} />
+                        <MenuDoCliente
+                          clienteId={cliente.id}
+                          nome={cliente.nome}
+                          souAdministrador={sessao.perfil === 'ADMINISTRADOR'}
+                        />
                       </td>
                     </tr>
                   ))}
