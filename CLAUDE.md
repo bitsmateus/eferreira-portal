@@ -307,6 +307,39 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Três defeitos achados no uso real, todos corrigidos** (16/09/2026):
+
+1. **O envio para assinatura recusava com "This file not have signers"**,
+   mesmo a tela mostrando os dois signatários certos. Era um erro de
+   digitação de longa data em `src/lib/d4sign.ts`: o campo que diz que o
+   signatário é avulso chama-se `foreign` na API da D4Sign, e o código
+   mandava `foresign`. A D4Sign aceitava a chamada com HTTP 200 e descartava
+   por baixo o objeto malformado — a lista de signatários ficava vazia, e só
+   o passo seguinte acusava o problema, sem apontar a causa. Corrigido o
+   nome do campo, e `definirSignatarios` passou a conferir que a resposta
+   trouxe uma entrada por signatário mandado, em vez de só olhar o status
+   HTTP.
+
+2. **"Ver prévia" mostrava uma caixa em branco**, sem erro nenhum, mesmo o
+   "gerar e arquivar" de verdade funcionando. `next.config.ts` mandava
+   `X-Frame-Options: DENY` em toda rota, e a prévia embute o próprio PDF num
+   `<iframe>` da mesma aplicação — `DENY` bloqueia isso mesmo sendo a mesma
+   origem, sem avisar o motivo. Trocado para `SAMEORIGIN`, que resolve sem
+   abrir mão da proteção contra outro site enquadrar o portal.
+
+3. **Não havia como excluir um cliente que já tinha caso e andamento** — a
+   trava de `excluirCliente` está certa por padrão (regra 6: não apagar
+   prova de diligência), mas faltava um jeito de resolver quando a decisão É
+   apagar mesmo assim, dado de teste incluído. `excluirCliente` ganhou
+   `opcoes.forcar`, e só o **ADMINISTRADOR** consegue usá-la — a exclusão
+   forçada cai em cascata sobre caso, andamento e documento, e a auditoria
+   guarda `forcado: true` com os números exatos do que foi apagado. Na tela,
+   forçar exige um popup (`modal-exclusao-forcada-de-cliente.tsx`) que só
+   libera o botão depois de digitar o nome do cliente por extenso — no menu
+   da lista e no botão "Excluir cliente" da edição. Para o operador, a
+   mesma trava aparece como sempre: texto explicando o que existe, sem opção
+   de forçar.
+
 **"Esqueci minha senha" está de pé** (16/09/2026), pedido do escritório depois
 do primeiro uso real: até aqui, senha esquecida só se resolvia com o
 administrador redefinindo pela tela de Usuários. Agora `/entrar` tem o link
