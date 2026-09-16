@@ -229,7 +229,13 @@ export default async function PaginaDeClientes({
                           temEmail={cliente.temEmail}
                         />
                       </td>
-                      <td className="text-right">
+                      {/*
+                        `relative z-10`: sem isto, o `::after` esticado do link
+                        da primeira célula fica por cima deste botão — clicar
+                        nos três pontinhos abriria a ficha em vez do menu,
+                        porque o pseudo-elemento intercepta o clique primeiro.
+                      */}
+                      <td className="relative z-10 text-right">
                         <MenuDoCliente clienteId={cliente.id} nome={cliente.nome} />
                       </td>
                     </tr>

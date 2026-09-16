@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
+import { ExcluirClienteBotao } from '@/componentes/excluir-cliente-botao'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { obterCliente } from '@/lib/clientes'
 import { dataParaDiaCivil } from '@/lib/datas'
@@ -59,6 +60,7 @@ export default async function PaginaDeEdicaoDeCliente({
             <span className="mono">{formatarDocumento(cliente.documento)}</span>
           </>
         }
+        acoes={<ExcluirClienteBotao clienteId={cliente.id} nome={cliente.nome} />}
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
