@@ -400,6 +400,23 @@ seletor — sem cliente escolhido a gravação é recusada. Casos ganharam filtr
 por situação, responsável (incluindo "sem responsável") e com/sem número de
 processo.
 
+**O painel virou visão geral de verdade** (16/09/2026), pedido do
+escritório: mais indicadores e clicar num deles filtra NA PRÓPRIA TELA, sem
+navegar embora. Os indicadores levam para `/painel?secao=clientes&...` — a
+mesma rota do painel, com o filtro na query string — em vez de
+`/painel/clientes`. Reaproveita exatamente os filtros construídos para as
+listas de Clientes e de Casos: uma lista de regras só.
+
+Três relatórios novos, cada linha clicável levando ao mesmo filtro na
+própria tela: clientes por tipo (PF/PJ), acesso ao portal (liberado,
+aguardando assinatura, sem e-mail) e casos (em andamento, arquivados, sem
+responsável, sem número — pré-processual). Um quarto mostra os envios de
+assinatura eletrônica aguardando e assinados, sem link — falta a tela de
+Documentos para ter o que filtrar. "Últimos andamentos lançados" continua
+sempre visível, embaixo de tudo. Conferido em produção: clicar em "Clientes
+cadastrados" e em "Pessoa jurídica" mantém a URL em `/painel` e mostra a
+amostra filtrada com a descrição do filtro em texto.
+
 **O primeiro uso de verdade achou três defeitos** (16/09/2026), todos no
 caminho mais percorrido do sistema: cadastrar um cliente.
 
