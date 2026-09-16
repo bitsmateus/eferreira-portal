@@ -80,12 +80,28 @@ function conferirTudo(
   return { ok: true, caso, parcelas: parcelas.dados }
 }
 
+/**
+ * Cadastra um caso.
+ *
+ * `clienteFixo` vem preenchido quando o caso nasce dentro da ficha de um
+ * cliente — ali o dono já está decidido, e aceitar um `clienteId` do
+ * formulário abriria caminho para o caso cair em outro cadastro (regra 2).
+ *
+ * Nulo, o caso está nascendo da lista de Casos e o cliente vem do seletor.
+ * Quem confere se ESTA sessão pode usar aquele cliente é `criarCaso`, pelo
+ * filtro da sessão — aqui só se confere que algum foi escolhido.
+ */
 export async function cadastrarCaso(
-  clienteId: string,
+  clienteFixo: string | null,
   _estado: EstadoDoCaso,
   dados: FormData,
 ): Promise<EstadoDoCaso> {
   const sessao = await exigirSessaoDaEquipe()
+
+  const clienteId = clienteFixo ?? texto(dados, 'clienteId').trim()
+  if (clienteId === '') {
+    return { erros: { clienteId: 'Escolha o cliente deste caso.' } }
+  }
 
   const conferido = conferirTudo(dados)
   if (!conferido.ok) return { erros: conferido.erros }
@@ -99,7 +115,7 @@ export async function cadastrarCaso(
   )
 
   if (resultado.situacao === 'cliente_nao_encontrado') {
-    return { mensagem: 'Cliente não encontrado.' }
+    return { erros: { clienteId: 'Cliente não encontrado.' } }
   }
 
   if (resultado.situacao === 'responsavel_invalido') {

@@ -227,6 +227,77 @@ function condicaoDaBusca(busca: Busca): Prisma.ClienteWhereInput | undefined {
 }
 
 // ---------------------------------------------------------------------------
+// Filtros da lista
+//
+// São montados a partir da query string, que é do navegador — e por isso
+// entram SEMPRE por dentro de `filtroDeClientes` (regra 2). Cada um só
+// estreita o resultado; nenhum consegue ampliar o que a sessão enxerga.
+//
+// Valor desconhecido é tratado como "sem filtro", nunca como erro: link
+// antigo, filtro renomeado ou query editada à mão devolvem a lista inteira,
+// que é o lado inofensivo de errar.
+// ---------------------------------------------------------------------------
+
+export type FiltrosDeCliente = {
+  /** '' = todos. */
+  tipo: '' | 'FISICA' | 'JURIDICA'
+  /** '' = todos; 'liberado'/'aguardando' pelo contrato; 'sem_email' é o furo. */
+  acesso: '' | 'liberado' | 'aguardando' | 'sem_email'
+  /** '' = todos; 'com'/'sem' casos vinculados. */
+  casos: '' | 'com' | 'sem'
+}
+
+export const FILTROS_DE_CLIENTE_VAZIOS: FiltrosDeCliente = {
+  tipo: '',
+  acesso: '',
+  casos: '',
+}
+
+/** Lê os filtros da query string, aceitando só o que existe. */
+export function lerFiltrosDeCliente(
+  entrada: Record<string, string | undefined>,
+): FiltrosDeCliente {
+  const dentro = <V extends string>(valor: string | undefined, opcoes: readonly V[]) =>
+    (opcoes as readonly string[]).includes(valor ?? '') ? (valor as V) : ('' as V)
+
+  return {
+    tipo: dentro(entrada['tipo'], ['FISICA', 'JURIDICA'] as const),
+    acesso: dentro(entrada['acesso'], ['liberado', 'aguardando', 'sem_email'] as const),
+    casos: dentro(entrada['casos'], ['com', 'sem'] as const),
+  }
+}
+
+export function algumFiltroDeClienteAtivo(filtros: FiltrosDeCliente): boolean {
+  return filtros.tipo !== '' || filtros.acesso !== '' || filtros.casos !== ''
+}
+
+/** Traduz os filtros em condição do Prisma. Pura: dá para testar sem banco. */
+export function condicaoDosFiltrosDeCliente(
+  filtros: FiltrosDeCliente,
+): Prisma.ClienteWhereInput {
+  const condicoes: Prisma.ClienteWhereInput[] = []
+
+  if (filtros.tipo !== '') {
+    condicoes.push({ tipoPessoa: filtros.tipo as TipoPessoa })
+  }
+
+  if (filtros.acesso === 'liberado') {
+    condicoes.push({ contratoAssinadoEm: { not: null } })
+  } else if (filtros.acesso === 'aguardando') {
+    condicoes.push({ contratoAssinadoEm: null })
+  } else if (filtros.acesso === 'sem_email') {
+    // Sem e-mail o código de acesso não tem para onde ir: é a lista de quem
+    // nunca vai conseguir entrar enquanto ficar assim.
+    condicoes.push({ OR: [{ email: null }, { email: '' }] })
+  }
+
+  if (filtros.casos === 'com') condicoes.push({ casos: { some: {} } })
+  if (filtros.casos === 'sem') condicoes.push({ casos: { none: {} } })
+
+  return condicoes.length === 0 ? {} : { AND: condicoes }
+}
+
+// ---------------------------------------------------------------------------
 // Leitura
 // ---------------------------------------------------------------------------
 
@@ -304,12 +375,23 @@ export type ListaDeClientes = {
 export async function listarClientes(
   sessao: SessaoServidor,
   termo: string,
+  filtros: FiltrosDeCliente = FILTROS_DE_CLIENTE_VAZIOS,
 ): Promise<ListaDeClientes> {
   const busca = interpretarBusca(termo)
 
+  const condicoes: Prisma.ClienteWhereInput[] = []
+  const daBusca = condicaoDaBusca(busca)
+  if (daBusca !== undefined) condicoes.push(daBusca)
+  if (algumFiltroDeClienteAtivo(filtros)) {
+    condicoes.push(condicaoDosFiltrosDeCliente(filtros))
+  }
+
   // Pede um a mais que o teto: se vier, é porque havia mais do que coube.
   const clientes = await prisma.cliente.findMany({
-    where: filtroDeClientes(sessao, condicaoDaBusca(busca)),
+    where: filtroDeClientes(
+      sessao,
+      condicoes.length === 0 ? undefined : { AND: condicoes },
+    ),
     select: RESUMO,
     orderBy: { nome: 'asc' },
     take: LIMITE_DA_LISTA + 1,
@@ -325,6 +407,122 @@ export async function listarClientes(
 
 export async function contarClientes(sessao: SessaoServidor): Promise<number> {
   return prisma.cliente.count({ where: filtroDeClientes(sessao) })
+}
+
+/**
+ * Clientes para o seletor de "a quem pertence este caso".
+ *
+ * Só id, nome e documento: o seletor não precisa de mais nada, e puxar a
+ * ficha inteira de cada cliente para desenhar uma lista suspensa seria
+ * desperdício em toda abertura da tela.
+ */
+export async function listarClientesParaEscolha(
+  sessao: SessaoServidor,
+): Promise<{ id: string; nome: string; documento: string }[]> {
+  exigirEquipe(sessao)
+
+  return prisma.cliente.findMany({
+    where: filtroDeClientes(sessao),
+    select: { id: true, nome: true, documento: true },
+    orderBy: { nome: 'asc' },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Exclusão
+// ---------------------------------------------------------------------------
+
+export type ResultadoDaExclusao =
+  | { situacao: 'excluido'; nome: string }
+  | { situacao: 'nao_encontrado' }
+  /** Tem rastro: a exclusão é recusada e a tela diz o que existe. */
+  | {
+      situacao: 'tem_historico'
+      documentos: number
+      andamentos: number
+      contratoAssinado: boolean
+    }
+
+/**
+ * Apaga um cliente — e SÓ o cliente que ainda não deixou rastro.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * POR QUE NÃO APAGA TUDO
+ *
+ * O problema real que isto resolve é o cadastro feito por engano: CPF errado,
+ * cliente duplicado, teste que ficou. Esse cadastro não tem nada dentro, e
+ * apagá-lo não destrói nada.
+ *
+ * Cliente com documento, com andamento ou com contrato assinado é outra
+ * coisa. Ali existe documento gerado ou recebido — em muitos casos assinado —
+ * e existe o histórico do processo que o próprio cliente consulta. Apagar
+ * isso num escritório de advocacia é destruir prova de diligência, e nenhuma
+ * tela deve poder fazê-lo com dois cliques.
+ *
+ * Por isso a recusa vem com números: a pessoa vê o que existe e decide o que
+ * fazer, em vez de receber "não é possível" sem explicação.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * O que some junto, por cascata: os casos vazios, o usuário de perfil CLIENTE
+ * e os códigos de acesso pendentes. Nada disso é prova de coisa alguma.
+ *
+ * O registro de auditoria fica (regra 6), e guarda nome e documento em texto:
+ * depois da exclusão a linha do cliente não existe mais para ser consultada,
+ * e "excluiu o cliente cmu48..." não diria nada a ninguém.
+ */
+export async function excluirCliente(
+  sessao: SessaoServidor,
+  clienteId: string,
+  emailDoAutor: string | null,
+): Promise<ResultadoDaExclusao> {
+  exigirEquipe(sessao)
+
+  // Regra 2: o id vem da tela, mas quem decide se ele pode ser tocado é o
+  // filtro montado a partir da sessão.
+  const cliente = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { id: clienteId }),
+    select: {
+      id: true,
+      nome: true,
+      documento: true,
+      contratoAssinadoEm: true,
+      _count: { select: { documentos: true, casos: true } },
+    },
+  })
+  if (cliente === null) return { situacao: 'nao_encontrado' }
+
+  const andamentos = await prisma.andamento.count({
+    where: { caso: { clienteId: cliente.id } },
+  })
+
+  const contratoAssinado = cliente.contratoAssinadoEm !== null
+
+  if (cliente._count.documentos > 0 || andamentos > 0 || contratoAssinado) {
+    return {
+      situacao: 'tem_historico',
+      documentos: cliente._count.documentos,
+      andamentos,
+      contratoAssinado,
+    }
+  }
+
+  await prisma.cliente.delete({ where: { id: cliente.id } })
+
+  await registrarAuditoria({
+    usuarioId: sessao.usuarioId,
+    usuarioEmail: emailDoAutor,
+    acao: AcaoAuditoria.EXCLUSAO,
+    entidade: 'cliente',
+    entidadeId: cliente.id,
+    detalhes: {
+      // Em texto: a linha do cliente não existe mais para ser consultada.
+      nome: cliente.nome,
+      documento: cliente.documento,
+      casosVaziosRemovidos: cliente._count.casos,
+    },
+  })
+
+  return { situacao: 'excluido', nome: cliente.nome }
 }
 
 /** A ficha do cliente. Devolve null quando a sessão não pode vê-lo. */

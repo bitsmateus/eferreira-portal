@@ -6,6 +6,7 @@ import { useFormStatus } from 'react-dom'
 import { SituacaoCaso } from '@prisma/client'
 
 import { ROTULO_DA_SITUACAO } from '@/componentes/situacoes'
+import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { LINHAS_DE_PARCELA } from '@/lib/casos'
 import type { EstadoDoCaso } from './acoes'
@@ -38,6 +39,14 @@ type Props = {
   responsaveis: readonly { id: string; nome: string }[]
   rotuloDoBotao: string
   hrefCancelar: string
+  /**
+   * Os clientes a escolher, quando o caso nasce fora da ficha de alguém.
+   *
+   * Vindo da ficha do cliente, o dono já está decidido e este seletor não
+   * aparece — perguntar de novo a quem acabou de abrir a ficha do cliente
+   * seria só uma chance a mais de escolher errado.
+   */
+  clientes?: readonly { id: string; nome: string; documento: string }[]
 }
 
 function Campo({
@@ -97,9 +106,13 @@ export function FormularioDeCaso({
   responsaveis,
   rotuloDoBotao,
   hrefCancelar,
+  clientes,
 }: Props) {
   const [estado, enviar] = useActionState(acao, undefined)
   const erros = estado?.erros ?? {}
+
+  /** Só existe quando o caso nasce fora da ficha de um cliente. */
+  const [clienteId, setClienteId] = useState('')
 
   /**
    * TODO CAMPO É CONTROLADO, PELO MESMO MOTIVO DO CADASTRO DE CLIENTE.
@@ -194,6 +207,32 @@ export function FormularioDeCaso({
           </div>
 
           <div className="cartao-corpo">
+            {clientes !== undefined && (
+              <Campo
+                nome="clienteId"
+                rotulo="Cliente"
+                erro={erros['clienteId']}
+                dica="Todo caso pertence a um cliente. Sem isso não há de quem seja o processo, nem para quem mostrar o andamento."
+                obrigatorio
+              >
+                <select
+                  id="clienteId"
+                  name="clienteId"
+                  required
+                  className="campo-entrada"
+                  value={clienteId}
+                  onChange={(evento) => setClienteId(evento.target.value)}
+                >
+                  <option value="">Escolha o cliente…</option>
+                  {clientes.map((cliente) => (
+                    <option key={cliente.id} value={cliente.id}>
+                      {cliente.nome} — {formatarDocumento(cliente.documento)}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+            )}
+
             <Campo
               nome="numeroProcesso"
               rotulo="Número do processo"

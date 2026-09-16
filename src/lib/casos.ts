@@ -241,6 +241,72 @@ function condicaoDaBusca(termo: string): Prisma.CasoWhereInput | undefined {
 }
 
 /** Teto de linhas por página, como na lista de clientes. */
+// ---------------------------------------------------------------------------
+// Filtros da lista
+//
+// Montados a partir da query string, que é do navegador — e por isso entram
+// SEMPRE por dentro de `filtroDeCasos` (regra 2). Cada um só estreita.
+// Valor desconhecido vira "sem filtro", nunca erro.
+// ---------------------------------------------------------------------------
+
+export type FiltrosDeCaso = {
+  /** '' = todas. */
+  situacao: '' | 'EM_ANDAMENTO' | 'ARQUIVADO'
+  /** '' = todos; 'sem' = sem responsável definido; ou o id de um da equipe. */
+  responsavel: string
+  /** '' = todos; 'com'/'sem' número de processo (pré-processual). */
+  numero: '' | 'com' | 'sem'
+}
+
+export const FILTROS_DE_CASO_VAZIOS: FiltrosDeCaso = {
+  situacao: '',
+  responsavel: '',
+  numero: '',
+}
+
+export function lerFiltrosDeCaso(
+  entrada: Record<string, string | undefined>,
+): FiltrosDeCaso {
+  const situacao = entrada['situacao'] ?? ''
+  const numero = entrada['numero'] ?? ''
+
+  return {
+    situacao:
+      situacao === SituacaoCaso.EM_ANDAMENTO || situacao === SituacaoCaso.ARQUIVADO
+        ? situacao
+        : '',
+    // Não confere aqui se o id existe: id inexistente simplesmente não acha
+    // caso nenhum, que é o resultado honesto.
+    responsavel: (entrada['responsavel'] ?? '').trim(),
+    numero: numero === 'com' || numero === 'sem' ? numero : '',
+  }
+}
+
+export function algumFiltroDeCasoAtivo(filtros: FiltrosDeCaso): boolean {
+  return filtros.situacao !== '' || filtros.responsavel !== '' || filtros.numero !== ''
+}
+
+export function condicaoDosFiltrosDeCaso(
+  filtros: FiltrosDeCaso,
+): Prisma.CasoWhereInput {
+  const condicoes: Prisma.CasoWhereInput[] = []
+
+  if (filtros.situacao !== '') condicoes.push({ situacao: filtros.situacao })
+
+  if (filtros.responsavel === 'sem') {
+    condicoes.push({ responsavelId: null })
+  } else if (filtros.responsavel !== '') {
+    condicoes.push({ responsavelId: filtros.responsavel })
+  }
+
+  // O protótipo prevê caso ainda em fase pré-processual, sem número. Saber
+  // quais são é a diferença entre lembrar e esquecer de protocolar.
+  if (filtros.numero === 'com') condicoes.push({ numeroProcesso: { not: null } })
+  if (filtros.numero === 'sem') condicoes.push({ numeroProcesso: null })
+
+  return condicoes.length === 0 ? {} : { AND: condicoes }
+}
+
 export const LIMITE_DA_LISTA = 200
 
 export type ListaDeCasos = {
@@ -252,9 +318,18 @@ export type ListaDeCasos = {
 export async function listarCasos(
   sessao: SessaoServidor,
   termo: string,
+  filtros: FiltrosDeCaso = FILTROS_DE_CASO_VAZIOS,
 ): Promise<ListaDeCasos> {
+  const condicoes: Prisma.CasoWhereInput[] = []
+  const daBusca = condicaoDaBusca(termo)
+  if (daBusca !== undefined) condicoes.push(daBusca)
+  if (algumFiltroDeCasoAtivo(filtros)) condicoes.push(condicaoDosFiltrosDeCaso(filtros))
+
   const casos = await prisma.caso.findMany({
-    where: filtroDeCasos(sessao, condicaoDaBusca(termo)),
+    where: filtroDeCasos(
+      sessao,
+      condicoes.length === 0 ? undefined : { AND: condicoes },
+    ),
     select: RESUMO,
     orderBy: { criadoEm: 'desc' },
     take: LIMITE_DA_LISTA + 1,
