@@ -385,6 +385,21 @@ acima) ou uma limpeza no banco antes da entrega.
 uma caixa de verdade. A tela responde e o SMTP está provado; falta o ciclo
 completo, que é item da demonstração.
 
+**Listas de clientes e de casos ganharam filtros, linha clicável e menu**
+(16/09/2026), pedido do escritório. Conferido em produção: filtro por tipo de
+pessoa, por acesso ao portal e por ter/não ter caso; a linha inteira abre a
+ficha; o menu de cada cliente tem abrir, editar e **excluir**.
+
+A exclusão tem trava: recusa cliente com documento, andamento ou contrato
+assinado, e devolve os números do que existe em vez de um "não é possível"
+sem explicação. Conferido em produção nos dois lados — cliente vazio sai,
+cliente com histórico (a Joana, com 2 documentos e 1 andamento) fica.
+
+Caso agora nasce também da lista de Casos, com o cliente obrigatório no
+seletor — sem cliente escolhido a gravação é recusada. Casos ganharam filtro
+por situação, responsável (incluindo "sem responsável") e com/sem número de
+processo.
+
 **O primeiro uso de verdade achou três defeitos** (16/09/2026), todos no
 caminho mais percorrido do sistema: cadastrar um cliente.
 
