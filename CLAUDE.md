@@ -307,6 +307,59 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Passeio de operador em produção** (16/09/2026): o sistema foi dirigido de
+ponta a ponta como uma pessoa o usaria, errando de propósito. Funcionou tudo
+— pessoa física e jurídica, caso com honorários parcelados, andamento,
+procuração e contrato em PDF, pasta e a tela de assinatura (sem enviar). O
+caminho de empresa se saiu especialmente bem: pedir procuração sem sócio
+vinculado responde "Falta preencher antes de gerar: representante legal da
+empresa", com link para resolver.
+
+Quatro defeitos vieram junto, e todos já estão corrigidos e no ar:
+
+1. **O formulário de CASO apagava tudo**, pelo mesmo motivo do de cliente. Era
+   o pior dos dois: a regra que mais recusa ali é a da soma das parcelas, que
+   só pode falhar DEPOIS de honorários e parcelas preenchidos. Andamento,
+   anexo e novo usuário tinham a mesma doença.
+2. **A ficha não mostrava cidade e UF** — campo obrigatório sem lugar para
+   conferir, e é dele que sai a cidade da assinatura dos documentos.
+3. **Concordância de gênero** nas mensagens de campo obrigatório.
+4. **O erro antigo escondia a dica ao vivo** do CPF: corrigido o número, a
+   tela continuava dizendo "Informe o CPF ou o CNPJ".
+
+**O que ficou como melhoria, por ordem de valor.** Nada disso é obrigação de
+contrato; é o que faria diferença no uso diário:
+
+1. **Busca de endereço pelo CEP.** Hoje CEP, rua, bairro, cidade e UF são
+   digitados um a um em todo cliente. É o maior ganho de tempo disponível, e
+   reduz erro justamente em cidade/UF, que vão para os documentos.
+2. **Uma tela de Documentos de verdade.** Agora que a assinatura existe, a
+   pergunta diária é "quais contratos estão aguardando assinatura?", e ela só
+   se responde abrindo cliente por cliente.
+3. **Estado civil como lista**, não campo livre: vai para documento jurídico e
+   em seis meses haverá "solteira", "Solteira" e "SOLTEIRO" no banco.
+4. **Não há como remover cliente cadastrado por engano.** O padrão de
+   Usuários — desativar, não apagar — serviria.
+5. **"anexado por" aparece em documento que o sistema gerou.** Falta
+   distinguir gerado de anexado.
+
+**Uma melhoria recusada de propósito:** preencher "brasileira" por padrão na
+nacionalidade. Economizaria digitação em quase todo cadastro, mas basta
+alguém não trocar num cliente estrangeiro para a procuração sair mentindo. Em
+documento assinado, campo em branco que incomoda é melhor que campo
+preenchido que mente.
+
+**Há dados de teste em produção** desde 16/09/2026: os clientes Joana Ribeiro
+da Silva, Padaria Aurora Ltda e Carlos Aurora de Souza, com um caso, um
+andamento e três documentos gerados. Nenhum foi enviado para assinatura —
+nenhum crédito foi gasto. Ficam até existir a desativação de cliente (item 4
+acima) ou uma limpeza no banco antes da entrega.
+
+**O único caminho não testado de ponta a ponta é o cliente entrando em
+`/consultar`**: o código vai por e-mail, e testá-lo exige alguém com acesso a
+uma caixa de verdade. A tela responde e o SMTP está provado; falta o ciclo
+completo, que é item da demonstração.
+
 **O primeiro uso de verdade achou três defeitos** (16/09/2026), todos no
 caminho mais percorrido do sistema: cadastrar um cliente.
 
