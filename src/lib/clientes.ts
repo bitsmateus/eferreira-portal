@@ -26,55 +26,16 @@ import {
   ufValida,
 } from '@/lib/formatos'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
+import { obrigatoriosPara } from '@/lib/campos-do-cliente'
 
 // ---------------------------------------------------------------------------
 // Validação do cadastro
 // ---------------------------------------------------------------------------
 
-/**
- * Campos que o escritório definiu como obrigatórios em 14/09/2026, e a razão
- * de a lista mudar conforme o tipo de pessoa.
- *
- * Para pessoa física, a qualificação é dela mesma. Para pessoa jurídica, RG,
- * estado civil, profissão, nacionalidade e nome da mãe **não se aplicam à
- * empresa** — são do sócio, que o escritório pediu como "o mesmo cadastro da
- * PF ligado ao cadastro do PJ" e mora no `RepresentanteLegal`. Exigi-los da
- * empresa impediria cadastrar qualquer CNPJ.
- *
- * Data de nascimento ficou de fora: o escritório tirou da lista, e nenhum dos
- * modelos de documento a usa.
- *
- * Bloqueiam a gravação, a pedido do escritório: "é melhor não deixar salvar,
- * para não criar futuras pendências".
- */
-const OBRIGATORIOS_COMUNS = [
-  ['email', 'E-mail'],
-  ['telefone', 'Telefone'],
-  ['cep', 'CEP'],
-  ['endereco', 'Endereço'],
-  ['cidade', 'Cidade'],
-  ['uf', 'UF'],
-] as const
-
-const OBRIGATORIOS_DA_PESSOA = [
-  ['rg', 'RG'],
-  ['estadoCivil', 'Estado civil'],
-  ['profissao', 'Profissão'],
-  ['nacionalidade', 'Nacionalidade'],
-  ['nomeMae', 'Nome da mãe'],
-] as const
-
-type CampoObrigatorio =
-  | (typeof OBRIGATORIOS_COMUNS)[number][0]
-  | (typeof OBRIGATORIOS_DA_PESSOA)[number][0]
-
-export function obrigatoriosPara(
-  tipoPessoa: TipoPessoa,
-): readonly (readonly [CampoObrigatorio, string])[] {
-  return tipoPessoa === TipoPessoa.FISICA
-    ? [...OBRIGATORIOS_COMUNS, ...OBRIGATORIOS_DA_PESSOA]
-    : OBRIGATORIOS_COMUNS
-}
+// A lista de obrigatórios vive em `campos-do-cliente.ts`, que o formulário
+// também importa para marcar o asterisco. Uma lista só: a tela e o servidor
+// não podem discordar sobre o que é obrigatório.
+export { obrigatoriosPara } from '@/lib/campos-do-cliente'
 
 const unidadeFederativa = z
   .string()

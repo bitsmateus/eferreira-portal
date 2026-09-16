@@ -10,7 +10,9 @@ import {
   useTransition,
 } from 'react'
 import { useFormStatus } from 'react-dom'
+import { TipoPessoa } from '@prisma/client'
 
+import { ehObrigatorio } from '@/lib/campos-do-cliente'
 import {
   UNIDADES_FEDERATIVAS,
   formatarCep,
@@ -69,6 +71,7 @@ function Campo({
   erro,
   dica,
   complemento,
+  obrigatorio = false,
 }: {
   nome: string
   rotulo: string
@@ -76,11 +79,22 @@ function Campo({
   erro?: string
   dica?: React.ReactNode
   complemento?: React.ReactNode
+  obrigatorio?: boolean
 }) {
   return (
     <div className="mb-[15px]">
       <label className="campo-rotulo" htmlFor={nome}>
         {rotulo}
+        {obrigatorio && (
+          <>
+            {/* O asterisco é decoração para quem enxerga; quem usa leitor de
+                tela ouve a palavra, que é o que realmente informa. */}
+            <span aria-hidden="true" className="text-erro">
+              {' *'}
+            </span>
+            <span className="sr-only"> (obrigatório)</span>
+          </>
+        )}
         {complemento}
       </label>
       {children}
@@ -123,9 +137,20 @@ export function FormularioDeCliente({
   const erros = estado?.erros ?? {}
   const idDoFormulario = useId()
 
-  const [documento, setDocumento] = useState(valores.documento)
-  const [telefone, setTelefone] = useState(valores.telefone)
-  const [cep, setCep] = useState(valores.cep)
+  /**
+   * TODO CAMPO É CONTROLADO, E ISSO NÃO É ESTILO — É O CONSERTO DE UM DEFEITO.
+   *
+   * Antes, só documento, telefone e CEP tinham estado; o resto era
+   * `defaultValue`. Quando a gravação era recusada por falta de um campo
+   * obrigatório, o React reiniciava o formulário ao fim da ação e **tudo o
+   * que tinha sido digitado desaparecia** — o operador preenchia a ficha
+   * inteira, errava um campo e recomeçava do zero.
+   *
+   * Com o valor no estado do componente, a recusa não apaga nada: a tela
+   * volta com tudo no lugar e o erro apontando o que falta preencher.
+   */
+  const [campos, setCampos] = useState<ValoresDoCliente>(valores)
+
   const [reconhecimento, setReconhecimento] = useState<Reconhecimento>({
     estado: 'vazio',
   })
@@ -133,14 +158,28 @@ export function FormularioDeCliente({
   /** Número da última consulta disparada, para descartar resposta atrasada. */
   const ultimaConsulta = useRef(0)
 
+  function definir<C extends keyof ValoresDoCliente>(nome: C, valor: string): void {
+    setCampos((atual) => ({ ...atual, [nome]: valor }))
+  }
+
   // Só para a tela saber o que mostrar. Quem decide o tipo de pessoa de
   // verdade é o servidor, a partir do próprio documento (regra 2).
-  const ehPessoaJuridica = normalizarDocumento(documento).length === 14
+  const ehPessoaJuridica = normalizarDocumento(campos.documento).length === 14
+
+  /**
+   * Enquanto o documento não estiver completo, a tela assume pessoa física —
+   * que é a lista mais exigente. Assim que um CNPJ é digitado, os asteriscos
+   * da qualificação pessoal somem sozinhos: aqueles dados são do sócio, não
+   * da empresa.
+   */
+  const tipoPessoa = ehPessoaJuridica ? TipoPessoa.JURIDICA : TipoPessoa.FISICA
+  const obrigatorio = (campo: keyof ValoresDoCliente) =>
+    ehObrigatorio(campo, tipoPessoa)
 
   useEffect(() => {
     if (!reconhecerAoDigitar) return
 
-    const digitos = normalizarDocumento(documento)
+    const digitos = normalizarDocumento(campos.documento)
     if (digitos === '') {
       setReconhecimento({ estado: 'vazio' })
       return
@@ -185,7 +224,7 @@ export function FormularioDeCliente({
     }, 400)
 
     return () => clearTimeout(relogio)
-  }, [documento, reconhecerAoDigitar])
+  }, [campos.documento, reconhecerAoDigitar])
 
   const dicaDoDocumento = (() => {
     if (reconhecimento.estado === 'consultando') {
@@ -225,6 +264,9 @@ export function FormularioDeCliente({
     return undefined
   })()
 
+  /** Quantos campos obrigatórios a última tentativa recusou. */
+  const quantosErros = Object.keys(erros).length
+
   return (
     <form action={enviar} noValidate id={idDoFormulario}>
       {estado?.mensagem !== undefined && (
@@ -248,10 +290,31 @@ export function FormularioDeCliente({
         </div>
       )}
 
+      {quantosErros > 0 && (
+        <div className="aviso aviso-atencao mb-4" role="alert">
+          <span aria-hidden="true">▲</span>
+          <div>
+            <b>
+              {quantosErros === 1
+                ? 'Falta preencher 1 campo.'
+                : `Faltam preencher ${quantosErros} campos.`}
+            </b>{' '}
+            Nada do que você digitou foi perdido — complete o que está marcado
+            em vermelho e salve de novo.
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <div className="cartao">
           <div className="cartao-cabecalho">
             <h2>Identificação</h2>
+            <span className="ml-auto text-[11.5px] text-texto-3">
+              <span aria-hidden="true" className="text-erro">
+                *
+              </span>{' '}
+              obrigatório
+            </span>
           </div>
 
           <div className="cartao-corpo">
@@ -260,6 +323,7 @@ export function FormularioDeCliente({
               rotulo="CPF ou CNPJ"
               erro={erros['documento']}
               dica={dicaDoDocumento}
+              obrigatorio={obrigatorio('documento')}
             >
               <input
                 id="documento"
@@ -269,39 +333,51 @@ export function FormularioDeCliente({
                 required
                 className="campo-entrada mono"
                 placeholder="000.000.000-00"
-                value={documento}
-                onChange={(evento) => setDocumento(evento.target.value)}
+                value={campos.documento}
+                onChange={(evento) => definir('documento', evento.target.value)}
                 onBlur={() =>
-                  setDocumento((atual) => {
+                  setCampos((atual) => {
                     // Formatar um documento incompleto apagaria o que a pessoa
                     // acabou de digitar. Só formata quando está inteiro.
-                    const digitos = normalizarDocumento(atual)
+                    const digitos = normalizarDocumento(atual.documento)
                     return digitos.length === 11 || digitos.length === 14
-                      ? formatarDocumento(atual)
+                      ? { ...atual, documento: formatarDocumento(atual.documento) }
                       : atual
                   })
                 }
               />
             </Campo>
 
-            <Campo nome="nome" rotulo="Nome completo" erro={erros['nome']}>
+            <Campo
+              nome="nome"
+              rotulo="Nome completo"
+              erro={erros['nome']}
+              obrigatorio={obrigatorio('nome')}
+            >
               <input
                 id="nome"
                 name="nome"
                 required
                 className="campo-entrada"
-                defaultValue={valores.nome}
+                value={campos.nome}
+                onChange={(evento) => definir('nome', evento.target.value)}
               />
             </Campo>
 
             <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
               <div className="flex-1">
-                <Campo nome="rg" rotulo="RG ou inscrição estadual" erro={erros['rg']}>
+                <Campo
+                  nome="rg"
+                  rotulo="RG ou inscrição estadual"
+                  erro={erros['rg']}
+                  obrigatorio={obrigatorio('rg')}
+                >
                   <input
                     id="rg"
                     name="rg"
                     className="campo-entrada"
-                    defaultValue={valores.rg}
+                    value={campos.rg}
+                    onChange={(evento) => definir('rg', evento.target.value)}
                   />
                 </Campo>
               </div>
@@ -310,13 +386,17 @@ export function FormularioDeCliente({
                   nome="dataNascimento"
                   rotulo="Data de nascimento ou de fundação"
                   erro={erros['dataNascimento']}
+                  obrigatorio={obrigatorio('dataNascimento')}
                 >
                   <input
                     id="dataNascimento"
                     name="dataNascimento"
                     type="date"
                     className="campo-entrada mono"
-                    defaultValue={valores.dataNascimento}
+                    value={campos.dataNascimento}
+                    onChange={(evento) =>
+                      definir('dataNascimento', evento.target.value)
+                    }
                   />
                 </Campo>
               </div>
@@ -328,22 +408,30 @@ export function FormularioDeCliente({
                   nome="estadoCivil"
                   rotulo="Estado civil"
                   erro={erros['estadoCivil']}
+                  obrigatorio={obrigatorio('estadoCivil')}
                 >
                   <input
                     id="estadoCivil"
                     name="estadoCivil"
                     className="campo-entrada"
-                    defaultValue={valores.estadoCivil}
+                    value={campos.estadoCivil}
+                    onChange={(evento) => definir('estadoCivil', evento.target.value)}
                   />
                 </Campo>
               </div>
               <div className="flex-1">
-                <Campo nome="profissao" rotulo="Profissão" erro={erros['profissao']}>
+                <Campo
+                  nome="profissao"
+                  rotulo="Profissão"
+                  erro={erros['profissao']}
+                  obrigatorio={obrigatorio('profissao')}
+                >
                   <input
                     id="profissao"
                     name="profissao"
                     className="campo-entrada"
-                    defaultValue={valores.profissao}
+                    value={campos.profissao}
+                    onChange={(evento) => definir('profissao', evento.target.value)}
                   />
                 </Campo>
               </div>
@@ -355,12 +443,14 @@ export function FormularioDeCliente({
                   nome="nacionalidade"
                   rotulo="Nacionalidade"
                   erro={erros['nacionalidade']}
+                  obrigatorio={obrigatorio('nacionalidade')}
                 >
                   <input
                     id="nacionalidade"
                     name="nacionalidade"
                     className="campo-entrada"
-                    defaultValue={valores.nacionalidade}
+                    value={campos.nacionalidade}
+                    onChange={(evento) => definir('nacionalidade', evento.target.value)}
                   />
                 </Campo>
               </div>
@@ -369,6 +459,7 @@ export function FormularioDeCliente({
                   nome="nomeMae"
                   rotulo="Nome da mãe"
                   erro={erros['nomeMae']}
+                  obrigatorio={obrigatorio('nomeMae')}
                   dica={
                     ehPessoaJuridica ? undefined : (
                       <p className="dica">
@@ -381,7 +472,8 @@ export function FormularioDeCliente({
                     id="nomeMae"
                     name="nomeMae"
                     className="campo-entrada"
-                    defaultValue={valores.nomeMae}
+                    value={campos.nomeMae}
+                    onChange={(evento) => definir('nomeMae', evento.target.value)}
                   />
                 </Campo>
               </div>
@@ -405,6 +497,7 @@ export function FormularioDeCliente({
               nome="email"
               rotulo="E-mail"
               erro={erros['email']}
+              obrigatorio={obrigatorio('email')}
               complemento={
                 <span className="text-erro"> · necessário para o acesso do cliente</span>
               }
@@ -415,60 +508,93 @@ export function FormularioDeCliente({
                 type="email"
                 autoComplete="off"
                 className="campo-entrada"
-                defaultValue={valores.email}
+                value={campos.email}
+                onChange={(evento) => definir('email', evento.target.value)}
               />
             </Campo>
 
             <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
               <div className="flex-1">
-                <Campo nome="telefone" rotulo="Telefone" erro={erros['telefone']}>
+                <Campo
+                  nome="telefone"
+                  rotulo="Telefone"
+                  erro={erros['telefone']}
+                  obrigatorio={obrigatorio('telefone')}
+                >
                   <input
                     id="telefone"
                     name="telefone"
                     inputMode="tel"
                     className="campo-entrada mono"
                     placeholder="(11) 90000-0000"
-                    value={telefone}
-                    onChange={(evento) => setTelefone(evento.target.value)}
-                    onBlur={() => setTelefone((atual) => formatarTelefone(atual))}
+                    value={campos.telefone}
+                    onChange={(evento) => definir('telefone', evento.target.value)}
+                    onBlur={() =>
+                      setCampos((atual) => ({
+                        ...atual,
+                        telefone: formatarTelefone(atual.telefone),
+                      }))
+                    }
                   />
                 </Campo>
               </div>
               <div className="flex-1">
-                <Campo nome="cep" rotulo="CEP" erro={erros['cep']}>
+                <Campo
+                  nome="cep"
+                  rotulo="CEP"
+                  erro={erros['cep']}
+                  obrigatorio={obrigatorio('cep')}
+                >
                   <input
                     id="cep"
                     name="cep"
                     inputMode="numeric"
                     className="campo-entrada mono"
                     placeholder="00000-000"
-                    value={cep}
-                    onChange={(evento) => setCep(evento.target.value)}
-                    onBlur={() => setCep((atual) => formatarCep(atual))}
+                    value={campos.cep}
+                    onChange={(evento) => definir('cep', evento.target.value)}
+                    onBlur={() =>
+                      setCampos((atual) => ({
+                        ...atual,
+                        cep: formatarCep(atual.cep),
+                      }))
+                    }
                   />
                 </Campo>
               </div>
             </div>
 
-            <Campo nome="endereco" rotulo="Endereço" erro={erros['endereco']}>
+            <Campo
+              nome="endereco"
+              rotulo="Endereço"
+              erro={erros['endereco']}
+              obrigatorio={obrigatorio('endereco')}
+            >
               <input
                 id="endereco"
                 name="endereco"
                 className="campo-entrada"
                 placeholder="Rua, número, complemento e bairro"
-                defaultValue={valores.endereco}
+                value={campos.endereco}
+                onChange={(evento) => definir('endereco', evento.target.value)}
               />
               <p className="dica">Sem a cidade — ela vai nos campos abaixo.</p>
             </Campo>
 
             <div className="flex gap-3">
               <div className="flex-1">
-                <Campo nome="cidade" rotulo="Cidade" erro={erros['cidade']}>
+                <Campo
+                  nome="cidade"
+                  rotulo="Cidade"
+                  erro={erros['cidade']}
+                  obrigatorio={obrigatorio('cidade')}
+                >
                   <input
                     id="cidade"
                     name="cidade"
                     className="campo-entrada"
-                    defaultValue={valores.cidade}
+                    value={campos.cidade}
+                    onChange={(evento) => definir('cidade', evento.target.value)}
                   />
                   <p className="dica">
                     É esta cidade que sai na assinatura dos documentos.
@@ -476,12 +602,18 @@ export function FormularioDeCliente({
                 </Campo>
               </div>
               <div className="w-[110px]">
-                <Campo nome="uf" rotulo="UF" erro={erros['uf']}>
+                <Campo
+                  nome="uf"
+                  rotulo="UF"
+                  erro={erros['uf']}
+                  obrigatorio={obrigatorio('uf')}
+                >
                   <select
                     id="uf"
                     name="uf"
                     className="campo-entrada"
-                    defaultValue={valores.uf}
+                    value={campos.uf}
+                    onChange={(evento) => definir('uf', evento.target.value)}
                   >
                     <option value="">—</option>
                     {UNIDADES_FEDERATIVAS.map((sigla) => (
