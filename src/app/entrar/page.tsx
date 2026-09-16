@@ -38,7 +38,10 @@ export default function PaginaDeEntrada() {
         <FormularioDeEntrada />
 
         <p className="mt-3.5 text-center text-[11.5px] text-texto-3">
-          Esqueceu a senha? Fale com o administrador do escritório.
+          Esqueceu a senha?{' '}
+          <a href="/recuperar-senha" className="underline underline-offset-2">
+            Recuperar acesso
+          </a>
         </p>
 
         <div className="mt-7 border-t border-borda pt-[18px]">

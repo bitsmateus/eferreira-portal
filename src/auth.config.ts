@@ -14,8 +14,8 @@ const PREFIXOS_DO_PAINEL = ['/painel'] as const
 /** A área do cliente. Só o perfil CLIENTE entra — e a página confere de novo. */
 const PREFIXOS_DO_CLIENTE = ['/meus-processos'] as const
 
-/** Rotas abertas: as duas telas de entrada e o que o Auth.js precisa. */
-const ROTAS_PUBLICAS = ['/entrar', '/consultar'] as const
+/** Rotas abertas: as telas de entrada e o que o Auth.js precisa. */
+const ROTAS_PUBLICAS = ['/entrar', '/consultar', '/recuperar-senha'] as const
 
 function comecaCom(caminho: string, prefixos: readonly string[]): boolean {
   return prefixos.some(

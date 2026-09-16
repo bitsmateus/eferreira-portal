@@ -60,3 +60,47 @@ export function mensagemDeCodigo(
 
   return { para, assunto, texto, html }
 }
+
+/**
+ * O e-mail com o código de redefinição de senha do operador ou administrador
+ * que esqueceu a senha.
+ *
+ * Mesmo cuidado do código de entrada do cliente: nada sobre o painel, sobre
+ * clientes ou sobre processos — só o código e o aviso de segurança.
+ */
+export function mensagemDeRedefinicaoDeSenha(
+  para: string,
+  nome: string,
+  codigo: string,
+  minutosDeValidade: number,
+): Mensagem {
+  const assunto = `Código para redefinir sua senha: ${codigo}`
+
+  const texto = [
+    `${nome},`,
+    '',
+    `Alguém pediu para redefinir a senha do seu acesso ao painel com o código ${codigo}.`,
+    '',
+    `Ele vale por ${minutosDeValidade} minutos e serve uma vez só.`,
+    '',
+    'Se não foi você que pediu, ignore este e-mail — sem o código ninguém troca',
+    'sua senha — e avise o escritório.',
+    '',
+    `${ESCRITORIO.razaoSocial}`,
+    `${ESCRITORIO.telefone} · ${ESCRITORIO.email}`,
+  ].join('\n')
+
+  const html = [
+    '<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:28px 24px;color:#1E1E1E">',
+    `<p style="margin:0 0 18px;font-size:15px">${escapar(nome)},</p>`,
+    '<p style="margin:0 0 6px;font-size:15px">Código para redefinir a senha do seu acesso ao painel:</p>',
+    `<p style="margin:0 0 6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:34px;letter-spacing:.22em;font-weight:600">${escapar(codigo)}</p>`,
+    `<p style="margin:0 0 22px;font-size:13px;color:#5A5A5A">Vale por ${minutosDeValidade} minutos e serve uma vez só.</p>`,
+    '<p style="margin:0 0 22px;font-size:13px;color:#5A5A5A">Se não foi você que pediu, ignore este e-mail — sem o código ninguém troca sua senha — e avise o escritório.</p>',
+    '<hr style="border:0;border-top:1px solid #DCDCDC;margin:0 0 14px">',
+    `<p style="margin:0;font-size:12px;color:#7A7A7A">${escapar(ESCRITORIO.razaoSocial)}<br>${escapar(ESCRITORIO.telefone)} · ${escapar(ESCRITORIO.email)}</p>`,
+    '</div>',
+  ].join('')
+
+  return { para, assunto, texto, html }
+}

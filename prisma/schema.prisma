@@ -126,6 +126,7 @@ model Usuario {
   documentosEnviados  Documento[]           @relation("DocumentoEnviadoPor")
   assinaturasPedidas  EnvioParaAssinatura[] @relation("EnvioPedidoPor")
   registrosAuditoria  Auditoria[]
+  tokensDeRedefinicaoDeSenha TokenDeRedefinicaoDeSenha[]
 
   @@index([perfil])
   @@index([clienteId])
@@ -237,6 +238,41 @@ model CodigoDeAcesso {
 
   @@index([clienteId, criadoEm])
   @@map("codigo_de_acesso")
+}
+
+// ---------------------------------------------------------------------------
+// Token de redefinição de senha — "esqueci minha senha", para operador e
+// administrador. Mesmo desenho do CodigoDeAcesso do cliente, mas ligado ao
+// Usuario: seis dígitos por e-mail, em vez de link, para não ter dois padrões
+// de recuperação no mesmo sistema.
+//
+// O código NÃO é guardado em texto, pelo mesmo motivo do código do cliente:
+// quem tivesse leitura do banco poderia trocar a senha de qualquer um.
+// ---------------------------------------------------------------------------
+
+model TokenDeRedefinicaoDeSenha {
+  id String @id @default(cuid())
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  /// Argon2id dos seis dígitos. Nunca o código em si.
+  codigoHash String
+
+  expiraEm     DateTime
+  /// Tentativas erradas contra ESTE código. Na quinta, ele morre.
+  tentativas   Int       @default(0)
+  usadoEm      DateTime?
+  /// Invalidado por um pedido mais novo, por tentativas demais ou por uso.
+  invalidadoEm DateTime?
+
+  enderecoIp    String?
+  agenteUsuario String?
+
+  criadoEm DateTime @default(now())
+
+  @@index([usuarioId, criadoEm])
+  @@map("token_de_redefinicao_de_senha")
 }
 
 // ---------------------------------------------------------------------------

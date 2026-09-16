@@ -307,6 +307,26 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**"Esqueci minha senha" está de pé** (16/09/2026), pedido do escritório depois
+do primeiro uso real: até aqui, senha esquecida só se resolvia com o
+administrador redefinindo pela tela de Usuários. Agora `/entrar` tem o link
+"Recuperar acesso", que leva a `/recuperar-senha`.
+
+O desenho é o MESMO da entrada do cliente por CPF/CNPJ (Anexo II, 3.6), de
+propósito — um padrão só de recuperação por e-mail no sistema inteiro: seis
+dígitos por `node:crypto`, Argon2id no que fica gravado, um código por vez
+(pedir outro invalida o anterior), cinco tentativas erradas matam o código,
+dez minutos de validade, e a resposta na tela é **sempre a mesma** exista ou
+não aquele e-mail no sistema — diferenciar revelaria quem trabalha no
+escritório. Só a equipe (operador e administrador) passa por aqui: o cliente
+não tem senha para esquecer, ele entra por código de acesso.
+
+Redefinir com o código certo também destrava o bloqueio de 5 tentativas — a
+pessoa acabou de provar quem é pelo e-mail, mesmo padrão do "Redefinir senha"
+do administrador. `TokenDeRedefinicaoDeSenha` é tabela nova (migração
+`20260916175729`), irmã de `CodigoDeAcesso` mas ligada a `Usuario`. 348
+testes unitários e 102 contra o banco.
+
 **A busca de endereço pelo CEP está de pé** (16/09/2026) — era o item 1 da
 lista de melhorias e o maior ganho de tempo disponível. Digitado o CEP, o
 sistema preenche endereço, cidade e UF. Não é só digitação poupada: é em
