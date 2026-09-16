@@ -200,7 +200,8 @@ export async function gerarDocumento(
 
   if (previa.situacao !== 'pronto') return previa
 
-  const pdf = await gerarPdf(await montarPaginaTimbrada(previa.html, previa.titulo))
+  const { html, timbre } = await montarPaginaTimbrada(previa.html, previa.titulo)
+  const pdf = await gerarPdf(html, timbre)
 
   const cliente = await prisma.cliente.findFirst({
     where: filtroDeClientes(sessao, { id: clienteId }),

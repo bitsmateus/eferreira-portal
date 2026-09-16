@@ -48,7 +48,8 @@ export async function GET(
       return new NextResponse('Documento indisponível.', { status: 409 })
     }
 
-    const pdf = await gerarPdf(await montarPaginaTimbrada(previa.html, previa.titulo))
+    const { html, timbre } = await montarPaginaTimbrada(previa.html, previa.titulo)
+    const pdf = await gerarPdf(html, timbre)
 
     return new NextResponse(Buffer.from(pdf), {
       headers: {

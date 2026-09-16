@@ -188,10 +188,14 @@ O `.docx` traz, no cabeçalho, uma **imagem de página inteira**: o monograma no
 alto, a marca d'água ao centro e, no pé, o nome do advogado, a OAB, o telefone,
 o e-mail e o site. É o timbre que o escritório usa no Word.
 
-Ele agora é o timbre dos documentos gerados (`src/modelos/timbre.png`), com as
-mesmas margens do arquivo original — 4,14cm no topo, 3cm nas laterais, 2,75cm
-no pé — e se repete em **todas** as páginas. Conferido: um contrato de quatro
-páginas sai com o timbre nas quatro.
+Ele virou o timbre dos documentos gerados, com as mesmas margens do arquivo
+original — 4,14cm no topo, 3cm nas laterais, 2,75cm no pé — e se repete em
+**todas** as páginas. `src/modelos/timbre.png` é o arquivo original, guardado
+como origem; o que roda em produção é o recorte dele em três faixas
+(`timbre-cabecalho.png`, `timbre-marca-dagua.png`, `timbre-rodape.png`) — ver
+o porquê, achado no uso real de 16/09/2026, no comentário grande no topo de
+`src/lib/timbre.ts`. Conferido de novo depois da correção: um contrato de
+várias páginas sai com cabeçalho e rodapé no lugar certo em todas elas.
 
 Isso fecha a dependência 3.2 sem arquivo novo. O desenho que eu havia feito a
 partir do protótipo foi descartado: este é o original.

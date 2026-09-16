@@ -89,6 +89,12 @@ export default async function PaginaDoCaso({
             >
               Editar
             </Link>
+            <Link
+              href={`/painel/clientes/${caso.cliente.id}/gerar?casoId=${caso.id}`}
+              className="botao botao-secundario"
+            >
+              Gerar documento
+            </Link>
             <ExcluirCasoBotao casoId={caso.id} titulo={titulo} />
           </>
         }

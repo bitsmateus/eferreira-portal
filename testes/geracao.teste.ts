@@ -47,9 +47,11 @@ describe('montarPagina', () => {
     expect(pagina).toContain('body{margin:0}')
     expect(pagina).toContain('<p>corpo</p>')
     expect(pagina).toContain('<title>Procuração</title>')
-    // O papel timbrado do escritório entra embutido, atrás do texto.
+    // A marca d'água do timbre entra embutida, atrás do texto — cabeçalho e
+    // rodapé vão por outro caminho (headerTemplate/footerTemplate do
+    // Chromium, em src/lib/pdf.ts), não pelo corpo do HTML.
     expect(pagina).toContain('data:image/png;base64,TIMBRE')
-    expect(pagina).toContain('class="papel-timbrado"')
+    expect(pagina).toContain('class="marca-dagua"')
   })
 
   // A prévia e o PDF passam por aqui. Se a folha de estilo não entrasse, o

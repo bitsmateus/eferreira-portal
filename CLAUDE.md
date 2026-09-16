@@ -307,6 +307,40 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**O timbre continuava "quebrado" mesmo depois da marca d'água mais fraca —
+a causa de verdade era outra, e agora está corrigida** (16/09/2026). O
+escritório voltou a reportar cabeçalho e rodapé "fora do lugar", por cima do
+texto do contrato, mesmo depois do ajuste de opacidade abaixo. Reproduzido
+localmente gerando um contrato de teste e inspecionando o PDF por dentro (a
+árvore de operadores do conteúdo, não só o olho): o Chromium, ao paginar
+impressão, repete elemento com `position: fixed` no ritmo da ÁREA ÚTIL da
+página (a altura entre as margens, ~22,81cm) — não no ritmo da FOLHA INTEIRA
+(29,7cm). O timbre era uma imagem só, do tamanho da folha inteira, presa com
+`position: fixed`; cada repetição avançava 22,81cm enquanto a próxima página
+física só começava 29,7cm depois, e esse descompasso de 6,89cm por página se
+acumulava até o cabeçalho e o rodapé de um ciclo caírem por cima do texto de
+outra página — pior quanto mais páginas o documento tinha, exatamente como
+reportado.
+
+A correção separa o que é margem do que é área de texto: cabeçalho e rodapé
+(as faixas que vivem dentro das margens) saíram do `position: fixed` no corpo
+do HTML e passaram a entrar pelo `headerTemplate`/`footerTemplate` do
+Chromium — o mecanismo nativo dele para repetir conteúdo em toda página
+impressa, imune a esse descompasso. Só a marca d'água central continua em
+`position: fixed`, agora do tamanho exato da área útil (22,81cm), o que faz a
+repetição coincidir com cada página em vez de brigar com ela. O timbre
+original (`src/modelos/timbre.png`) virou três recortes —
+`timbre-cabecalho.png`, `timbre-marca-dagua.png`, `timbre-rodape.png` —, pixel
+a pixel iguais ao arquivo do escritório, sem redesenhar nada. Detalhes e a
+armadilha do "seguro de impressora" do Chromium (um deslocamento fixo de
+~15pt que ele aplica ao cabeçalho/rodapé independente da margem pedida) estão
+no comentário grande em `src/lib/timbre.ts`.
+
+Conferido depois da correção, inspecionando a mesma árvore de operadores do
+PDF: cabeçalho, marca d'água e rodapé saem com a matriz de posição
+IDÊNTICA em todas as páginas de um contrato de teste com várias — o sinal de
+que não há mais descompasso acumulando. 353 testes.
+
 **Mais uma rodada de defeitos do uso real, todos corrigidos** (16/09/2026) —
 sequência direta da rodada anterior, achados assim que o escritório voltou a
 testar depois do deploy:

@@ -13,7 +13,13 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { Browser } from 'playwright'
 
-import { fundoTimbrado, timbreEmBase64 } from '@/lib/timbre'
+import { fundoDeMarcaDagua, templateDoTimbre, timbreEmBase64, type Timbre } from '@/lib/timbre'
+
+/** As margens do documento — a mesma medida para o texto (via `page.pdf`) e
+ * para o tamanho reservado ao `headerTemplate`/`footerTemplate`. Ver o
+ * comentário grande em `src/lib/timbre.ts` sobre por que isso não vem mais
+ * do `@page` do CSS. */
+const MARGEM = { top: '4.14cm', right: '3cm', bottom: '2.75cm', left: '3cm' } as const
 
 let navegadorMemorizado: Browser | null = null
 
@@ -70,7 +76,7 @@ export function montarPagina(
   corpo: string,
   estilo: string,
   titulo: string,
-  timbre: string,
+  marcaDagua: string,
 ): string {
   return `<!doctype html>
 <html lang="pt-BR">
@@ -79,23 +85,33 @@ export function montarPagina(
 <title>${titulo}</title>
 <style>${estilo}</style>
 </head>
-<body><main class="documento">${fundoTimbrado(timbre)}${corpo}</main></body>
+<body><main class="documento">${fundoDeMarcaDagua(marcaDagua)}${corpo}</main></body>
 </html>`
 }
 
-/** Atalho para quem só quer a página pronta, com o timbre já lido do disco. */
+/** Atalho para quem só quer a página pronta, com o timbre já lido do disco.
+ * O `timbre` completo (cabeçalho e rodapé inclusos) volta junto porque
+ * `gerarPdf` precisa dele para montar o `headerTemplate`/`footerTemplate`. */
 export async function montarPaginaTimbrada(
   corpo: string,
   titulo: string,
-): Promise<string> {
-  return montarPagina(corpo, await estiloDosDocumentos(), titulo, await timbreEmBase64())
+): Promise<{ html: string; timbre: Timbre }> {
+  const timbre = await timbreEmBase64()
+  const html = montarPagina(corpo, await estiloDosDocumentos(), titulo, timbre.marcaDagua)
+  return { html, timbre }
 }
 
 /**
  * Gera o PDF. `printBackground` fica ligado para que as linhas de assinatura e
  * as bordas do cabeçalho apareçam; sem isso o Chromium as descarta.
+ *
+ * Cabeçalho e rodapé vão pelo `headerTemplate`/`footerTemplate` do Chromium,
+ * não por `position: fixed` no corpo — é o mecanismo dele para repetir
+ * conteúdo em toda página impressa sem o descompasso descrito em
+ * `src/lib/timbre.ts`. Por isso a margem agora é dada aqui (`MARGEM`), e não
+ * mais pelo `@page` do CSS: os dois precisam concordar, e só um pode mandar.
  */
-export async function gerarPdf(paginaHtml: string): Promise<Uint8Array> {
+export async function gerarPdf(paginaHtml: string, timbre: Timbre): Promise<Uint8Array> {
   const contexto = await (await navegador()).newContext()
 
   try {
@@ -105,9 +121,10 @@ export async function gerarPdf(paginaHtml: string): Promise<Uint8Array> {
     const pdf = await pagina.pdf({
       format: 'A4',
       printBackground: true,
-      // As margens vêm do @page do CSS dos documentos, para que a prévia na
-      // tela e o PDF usem a mesma medida.
-      preferCSSPageSize: true,
+      displayHeaderFooter: true,
+      headerTemplate: templateDoTimbre(timbre.cabecalho, MARGEM.top, 'cabecalho'),
+      footerTemplate: templateDoTimbre(timbre.rodape, MARGEM.bottom, 'rodape'),
+      margin: MARGEM,
     })
 
     return new Uint8Array(pdf)

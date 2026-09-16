@@ -8,12 +8,17 @@
  * Papel A4 com margens de documento jurídico, texto justificado e serifado.
  */
 
-/* As margens são as do arquivo do escritório: 4,14cm no topo (para caber o
-   monograma do timbre), 3cm nas laterais e 2,75cm no pé (para o rodapé
-   impresso do papel). Medidas conferidas no .docx enviado em 14/09/2026. */
+/* As margens NÃO vêm mais daqui: `page.pdf({ margin })`, em `src/lib/pdf.ts`,
+   é quem manda agora — é o que permite o `headerTemplate`/`footerTemplate`
+   do Chromium reservar exatamente essa faixa para o timbre (ver o comentário
+   grande em `src/lib/timbre.ts`). Se as duas fontes de margem divergissem, o
+   texto usaria uma medida e o timbre outra. As medidas são as mesmas de
+   sempre: 4,14cm no topo (para caber o monograma), 3cm nas laterais e 2,75cm
+   no pé (para o rodapé impresso do papel), conferidas no .docx enviado em
+   14/09/2026. */
 @page {
   size: A4;
-  margin: 4.14cm 3cm 2.75cm 3cm;
+  margin: 0;
 }
 
 * {
@@ -30,21 +35,33 @@ body {
   hyphens: auto;
 }
 
-/* O papel timbrado do escritório, atrás de tudo.
+/* A marca d'água central do timbre, atrás do texto — cabeçalho e rodapé são
+   outra coisa: entram pelo `headerTemplate`/`footerTemplate` do Chromium
+   (`src/lib/pdf.ts`), não por aqui.
 
    `position: fixed` é o que faz a imagem se repetir em TODAS as páginas do
    PDF — é como o Chromium trata elemento fixo ao imprimir. Um background no
    body sairia só na primeira página, e o contrato tem três.
 
-   O deslocamento negativo desfaz as margens do @page: na impressão, elemento
-   fixo é posicionado a partir da área útil, e a folha timbrada precisa
-   começar na borda física do papel. */
-.papel-timbrado {
+   A ALTURA é a da ÁREA ÚTIL da página (29,7cm − 4,14cm de margem no topo −
+   2,75cm no pé = 22,81cm), não a da folha inteira — é isso que faz a
+   repetição do Chromium coincidir com cada página física. Ver o comentário
+   grande em `src/lib/timbre.ts`: com a imagem do tamanho da folha inteira,
+   cabeçalho e rodapé de uma página acabavam pintados por cima do texto de
+   outra.
+
+   `top: 4.14cm` porque o `@page` acima não declara mais margem nenhuma
+   (ela vem de `page.pdf({ margin })`, em `src/lib/pdf.ts`) — e sem margem
+   no `@page`, a origem de um elemento `fixed` é o canto físico da folha, não
+   a área útil. `left: 0` pelo mesmo motivo: a imagem já nasce do tamanho da
+   folha inteira (21cm) e não precisa de deslocamento para sangrar até as
+   duas bordas. */
+.marca-dagua {
   position: fixed;
-  top: -4.14cm;
-  left: -3cm;
+  top: 4.14cm;
+  left: 0;
   width: 21cm;
-  height: 29.7cm;
+  height: 22.81cm;
   z-index: -1;
 }
 
