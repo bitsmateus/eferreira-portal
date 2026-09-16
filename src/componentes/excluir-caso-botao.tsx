@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
 import { excluirCasoDaLista } from '@/app/painel/casos/acoes'
@@ -28,6 +28,13 @@ export function ExcluirCasoBotao({ casoId, titulo }: { casoId: string; titulo: s
     excluirCasoDaLista.bind(null, casoId),
     undefined,
   )
+
+  // A recusa (caso com andamento ou documento) precisa ficar visível. Sem
+  // isto, o componente ficava preso na tela de confirmação — que não mostra
+  // `estado.erro` — e clicar em "Confirmar exclusão" parecia não fazer nada.
+  useEffect(() => {
+    if (estado?.erro !== undefined) setConfirmando(false)
+  }, [estado])
 
   if (confirmando) {
     return (

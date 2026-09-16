@@ -55,12 +55,7 @@ export function MenuDoCaso({
     setConfirmando(false)
   }
 
-  function alternar() {
-    if (aberto) {
-      fechar()
-      return
-    }
-
+  function abrir() {
     const retangulo = botaoRef.current?.getBoundingClientRect()
     if (retangulo === undefined) return
 
@@ -70,6 +65,14 @@ export function MenuDoCaso({
     )
     setPosicao({ top: retangulo.bottom + 4, left: esquerda })
     setAberto(true)
+  }
+
+  function alternar() {
+    if (aberto) {
+      fechar()
+      return
+    }
+    abrir()
   }
 
   useEffect(() => {
@@ -97,9 +100,12 @@ export function MenuDoCaso({
     }
   }, [aberto])
 
+  // A recusa (caso com andamento ou documento) precisa ficar visível: usar
+  // `alternar()` aqui fecharia o menu em vez de reabri-lo, porque ele já
+  // estava aberto quando o formulário de confirmação foi enviado — dando a
+  // impressão de que nada aconteceu ao clicar em excluir.
   useEffect(() => {
-    if (estado?.erro !== undefined) alternar()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (estado?.erro !== undefined) abrir()
   }, [estado])
 
   return (

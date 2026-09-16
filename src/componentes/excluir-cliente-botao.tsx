@@ -41,11 +41,15 @@ export function ExcluirClienteBotao({
     undefined,
   )
 
-  // A tentativa normal esbarrou no histórico: abre direto o popup de
-  // exclusão forçada em vez de deixar a pessoa clicar de novo.
+  // Qualquer resposta da ação — erro ou histórico — precisa sair da tela de
+  // confirmação, que não mostra nenhuma delas. Sem isto, o componente ficava
+  // preso ali e "Confirmar exclusão" parecia não fazer nada. Cliente com
+  // histórico e sessão de administrador pula direto para o popup de
+  // exclusão forçada, em vez de deixar a pessoa clicar de novo.
   useEffect(() => {
-    if (estado?.situacao === 'tem_historico' && souAdministrador) {
-      setConfirmando(false)
+    if (estado === undefined) return
+    setConfirmando(false)
+    if (estado.situacao === 'tem_historico' && souAdministrador) {
       setModalForcadaAberto(true)
     }
   }, [estado, souAdministrador])
