@@ -274,16 +274,17 @@ export async function definirSignatarios(
   uuidDocumento: string,
   signatarios: readonly Signatario[],
 ): Promise<void> {
-  // A resposta vem em formatos diferentes conforme a versão da API aceita a
-  // chamada ou recusa algum signatário — por isso `unknown[]`, e não um tipo
-  // fixo. O que importa aqui é só: veio pelo menos uma entrada por
-  // signatário mandado? Menos que isso é a D4Sign aceitando o HTTP 200 e
-  // descartando por baixo os signatários que não bateram com o formato
+  // Sucesso de verdade: `{ message: [{ key_signer, email, act, ... }, ...] }`
+  // — um objeto por signatário, ecoando os dados enviados mais o
+  // `key_signer` que a D4Sign atribuiu. O que importa aqui é: veio um
+  // `key_signer` por signatário mandado? Menos que isso é a D4Sign aceitando
+  // o HTTP 200 e descartando por baixo o que não bateu com o formato
   // esperado — e foi exatamente isto que aconteceu com o campo `foreign`
-  // grafado errado (`foresign`) até esta correção: a lista de signatários
-  // ficava vazia no documento, e só o passo seguinte (`sendtosigner`)
-  // acusava "This file not have signers", sem apontar para a causa real.
-  const resposta = await chamar<unknown>(
+  // grafado errado (`foresign`) até a correção anterior: a lista de
+  // signatários ficava vazia no documento, e só o passo seguinte
+  // (`sendtosigner`) acusava "This file not have signers", sem apontar para
+  // a causa real.
+  const resposta = await chamar<{ message?: unknown }>(
     configuracao,
     `/documents/${uuidDocumento}/createlist`,
     {
@@ -306,7 +307,16 @@ export async function definirSignatarios(
     },
   )
 
-  if (!Array.isArray(resposta) || resposta.length < signatarios.length) {
+  const signatariosConfirmados = Array.isArray(resposta.message) ? resposta.message : []
+  const todosComChave = signatariosConfirmados.every(
+    (item) =>
+      typeof item === 'object' &&
+      item !== null &&
+      'key_signer' in item &&
+      Boolean((item as { key_signer?: unknown }).key_signer),
+  )
+
+  if (signatariosConfirmados.length < signatarios.length || !todosComChave) {
     throw new FalhaNaD4Sign(
       200,
       `A D4Sign aceitou a chamada mas não cadastrou todos os signatários: ${JSON.stringify(resposta).slice(0, 300)}`,

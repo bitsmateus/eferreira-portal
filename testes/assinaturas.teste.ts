@@ -293,9 +293,23 @@ describe('definirSignatarios', () => {
     { email: 'escritorio@exemplo.invalido', acao: '1' },
   ]
 
+  // O formato de verdade da D4Sign, visto em produção: um objeto por
+  // signatário, ecoando o que foi mandado mais o `key_signer` que ela
+  // atribuiu, tudo dentro de `message`.
+  function respostaDeSucesso(quantos: number) {
+    return JSON.stringify({
+      message: Array.from({ length: quantos }, (_, i) => ({
+        key_signer: `chave-${i}`,
+        email: SIGNATARIOS[i]?.email,
+        act: '1',
+        foreign: '0',
+      })),
+    })
+  }
+
   it('manda o campo "foreign", não o "foresign" — typo que deixava a D4Sign sem cadastrar o signatário', async () => {
     const chamadaFetch = vi.fn<(url: string, opcoes?: RequestInit) => Promise<Response>>(
-      async () => responder(JSON.stringify([{ message: 'Success' }, { message: 'Success' }])),
+      async () => responder(respostaDeSucesso(2)),
     )
     vi.stubGlobal('fetch', chamadaFetch)
 
@@ -309,15 +323,36 @@ describe('definirSignatarios', () => {
     }
   })
 
+  it('aceita a resposta de verdade da D4Sign — objeto com "message" como lista', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => responder(respostaDeSucesso(2))))
+
+    await expect(
+      definirSignatarios(CONFIGURACAO, 'uuid-doc', SIGNATARIOS),
+    ).resolves.toBeUndefined()
+  })
+
   // O bug de produção que este teste evita: a D4Sign aceitava o HTTP 200 e
   // devolvia uma lista mais curta que a de signatários mandados — sinal de
   // que ela descartou algum por baixo dos panos — e o código seguia para o
   // envio como se estivesse tudo certo, só para o sendtosigner recusar
   // depois com "This file not have signers".
   it('recusa uma resposta que não traz uma entrada por signatário mandado', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => responder(respostaDeSucesso(1))))
+
+    await expect(
+      definirSignatarios(CONFIGURACAO, 'uuid-doc', SIGNATARIOS),
+    ).rejects.toBeInstanceOf(FalhaNaD4Sign)
+  })
+
+  // Outro jeito de a D4Sign aceitar o HTTP 200 sem cadastrar nada: devolver
+  // a entrada do signatário sem o `key_signer` — sinal de que ela ecoou o
+  // pedido de volta sem confirmar o cadastro.
+  it('recusa uma resposta cujas entradas não trazem "key_signer"', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => responder(JSON.stringify([{ message: 'Success' }]))),
+      vi.fn(async () =>
+        responder(JSON.stringify({ message: [{ email: SIGNATARIOS[0]?.email, act: '1' }] })),
+      ),
     )
 
     await expect(
@@ -325,10 +360,10 @@ describe('definirSignatarios', () => {
     ).rejects.toBeInstanceOf(FalhaNaD4Sign)
   })
 
-  it('recusa uma resposta que não é uma lista', async () => {
+  it('recusa uma resposta sem "message"', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => responder(JSON.stringify({ message: 'algo deu errado' }))),
+      vi.fn(async () => responder(JSON.stringify({ erro: 'algo deu errado' }))),
     )
 
     await expect(
