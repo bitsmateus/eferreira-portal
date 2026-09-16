@@ -274,24 +274,44 @@ export async function definirSignatarios(
   uuidDocumento: string,
   signatarios: readonly Signatario[],
 ): Promise<void> {
-  await chamar(configuracao, `/documents/${uuidDocumento}/createlist`, {
-    metodo: 'POST',
-    corpo: {
-      signers: signatarios.map((signatario) => ({
-        email: signatario.email,
-        act: signatario.acao,
-        foresign: '0',
-        certificadoicpbr: '0',
-        assinatura_presencial: '0',
-        docauth: '0',
-        docauthandselfie: '0',
-        embed_methodauth: 'email',
-        embed_smsnumber: '',
-        upload_allow: '0',
-        upload_obs: '0',
-      })),
+  // A resposta vem em formatos diferentes conforme a versão da API aceita a
+  // chamada ou recusa algum signatário — por isso `unknown[]`, e não um tipo
+  // fixo. O que importa aqui é só: veio pelo menos uma entrada por
+  // signatário mandado? Menos que isso é a D4Sign aceitando o HTTP 200 e
+  // descartando por baixo os signatários que não bateram com o formato
+  // esperado — e foi exatamente isto que aconteceu com o campo `foreign`
+  // grafado errado (`foresign`) até esta correção: a lista de signatários
+  // ficava vazia no documento, e só o passo seguinte (`sendtosigner`)
+  // acusava "This file not have signers", sem apontar para a causa real.
+  const resposta = await chamar<unknown>(
+    configuracao,
+    `/documents/${uuidDocumento}/createlist`,
+    {
+      metodo: 'POST',
+      corpo: {
+        signers: signatarios.map((signatario) => ({
+          email: signatario.email,
+          act: signatario.acao,
+          foreign: '0',
+          certificadoicpbr: '0',
+          assinatura_presencial: '0',
+          docauth: '0',
+          docauthandselfie: '0',
+          embed_methodauth: 'email',
+          embed_smsnumber: '',
+          upload_allow: '0',
+          upload_obs: '0',
+        })),
+      },
     },
-  })
+  )
+
+  if (!Array.isArray(resposta) || resposta.length < signatarios.length) {
+    throw new FalhaNaD4Sign(
+      200,
+      `A D4Sign aceitou a chamada mas não cadastrou todos os signatários: ${JSON.stringify(resposta).slice(0, 300)}`,
+    )
+  }
 }
 
 /** O passo que consome o crédito e dispara os e-mails. */

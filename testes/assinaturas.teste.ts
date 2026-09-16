@@ -13,6 +13,7 @@ import {
   FalhaNaD4Sign,
   baixarAssinado,
   configuracaoD4Sign,
+  definirSignatarios,
   subirDocumento,
   type ConfiguracaoD4Sign,
 } from '@/lib/d4sign'
@@ -278,6 +279,60 @@ describe('subirDocumento', () => {
 
     await expect(
       subirDocumento(CONFIGURACAO, 'cofre', 'Contrato', new Uint8Array([1])),
+    ).rejects.toBeInstanceOf(FalhaNaD4Sign)
+  })
+})
+
+describe('definirSignatarios', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const SIGNATARIOS = [
+    { email: 'cliente@exemplo.invalido', acao: '1' },
+    { email: 'escritorio@exemplo.invalido', acao: '1' },
+  ]
+
+  it('manda o campo "foreign", não o "foresign" — typo que deixava a D4Sign sem cadastrar o signatário', async () => {
+    const chamadaFetch = vi.fn<(url: string, opcoes?: RequestInit) => Promise<Response>>(
+      async () => responder(JSON.stringify([{ message: 'Success' }, { message: 'Success' }])),
+    )
+    vi.stubGlobal('fetch', chamadaFetch)
+
+    await definirSignatarios(CONFIGURACAO, 'uuid-doc', SIGNATARIOS)
+
+    const [, opcoes = {}] = chamadaFetch.mock.calls[0] ?? []
+    const corpo = JSON.parse(String(opcoes.body)) as { signers: Record<string, unknown>[] }
+    for (const signatario of corpo.signers) {
+      expect(signatario).toHaveProperty('foreign', '0')
+      expect(signatario).not.toHaveProperty('foresign')
+    }
+  })
+
+  // O bug de produção que este teste evita: a D4Sign aceitava o HTTP 200 e
+  // devolvia uma lista mais curta que a de signatários mandados — sinal de
+  // que ela descartou algum por baixo dos panos — e o código seguia para o
+  // envio como se estivesse tudo certo, só para o sendtosigner recusar
+  // depois com "This file not have signers".
+  it('recusa uma resposta que não traz uma entrada por signatário mandado', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => responder(JSON.stringify([{ message: 'Success' }]))),
+    )
+
+    await expect(
+      definirSignatarios(CONFIGURACAO, 'uuid-doc', SIGNATARIOS),
+    ).rejects.toBeInstanceOf(FalhaNaD4Sign)
+  })
+
+  it('recusa uma resposta que não é uma lista', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => responder(JSON.stringify({ message: 'algo deu errado' }))),
+    )
+
+    await expect(
+      definirSignatarios(CONFIGURACAO, 'uuid-doc', SIGNATARIOS),
     ).rejects.toBeInstanceOf(FalhaNaD4Sign)
   })
 })
