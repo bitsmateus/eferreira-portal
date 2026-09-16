@@ -134,8 +134,27 @@ export function FormularioDeCliente({
   reconhecerAoDigitar,
 }: Props) {
   const [estado, enviar] = useActionState(acao, undefined)
-  const erros = estado?.erros ?? {}
+  const errosDoServidor = estado?.erros ?? {}
   const idDoFormulario = useId()
+
+  /**
+   * O ERRO SOME ASSIM QUE A PESSOA COMEÇA A CORRIGIR O CAMPO.
+   *
+   * Sem isto, o recado da última tentativa fica colado no campo até alguém
+   * salvar de novo — e, no CPF, ele ocupava o lugar da dica ao vivo: a pessoa
+   * digitava um CPF válido, o sistema já sabia que estava certo, e a tela
+   * continuava dizendo "Informe o CPF ou o CNPJ". Errado e desanimador.
+   */
+  const [corrigidos, setCorrigidos] = useState<ReadonlySet<string>>(new Set())
+
+  useEffect(() => {
+    // Resposta nova do servidor: os recados valem outra vez.
+    setCorrigidos(new Set())
+  }, [estado])
+
+  const erros: Record<string, string | undefined> = Object.fromEntries(
+    Object.entries(errosDoServidor).filter(([campo]) => !corrigidos.has(campo)),
+  )
 
   /**
    * TODO CAMPO É CONTROLADO, E ISSO NÃO É ESTILO — É O CONSERTO DE UM DEFEITO.
@@ -160,6 +179,7 @@ export function FormularioDeCliente({
 
   function definir<C extends keyof ValoresDoCliente>(nome: C, valor: string): void {
     setCampos((atual) => ({ ...atual, [nome]: valor }))
+    setCorrigidos((atual) => (atual.has(nome) ? atual : new Set(atual).add(nome)))
   }
 
   // Só para a tela saber o que mostrar. Quem decide o tipo de pessoa de
@@ -264,7 +284,7 @@ export function FormularioDeCliente({
     return undefined
   })()
 
-  /** Quantos campos obrigatórios a última tentativa recusou. */
+  /** Quantos campos a última tentativa recusou e ainda não foram tocados. */
   const quantosErros = Object.keys(erros).length
 
   return (

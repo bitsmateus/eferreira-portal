@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { SituacaoCaso } from '@prisma/client'
 
@@ -46,17 +46,27 @@ function Campo({
   children,
   erro,
   dica,
+  obrigatorio = false,
 }: {
   nome: string
   rotulo: string
   children: React.ReactNode
   erro?: string
   dica?: string
+  obrigatorio?: boolean
 }) {
   return (
     <div className="mb-[15px]">
       <label className="campo-rotulo" htmlFor={nome}>
         {rotulo}
+        {obrigatorio && (
+          <>
+            <span aria-hidden="true" className="text-erro">
+              {' *'}
+            </span>
+            <span className="sr-only"> (obrigatório)</span>
+          </>
+        )}
       </label>
       {children}
       {erro !== undefined ? (
@@ -79,6 +89,8 @@ function BotaoSalvar({ rotulo }: { rotulo: string }) {
   )
 }
 
+type Parcela = { valor: string; vencimento: string }
+
 export function FormularioDeCaso({
   acao,
   valores,
@@ -89,12 +101,45 @@ export function FormularioDeCaso({
   const [estado, enviar] = useActionState(acao, undefined)
   const erros = estado?.erros ?? {}
 
+  /**
+   * TODO CAMPO É CONTROLADO, PELO MESMO MOTIVO DO CADASTRO DE CLIENTE.
+   *
+   * Com `defaultValue`, o React reiniciava o formulário ao fim da ação e a
+   * recusa apagava tudo. Aqui doía ainda mais: a regra que mais recusa é a da
+   * soma das parcelas, que só aparece DEPOIS de preencher honorários e
+   * parcelas — ou seja, o operador perdia justamente a parte mais trabalhosa
+   * do formulário por causa de um arredondamento.
+   */
+  const [campos, setCampos] = useState({
+    numeroProcesso: formatarNumeroDeProcesso(valores.numeroProcesso),
+    assunto: valores.assunto,
+    vara: valores.vara,
+    parteContraria: valores.parteContraria,
+    situacao: valores.situacao,
+    responsavelId: valores.responsavelId,
+    honorarios: valores.honorarios,
+  })
+
   // Linhas fixas em vez de "adicionar parcela": sem JavaScript extra, e o
   // contrato do escritorio nunca passou de tres parcelas.
-  const linhasDeParcela = Array.from({ length: LINHAS_DE_PARCELA }, (_, i) => ({
-    valor: valores.parcelas[i]?.valor ?? '',
-    vencimento: valores.parcelas[i]?.vencimento ?? '',
-  }))
+  const [parcelas, setParcelas] = useState<Parcela[]>(
+    Array.from({ length: LINHAS_DE_PARCELA }, (_, i) => ({
+      valor: valores.parcelas[i]?.valor ?? '',
+      vencimento: valores.parcelas[i]?.vencimento ?? '',
+    })),
+  )
+
+  function definir<C extends keyof typeof campos>(nome: C, valor: string): void {
+    setCampos((atual) => ({ ...atual, [nome]: valor }))
+  }
+
+  function definirParcela(indice: number, chave: keyof Parcela, valor: string): void {
+    setParcelas((atual) =>
+      atual.map((linha, i) => (i === indice ? { ...linha, [chave]: valor } : linha)),
+    )
+  }
+
+  const quantosErros = Object.keys(erros).length
 
   return (
     <form action={enviar} noValidate>
@@ -121,10 +166,31 @@ export function FormularioDeCaso({
         </div>
       )}
 
+      {quantosErros > 0 && (
+        <div className="aviso aviso-atencao mb-4" role="alert">
+          <span aria-hidden="true">▲</span>
+          <div>
+            <b>
+              {quantosErros === 1
+                ? 'Falta acertar 1 campo.'
+                : `Faltam acertar ${quantosErros} campos.`}
+            </b>{' '}
+            Nada do que você digitou foi perdido — corrija o que está marcado em
+            vermelho e salve de novo.
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
         <div className="cartao">
           <div className="cartao-cabecalho">
             <h2>Dados do caso</h2>
+            <span className="ml-auto text-[11.5px] text-texto-3">
+              <span aria-hidden="true" className="text-erro">
+                *
+              </span>{' '}
+              obrigatório
+            </span>
           </div>
 
           <div className="cartao-corpo">
@@ -140,18 +206,31 @@ export function FormularioDeCaso({
                 inputMode="numeric"
                 className="campo-entrada mono"
                 placeholder="0000000-00.0000.0.00.0000"
-                defaultValue={formatarNumeroDeProcesso(valores.numeroProcesso)}
+                value={campos.numeroProcesso}
+                onChange={(evento) => definir('numeroProcesso', evento.target.value)}
+                onBlur={() =>
+                  setCampos((atual) => ({
+                    ...atual,
+                    numeroProcesso: formatarNumeroDeProcesso(atual.numeroProcesso),
+                  }))
+                }
               />
             </Campo>
 
-            <Campo nome="assunto" rotulo="Assunto" erro={erros['assunto']}>
+            <Campo
+              nome="assunto"
+              rotulo="Assunto"
+              erro={erros['assunto']}
+              obrigatorio
+            >
               <input
                 id="assunto"
                 name="assunto"
                 required
                 className="campo-entrada"
                 placeholder="Ação de cobrança"
-                defaultValue={valores.assunto}
+                value={campos.assunto}
+                onChange={(evento) => definir('assunto', evento.target.value)}
               />
             </Campo>
 
@@ -162,7 +241,8 @@ export function FormularioDeCaso({
                     id="vara"
                     name="vara"
                     className="campo-entrada"
-                    defaultValue={valores.vara}
+                    value={campos.vara}
+                    onChange={(evento) => definir('vara', evento.target.value)}
                   />
                 </Campo>
               </div>
@@ -176,7 +256,8 @@ export function FormularioDeCaso({
                     id="parteContraria"
                     name="parteContraria"
                     className="campo-entrada"
-                    defaultValue={valores.parteContraria}
+                    value={campos.parteContraria}
+                    onChange={(evento) => definir('parteContraria', evento.target.value)}
                   />
                 </Campo>
               </div>
@@ -189,7 +270,8 @@ export function FormularioDeCaso({
                     id="situacao"
                     name="situacao"
                     className="campo-entrada"
-                    defaultValue={valores.situacao}
+                    value={campos.situacao}
+                    onChange={(evento) => definir('situacao', evento.target.value)}
                   >
                     {Object.values(SituacaoCaso).map((situacao) => (
                       <option key={situacao} value={situacao}>
@@ -209,7 +291,8 @@ export function FormularioDeCaso({
                     id="responsavelId"
                     name="responsavelId"
                     className="campo-entrada"
-                    defaultValue={valores.responsavelId}
+                    value={campos.responsavelId}
+                    onChange={(evento) => definir('responsavelId', evento.target.value)}
                   >
                     <option value="">Sem responsável definido</option>
                     {responsaveis.map((pessoa) => (
@@ -242,7 +325,8 @@ export function FormularioDeCaso({
                 inputMode="decimal"
                 className="campo-entrada mono"
                 placeholder="0,00"
-                defaultValue={valores.honorarios}
+                value={campos.honorarios}
+                onChange={(evento) => definir('honorarios', evento.target.value)}
               />
             </Campo>
 
@@ -258,7 +342,7 @@ export function FormularioDeCaso({
                     </tr>
                   </thead>
                   <tbody>
-                    {linhasDeParcela.map((linha, indice) => (
+                    {parcelas.map((linha, indice) => (
                       <tr key={indice}>
                         <td className="mono text-texto-3">{indice + 1}</td>
                         <td>
@@ -268,7 +352,10 @@ export function FormularioDeCaso({
                             aria-label={`Valor da parcela ${indice + 1}`}
                             className="campo-entrada mono"
                             placeholder="0,00"
-                            defaultValue={linha.valor}
+                            value={linha.valor}
+                            onChange={(evento) =>
+                              definirParcela(indice, 'valor', evento.target.value)
+                            }
                           />
                           {erros[`parcelas.${indice}.valor`] !== undefined && (
                             <p className="dica dica-erro" role="alert">
@@ -282,7 +369,10 @@ export function FormularioDeCaso({
                             type="date"
                             aria-label={`Vencimento da parcela ${indice + 1}`}
                             className="campo-entrada mono"
-                            defaultValue={linha.vencimento}
+                            value={linha.vencimento}
+                            onChange={(evento) =>
+                              definirParcela(indice, 'vencimento', evento.target.value)
+                            }
                           />
                           {erros[`parcelas.${indice}.vencimento`] !== undefined && (
                             <p className="dica dica-erro" role="alert">

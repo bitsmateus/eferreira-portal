@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
 import { registrarAndamento } from './acoes'
@@ -13,6 +13,17 @@ function BotaoLancar() {
     <button type="submit" className="botao" disabled={pending}>
       {pending ? 'Lançando…' : 'Lançar andamento'}
     </button>
+  )
+}
+
+function Obrigatorio() {
+  return (
+    <>
+      <span aria-hidden="true" className="text-erro">
+        {' *'}
+      </span>
+      <span className="sr-only"> (obrigatório)</span>
+    </>
   )
 }
 
@@ -33,13 +44,32 @@ export function FormularioDeAndamento({
     undefined,
   )
   const erros = estado?.erros ?? {}
-  const formulario = useRef<HTMLFormElement>(null)
+
+  /**
+   * Campos controlados, como nos demais formulários.
+   *
+   * Aqui o que se perdia era a **descrição** — o único campo do sistema em que
+   * alguém escreve um parágrafo pensado para o cliente ler. Recusar o
+   * lançamento por causa da situação em branco e levar junto o texto inteiro é
+   * o tipo de coisa que faz a pessoa escrever menos da próxima vez.
+   */
+  const [campos, setCampos] = useState({
+    data: hoje,
+    statusId: statusSugerido,
+    descricao: '',
+  })
 
   // Depois de lançar, limpa para o próximo — quem lança um costuma lançar
-  // outro em seguida.
+  // outro em seguida. Só no SUCESSO: a recusa não apaga nada.
   useEffect(() => {
-    if (estado?.sucesso === true) formulario.current?.reset()
-  }, [estado])
+    if (estado?.sucesso === true) {
+      setCampos({ data: hoje, statusId: statusSugerido, descricao: '' })
+    }
+  }, [estado, hoje, statusSugerido])
+
+  function definir<C extends keyof typeof campos>(nome: C, valor: string): void {
+    setCampos((atual) => ({ ...atual, [nome]: valor }))
+  }
 
   if (status.length === 0) {
     return (
@@ -55,7 +85,7 @@ export function FormularioDeAndamento({
   }
 
   return (
-    <form action={enviar} ref={formulario} noValidate>
+    <form action={enviar} noValidate>
       {estado?.mensagem !== undefined && (
         <div className="aviso aviso-erro mb-4" role="alert">
           <span aria-hidden="true">▲</span>
@@ -75,6 +105,7 @@ export function FormularioDeAndamento({
           <div className="mb-[15px]">
             <label className="campo-rotulo" htmlFor="data">
               Data
+              <Obrigatorio />
             </label>
             <input
               id="data"
@@ -82,7 +113,8 @@ export function FormularioDeAndamento({
               type="date"
               required
               max={hoje}
-              defaultValue={hoje}
+              value={campos.data}
+              onChange={(evento) => definir('data', evento.target.value)}
               className="campo-entrada mono"
             />
             {erros['data'] !== undefined && (
@@ -97,13 +129,15 @@ export function FormularioDeAndamento({
           <div className="mb-[15px]">
             <label className="campo-rotulo" htmlFor="statusId">
               Situação
+              <Obrigatorio />
             </label>
             <select
               id="statusId"
               name="statusId"
               required
               className="campo-entrada"
-              defaultValue={statusSugerido}
+              value={campos.statusId}
+              onChange={(evento) => definir('statusId', evento.target.value)}
             >
               <option value="">Escolha a situação…</option>
               {status.map((item) => (
@@ -124,6 +158,7 @@ export function FormularioDeAndamento({
       <div className="mb-[15px]">
         <label className="campo-rotulo" htmlFor="descricao">
           Descrição visível ao cliente
+          <Obrigatorio />
         </label>
         <textarea
           id="descricao"
@@ -132,6 +167,8 @@ export function FormularioDeAndamento({
           rows={3}
           className="campo-entrada min-h-[74px] resize-y"
           placeholder="Ex.: Petição juntada aos autos. Aguardando decisão sobre as provas requeridas."
+          value={campos.descricao}
+          onChange={(evento) => definir('descricao', evento.target.value)}
         />
         {erros['descricao'] !== undefined ? (
           <p className="dica dica-erro" role="alert">

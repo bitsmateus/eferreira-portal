@@ -246,7 +246,11 @@ Environment.
   por área — "Procurações Civeis", "contratos eFerreira advogados" —, e o
   cofre escolhido é o genérico do escritório.
 
-  **RISCO ABERTO, encontrado em 15/09/2026: a HOMOLOGAÇÃO está com o token de
+  **RISCO FECHADO em 16/09/2026** — `D4SIGN_TOKEN_API` foi esvaziada na
+  homologação. O que segue fica registrado porque explica por que ela está
+  assim e o que fazer quando houver um token de sandbox.
+
+  **Encontrado em 15/09/2026: a HOMOLOGAÇÃO estava com o token de
   PRODUÇÃO da D4Sign**, apontando para `secure.d4sign.com.br` e para o mesmo
   cofre "Escritorio". Um teste feito no ambiente de testes gastaria crédito de
   verdade, mandaria e-mail de verdade e deixaria documento de mentira dentro
@@ -302,6 +306,52 @@ o risco é do painel do D4Sign do escritório, não do portal.
 **Enquanto uma dependência não responder: não invente conteúdo para destravar.**
 
 ## Estado atual
+
+**O primeiro uso de verdade achou três defeitos** (16/09/2026), todos no
+caminho mais percorrido do sistema: cadastrar um cliente.
+
+1. **O formulário apagava tudo o que tinha sido digitado.** Só documento,
+   telefone e CEP tinham estado; o resto era `defaultValue`. Quando a
+   gravação era recusada por falta de um obrigatório, o React reiniciava o
+   formulário ao fim da ação e levava junto a ficha inteira. Agora **todo
+   campo é controlado**, e um aviso no topo diz quantos faltam e que nada se
+   perdeu. Foi o pior dos três: punia justamente quem estava preenchendo com
+   capricho.
+
+2. **Não dava para saber o que era obrigatório sem tentar salvar.** Os
+   obrigatórios ganharam **asterisco**, e a lista que decide isso é a MESMA
+   que o servidor usa para recusar — saiu de `clientes.ts` para
+   `src/lib/campos-do-cliente.ts`, que é seguro para o navegador. Duas
+   listas se desencontrariam no primeiro campo que alguém tornasse
+   obrigatório, e o jeito de descobrir seria um operador preenchendo tudo o
+   que tem asterisco e o sistema recusando assim mesmo. Há teste cruzando as
+   duas pontas, campo por campo, nos dois tipos de pessoa.
+
+   Os asteriscos mudam com o documento digitado: incompleto, a tela assume
+   pessoa física (a lista mais exigente); completado um CNPJ, os da
+   qualificação pessoal somem — são do sócio, não da empresa.
+
+3. **"Alguma coisa não funcionou aqui" ao salvar.** Não era defeito do
+   cadastro: era a aba com a **versão anterior** carregada. As ações de
+   servidor do Next são identificadas por um código que muda a cada
+   publicação, e a que aquela aba conhecia não existia mais no servidor.
+   Nada foi gravado, mas a mensagem não dizia isso e "tentar de novo" falhava
+   igual, porque `reset()` refaz a tela com o mesmo código velho. A
+   barreira de erro passa a reconhecer o caso e a dar o único conselho que
+   resolve: recarregar a página.
+
+   **Isto vai acontecer a cada publicação** com o sistema em uso. Publicar
+   fora do horário de trabalho do escritório é o jeito de ninguém perder
+   ficha nenhuma.
+
+**368 testes** (300 unitários, 68 contra o banco).
+
+**A HOMOLOGAÇÃO não assina mais em produção** (16/09/2026). `D4SIGN_TOKEN_API`
+está vazia lá, por decisão do fornecedor; a crypt key e o cofre continuam
+configurados, porque sozinhos não assinam nada e guardá-los poupa trabalho
+quando chegar um token de sandbox. Sem token, o portal de homologação
+simplesmente não assina e a tela explica. O risco registrado acima está
+**fechado**.
 
 **PRODUÇÃO está com o código novo** (16/09/2026, commit `596e934`). Antes
 disso ela rodava o commit de 14/09 e estava **sete commits atrás** — sem a

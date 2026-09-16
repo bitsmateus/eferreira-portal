@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { TipoDocumento } from '@prisma/client'
 
@@ -29,6 +29,14 @@ export function FormularioDeAnexo({
 }) {
   const [estado, enviar] = useActionState(anexarNaPasta.bind(null, clienteId), undefined)
   const erros = estado?.erros ?? {}
+
+  // Controlados pelo mesmo motivo dos outros formulários: a recusa não pode
+  // desfazer o que já foi escolhido. O ARQUIVO é a exceção inevitável — o
+  // navegador não deixa nenhum site preencher um campo de arquivo, então
+  // depois de uma recusa ele precisa ser escolhido de novo. Por isso o aviso
+  // abaixo do campo diz o limite ANTES de a pessoa tentar.
+  const [tipo, setTipo] = useState<string>(TipoDocumento.ANEXO)
+  const [casoId, setCasoId] = useState('')
 
   return (
     <form action={enviar} noValidate>
@@ -77,7 +85,8 @@ export function FormularioDeAnexo({
                 id="tipo"
                 name="tipo"
                 className="campo-entrada"
-                defaultValue={TipoDocumento.ANEXO}
+                value={tipo}
+                onChange={(evento) => setTipo(evento.target.value)}
               >
                 {Object.values(TipoDocumento).map((tipo) => (
                   <option key={tipo} value={tipo}>
@@ -96,7 +105,13 @@ export function FormularioDeAnexo({
               <label className="campo-rotulo" htmlFor="casoId">
                 Vincular a um caso
               </label>
-              <select id="casoId" name="casoId" className="campo-entrada" defaultValue="">
+              <select
+                id="casoId"
+                name="casoId"
+                className="campo-entrada"
+                value={casoId}
+                onChange={(evento) => setCasoId(evento.target.value)}
+              >
                 <option value="">Documento do cliente — nenhum caso específico</option>
                 {casos.map((caso) => (
                   <option key={caso.id} value={caso.id}>

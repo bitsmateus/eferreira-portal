@@ -102,6 +102,16 @@ export function NovoUsuario() {
   const [estado, criar] = useActionState(cadastrarUsuario, undefined)
   const [senhaVisivel, setSenhaVisivel] = useState(true)
 
+  // Controlados, como nos demais formulários: e-mail repetido é a recusa mais
+  // comum aqui, e ela não pode levar junto o nome já digitado.
+  const [campos, setCampos] = useState({
+    nome: '',
+    email: '',
+    perfil: String(PerfilUsuario.OPERADOR),
+  })
+  const definir = (nome: keyof typeof campos, valor: string) =>
+    setCampos((atual) => ({ ...atual, [nome]: valor }))
+
   if (estado?.senha !== undefined && senhaVisivel) {
     return <SenhaGerada senha={estado.senha} aoFechar={() => setSenhaVisivel(false)} />
   }
@@ -132,6 +142,8 @@ export function NovoUsuario() {
               maxLength={120}
               className="campo-entrada"
               placeholder="Nome completo"
+              value={campos.nome}
+              onChange={(evento) => definir('nome', evento.target.value)}
             />
             {estado?.erros?.['nome'] !== undefined && (
               <p className="dica dica-erro">{estado.erros['nome']}</p>
@@ -150,6 +162,8 @@ export function NovoUsuario() {
               maxLength={180}
               className="campo-entrada"
               placeholder="nome@eferreira.adv.br"
+              value={campos.email}
+              onChange={(evento) => definir('email', evento.target.value)}
             />
             {estado?.erros?.['email'] !== undefined && (
               <p className="dica dica-erro">{estado.erros['email']}</p>
@@ -163,7 +177,8 @@ export function NovoUsuario() {
             <select
               id="perfil"
               name="perfil"
-              defaultValue={PerfilUsuario.OPERADOR}
+              value={campos.perfil}
+              onChange={(evento) => definir('perfil', evento.target.value)}
               className="campo-entrada"
             >
               {PERFIS_DA_EQUIPE.map((perfil) => (
