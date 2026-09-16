@@ -277,3 +277,79 @@ export async function urlDeLeituraAutorizada(
 
   return urlTemporariaDeLeitura(documento.chaveArquivo, documento.nome, comoAnexo)
 }
+
+// ---------------------------------------------------------------------------
+// Exclusão
+// ---------------------------------------------------------------------------
+
+export type ResultadoDaExclusaoDeDocumento =
+  | { situacao: 'excluido' }
+  | { situacao: 'nao_encontrado' }
+  /** Já foi assinado — o documento em si é a prova, e prova apagada não volta. */
+  | { situacao: 'assinado' }
+  /** Já foi enviado para assinatura; apagar destruiria o rastro do envio. */
+  | { situacao: 'enviado_para_assinatura' }
+
+/**
+ * Apaga um documento da pasta — e SÓ o que ainda não deixou rastro.
+ *
+ * O problema real que isto resolve é o mesmo dos outros dois: anexo enviado
+ * por engano, PDF gerado para o caso errado, teste que ficou na pasta. Esse
+ * documento não é prova de nada, e apagá-lo não destrói nada.
+ *
+ * Documento ASSINADO é outra coisa — é ele próprio a prova, e não há como
+ * desfazer. Documento já ENVIADO para assinatura também é recusado, mesmo
+ * ainda aguardando: a linha em `EnvioParaAssinatura` aponta para ele com
+ * `onDelete: Cascade`, e apagar o documento apagaria junto o registro de quem
+ * mandou, para quem e quando — o rastro do crédito gasto e do e-mail
+ * mandado (regra 6). Nenhuma tela deve poder fazer isso com dois cliques.
+ */
+export async function excluirDocumento(
+  sessao: SessaoServidor,
+  documentoId: string,
+  emailDoAutor: string | null,
+): Promise<ResultadoDaExclusaoDeDocumento> {
+  exigirEquipe(sessao)
+
+  // Regra 2: o id vem da tela, mas quem decide se ele pode ser tocado é o
+  // filtro montado a partir da sessão.
+  const documento = await prisma.documento.findFirst({
+    where: filtroDeDocumentos(sessao, { id: documentoId }),
+    select: {
+      id: true,
+      nome: true,
+      clienteId: true,
+      casoId: true,
+      chaveArquivo: true,
+      assinadoEm: true,
+      _count: { select: { envios: true } },
+    },
+  })
+  if (documento === null) return { situacao: 'nao_encontrado' }
+
+  if (documento.assinadoEm !== null) return { situacao: 'assinado' }
+  if (documento._count.envios > 0) return { situacao: 'enviado_para_assinatura' }
+
+  await prisma.documento.delete({ where: { id: documento.id } })
+
+  await registrarAuditoria({
+    usuarioId: sessao.usuarioId,
+    usuarioEmail: emailDoAutor,
+    acao: AcaoAuditoria.EXCLUSAO,
+    entidade: 'documento',
+    entidadeId: documento.id,
+    detalhes: {
+      // Em texto: a linha do documento não existe mais para ser consultada.
+      nome: documento.nome,
+      clienteId: documento.clienteId,
+      casoId: documento.casoId,
+    },
+  })
+
+  // Best-effort: se o armazenamento não responder agora, sobra um objeto
+  // órfão no balde — chave opaca, sem dono e sem utilidade —, o que é
+  // inofensivo. Deixar o registro em estado incerto no banco seria pior.
+  await removerArquivo(documento.chaveArquivo).catch(() => undefined)
+
+  return { situacao: 'excluido' }
+}

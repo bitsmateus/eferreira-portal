@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { SituacaoDoEnvio, TipoDocumento } from '@prisma/client'
 
 import { Etiqueta } from '@/componentes/etiqueta'
+import { ExcluirDocumentoBotao } from '@/componentes/excluir-documento-botao'
 import type { EnvioEmAndamento } from '@/lib/assinaturas'
 import { formatarData } from '@/lib/datas'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
@@ -169,6 +170,19 @@ export function PastaDoCliente({
                 >
                   Baixar
                 </a>
+                {/*
+                  Só oferece o botão a quem PODE ser excluído — assinado ou já
+                  enviado para assinatura não aparece com a opção, em vez de
+                  um botão fadado a ser recusado pelo servidor.
+                */}
+                {documento.assinadoEm === null && envio === null && (
+                  <ExcluirDocumentoBotao
+                    documentoId={documento.id}
+                    clienteId={clienteId}
+                    casoId={documento.casoId}
+                    nome={documento.nome}
+                  />
+                )}
               </div>
             </div>
             )
