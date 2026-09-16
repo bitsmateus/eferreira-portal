@@ -5,30 +5,19 @@ import { createPortal } from 'react-dom'
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
-import { excluirClienteDaLista } from '@/app/painel/clientes/acoes'
+import { excluirCasoDaLista } from '@/app/painel/casos/acoes'
 
 /** Largura do menu, em pixels — usada para calcular onde ele cabe na tela. */
 const LARGURA_DO_MENU = 230
 
 /**
- * O menu de cada linha da lista de clientes: abrir, editar e excluir.
+ * O menu de cada linha da lista de casos: abrir, editar e excluir.
  *
- * ─────────────────────────────────────────────────────────────────────────
- * POR QUE O MENU É DESENHADO FORA DA TABELA (VIA PORTAL)
- *
- * A tabela rola de lado em telas estreitas (`.rolagem-lateral`, com
- * `overflow-x: auto`). Pela regra do CSS, um elemento com rolagem horizontal
- * não-visível também corta o que passa da borda vertical — mesmo que ninguém
- * tenha pedido isso. Um menu suspenso `position: absolute` dentro da tabela
- * ficava cortado pela própria borda da linha, exatamente como reportado.
- *
- * A saída é desenhar o menu fora da árvore da tabela, direto no `<body>`
- * (`createPortal`), com `position: fixed` calculado a partir da posição do
- * botão na TELA — não da linha, que pode estar dentro de qualquer contêiner
- * com rolagem. Rolar a página ou a tabela fecha o menu em vez de deixá-lo
- * flutuando num lugar errado: fechar é mais simples e mais seguro do que
- * recalcular a posição a cada pixel de rolagem.
- * ─────────────────────────────────────────────────────────────────────────
+ * Mesmo desenho de `menu-do-cliente.tsx`, com o mesmo motivo: o menu é
+ * desenhado fora da tabela via portal, com posição fixa calculada a partir do
+ * botão na tela. Sem isso, a rolagem lateral da tabela (`overflow-x: auto`)
+ * corta o menu pela borda vertical também — é regra do CSS, não bug de um
+ * lugar só, então os dois menus recebem o mesmo conserto.
  */
 function BotaoDeConfirmar() {
   const { pending } = useFormStatus()
@@ -43,18 +32,19 @@ function BotaoDeConfirmar() {
   )
 }
 
-export function MenuDoCliente({
-  clienteId,
-  nome,
+export function MenuDoCaso({
+  casoId,
+  titulo,
 }: {
-  clienteId: string
-  nome: string
+  casoId: string
+  /** Número do processo, ou o assunto quando ainda não há número. */
+  titulo: string
 }) {
   const [aberto, setAberto] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
   const [posicao, setPosicao] = useState<{ top: number; left: number } | null>(null)
   const [estado, excluir] = useActionState(
-    excluirClienteDaLista.bind(null, clienteId),
+    excluirCasoDaLista.bind(null, casoId),
     undefined,
   )
   const botaoRef = useRef<HTMLButtonElement>(null)
@@ -74,9 +64,6 @@ export function MenuDoCliente({
     const retangulo = botaoRef.current?.getBoundingClientRect()
     if (retangulo === undefined) return
 
-    // O menu tenta ficar alinhado à direita do botão, como antes; se isso
-    // jogaria parte dele para fora da tela (telas estreitas), encosta na
-    // borda em vez de cortar.
     const esquerda = Math.max(
       8,
       Math.min(retangulo.right - LARGURA_DO_MENU, window.innerWidth - LARGURA_DO_MENU - 8),
@@ -85,7 +72,6 @@ export function MenuDoCliente({
     setAberto(true)
   }
 
-  // Fechar clicando fora, no Esc, ou rolando qualquer coisa.
   useEffect(() => {
     if (!aberto) return
 
@@ -101,9 +87,6 @@ export function MenuDoCliente({
 
     document.addEventListener('mousedown', noDocumento)
     document.addEventListener('keydown', noTeclado)
-    // `capture: true` pega o scroll de QUALQUER contêiner rolável da página,
-    // não só da janela — é assim que o scroll da tabela também fecha o menu,
-    // mesmo o evento de scroll não borbulhando por padrão.
     window.addEventListener('scroll', fechar, true)
     window.addEventListener('resize', fechar)
     return () => {
@@ -114,8 +97,6 @@ export function MenuDoCliente({
     }
   }, [aberto])
 
-  // A recusa (cliente com histórico) precisa ficar visível: sem isto o menu
-  // fecharia e a pessoa não saberia por que nada aconteceu.
   useEffect(() => {
     if (estado?.erro !== undefined) alternar()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,10 +109,8 @@ export function MenuDoCliente({
         type="button"
         aria-haspopup="menu"
         aria-expanded={aberto}
-        aria-label={`Ações de ${nome}`}
+        aria-label={`Ações de ${titulo}`}
         onClick={(evento) => {
-          // A linha inteira é um link esticado (ver clientes/page.tsx): sem
-          // isto, o clique no botão também navegaria para a ficha.
           evento.stopPropagation()
           alternar()
         }}
@@ -157,17 +136,17 @@ export function MenuDoCliente({
           >
             <Link
               role="menuitem"
-              href={`/painel/clientes/${clienteId}`}
+              href={`/painel/casos/${casoId}`}
               className="block rounded-md px-2.5 py-1.5 text-[12.5px] hover:bg-prata-100"
             >
-              Abrir a ficha
+              Abrir o caso
             </Link>
             <Link
               role="menuitem"
-              href={`/painel/clientes/${clienteId}/editar`}
+              href={`/painel/casos/${casoId}/editar`}
               className="block rounded-md px-2.5 py-1.5 text-[12.5px] hover:bg-prata-100"
             >
-              Editar o cadastro
+              Editar
             </Link>
 
             <div className="my-1 border-t border-prata-100" />
@@ -182,8 +161,8 @@ export function MenuDoCliente({
               <form action={excluir}>
                 <input type="hidden" name="confirmacao" value="excluir" />
                 <p className="px-2.5 py-1.5 text-[11.5px] leading-relaxed text-texto-2">
-                  Excluir <b className="text-texto">{nome}</b> de vez? Só é possível
-                  enquanto o cadastro não tiver documento nem andamento.
+                  Excluir <b className="text-texto">{titulo}</b> de vez? Só é possível
+                  enquanto o caso não tiver andamento nem documento.
                 </p>
                 <BotaoDeConfirmar />
                 <button
@@ -201,7 +180,7 @@ export function MenuDoCliente({
                 onClick={() => setConfirmando(true)}
                 className="block w-full rounded-md px-2.5 py-1.5 text-left text-[12.5px] text-erro hover:bg-prata-100"
               >
-                Excluir o cliente
+                Excluir o caso
               </button>
             )}
           </div>,

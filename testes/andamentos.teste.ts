@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { validarAndamento } from '@/lib/andamentos'
+import { SENTINELA_STATUS_PERSONALIZADO, validarAndamento } from '@/lib/andamentos'
 
 function hojeEmSaoPaulo(deslocamentoEmDias = 0): string {
   const data = new Date(Date.now() + deslocamentoEmDias * 24 * 60 * 60 * 1000)
@@ -16,6 +16,7 @@ function campos(troca: Partial<Record<string, string>> = {}) {
   return {
     data: hojeEmSaoPaulo(),
     statusId: 'processo-distribuido',
+    statusPersonalizado: '',
     descricao: 'Petição inicial distribuída à 3ª Vara Cível. Custas recolhidas.',
     ...troca,
   } as Parameters<typeof validarAndamento>[0]
@@ -117,5 +118,66 @@ describe('validarAndamento', () => {
       'descricao',
       'statusId',
     ])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Situação personalizada
+// ---------------------------------------------------------------------------
+
+describe('situação personalizada', () => {
+  it('exige o texto quando a sentinela é escolhida', () => {
+    const resultado = validarAndamento(
+      campos({ statusId: SENTINELA_STATUS_PERSONALIZADO, statusPersonalizado: '' }),
+    )
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+
+    expect(resultado.erros['statusPersonalizado']).toMatch(/personalizada/i)
+  })
+
+  // Só de espaços é, na prática, vazio — mesma régua da descrição.
+  it('só espaços conta como vazio', () => {
+    const resultado = validarAndamento(
+      campos({ statusId: SENTINELA_STATUS_PERSONALIZADO, statusPersonalizado: '   ' }),
+    )
+
+    expect(resultado.ok).toBe(false)
+  })
+
+  it('aceita a sentinela com texto preenchido', () => {
+    const resultado = validarAndamento(
+      campos({
+        statusId: SENTINELA_STATUS_PERSONALIZADO,
+        statusPersonalizado: '  Aguardando perícia  ',
+      }),
+    )
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.statusPersonalizado).toBe('Aguardando perícia')
+  })
+
+  // Fora da sentinela, o texto personalizado não é olhado — pode vir
+  // preenchido por acidente (campo escondido na tela) sem quebrar nada.
+  it('sem a sentinela, o texto personalizado é ignorado', () => {
+    const resultado = validarAndamento(
+      campos({ statusId: 'processo-distribuido', statusPersonalizado: 'lixo qualquer' }),
+    )
+
+    expect(resultado.ok).toBe(true)
+  })
+
+  it('exige texto longo demais para a situação personalizada', () => {
+    const resultado = validarAndamento(
+      campos({
+        statusId: SENTINELA_STATUS_PERSONALIZADO,
+        statusPersonalizado: 'a'.repeat(61),
+      }),
+    )
+
+    expect(resultado.ok).toBe(false)
   })
 })

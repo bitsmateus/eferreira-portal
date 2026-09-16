@@ -57,18 +57,40 @@ const dataDoAndamento = z
     return data
   })
 
-export const esquemaDeAndamento = z.object({
-  data: dataDoAndamento,
-  statusId: z
-    .string()
-    .trim()
-    .min(1, 'Escolha a situação do processo.'),
-  descricao: z
-    .string()
-    .trim()
-    .min(10, 'Escreva o que aconteceu, pensando em quem não é advogado.')
-    .max(2000, 'Descrição longa demais.'),
-})
+/**
+ * Valor de `statusId` quando quem lança escolheu "Personalizado…" em vez de
+ * uma situação da lista. Quando ele chega, o texto digitado em
+ * `statusPersonalizado` é quem manda — ver `statusParaGravar`.
+ */
+export const SENTINELA_STATUS_PERSONALIZADO = '__personalizado__'
+
+export const esquemaDeAndamento = z
+  .object({
+    data: dataDoAndamento,
+    statusId: z
+      .string()
+      .trim()
+      .min(1, 'Escolha a situação do processo.'),
+    /** Só é lido quando `statusId` é a sentinela acima. */
+    statusPersonalizado: z
+      .string()
+      .trim()
+      .max(60, 'Situação personalizada longa demais.'),
+    descricao: z
+      .string()
+      .trim()
+      .min(10, 'Escreva o que aconteceu, pensando em quem não é advogado.')
+      .max(2000, 'Descrição longa demais.'),
+  })
+  .superRefine((dados, contexto) => {
+    if (dados.statusId === SENTINELA_STATUS_PERSONALIZADO && dados.statusPersonalizado === '') {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['statusPersonalizado'],
+        message: 'Digite a situação personalizada.',
+      })
+    }
+  })
 
 export type DadosDeAndamento = z.output<typeof esquemaDeAndamento>
 export type CamposDeAndamento = Record<keyof z.input<typeof esquemaDeAndamento>, string>
@@ -162,6 +184,47 @@ export type ResultadoDeAndamento =
   /** O status escolhido não existe ou foi desativado pelo escritório. */
   | { situacao: 'status_invalido' }
 
+/**
+ * Resolve o status a gravar: ou é um dos já cadastrados, ou é um texto novo
+ * digitado na hora (`SENTINELA_STATUS_PERSONALIZADO`), que passa a existir
+ * como uma entrada nova na lista do escritório — assim ela já aparece pronta
+ * da próxima vez, em vez de precisar ser digitada de novo a cada lançamento.
+ *
+ * A comparação com o que já existe não diferencia maiúsculas de minúsculas:
+ * "sentença" e "Sentença" são a MESMA situação, e duas entradas quase iguais
+ * na lista seriam o tipo de bagunça que ninguém percebe até já ter
+ * acontecido — o `nome` é único no banco, mas por padrão de forma sensível a
+ * maiúsculas, então cabe a este código evitar o quase-duplicado.
+ */
+async function statusParaGravar(
+  dados: DadosDeAndamento,
+): Promise<{ id: string; nome: string } | null> {
+  if (dados.statusId !== SENTINELA_STATUS_PERSONALIZADO) {
+    // O `statusId` vem de um <select>, e o navegador manda o que quiser.
+    return prisma.statusAndamento.findFirst({
+      where: { id: dados.statusId, ativo: true },
+      select: { id: true, nome: true },
+    })
+  }
+
+  const nome = dados.statusPersonalizado
+  if (nome === '') return null
+
+  const existente = await prisma.statusAndamento.findFirst({
+    where: { nome: { equals: nome, mode: 'insensitive' } },
+    select: { id: true, nome: true },
+  })
+  if (existente !== null) return existente
+
+  // Nasce no fim da lista do escritório — "10 em 10" para deixar espaço de
+  // reordenar depois sem precisar reescrever toda a sequência.
+  const maiorOrdem = await prisma.statusAndamento.aggregate({ _max: { ordem: true } })
+  return prisma.statusAndamento.create({
+    data: { nome, ordem: (maiorOrdem._max.ordem ?? 0) + 10 },
+    select: { id: true, nome: true },
+  })
+}
+
 export async function lancarAndamento(
   sessao: SessaoServidor,
   casoId: string,
@@ -177,11 +240,7 @@ export async function lancarAndamento(
   })
   if (caso === null) return { situacao: 'caso_nao_encontrado' }
 
-  // O `statusId` vem de um <select>, e o navegador manda o que quiser.
-  const status = await prisma.statusAndamento.findFirst({
-    where: { id: dados.statusId, ativo: true },
-    select: { id: true, nome: true },
-  })
+  const status = await statusParaGravar(dados)
   if (status === null) return { situacao: 'status_invalido' }
 
   const andamentoId = await prisma.$transaction(async (transacao) => {

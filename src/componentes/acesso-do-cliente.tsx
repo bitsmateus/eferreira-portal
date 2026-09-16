@@ -72,7 +72,7 @@ export function AcessoDoCliente({
   const erro = estadoDoRegistro?.erro ?? estadoDaRevogacao?.erro
 
   return (
-    <div className="cartao">
+    <div className="cartao mb-4">
       <div className="cartao-cabecalho">
         <h2>Acesso do cliente</h2>
       </div>

@@ -4,6 +4,7 @@ import { SituacaoCaso } from '@prisma/client'
 
 import { ROTULO_DA_SITUACAO } from '@/componentes/situacoes'
 import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
+import { MenuDoCaso } from '@/componentes/menu-do-caso'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import {
   LIMITE_DA_LISTA,
@@ -234,12 +235,14 @@ export default async function PaginaDeCasos({
                           {ultimo === undefined ? '—' : formatarData(ultimo.data)}
                         </td>
                         <td className="relative z-10 text-right">
-                          <Link
-                            href={`/painel/casos/${caso.id}/editar`}
-                            className="botao botao-secundario botao-pequeno"
-                          >
-                            Editar
-                          </Link>
+                          <MenuDoCaso
+                            casoId={caso.id}
+                            titulo={
+                              caso.numeroProcesso === null
+                                ? caso.assunto
+                                : formatarNumeroDeProcesso(caso.numeroProcesso)
+                            }
+                          />
                         </td>
                       </tr>
                     )

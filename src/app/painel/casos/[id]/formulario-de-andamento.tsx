@@ -1,8 +1,9 @@
 'use client'
 
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
+import { SENTINELA_STATUS_PERSONALIZADO } from '@/lib/andamentos'
 import { registrarAndamento } from './acoes'
 
 type Status = { id: string; nome: string }
@@ -56,32 +57,29 @@ export function FormularioDeAndamento({
   const [campos, setCampos] = useState({
     data: hoje,
     statusId: statusSugerido,
+    statusPersonalizado: '',
     descricao: '',
   })
+
+  const campoPersonalizado = useRef<HTMLInputElement>(null)
+  const ehPersonalizado = campos.statusId === SENTINELA_STATUS_PERSONALIZADO
 
   // Depois de lançar, limpa para o próximo — quem lança um costuma lançar
   // outro em seguida. Só no SUCESSO: a recusa não apaga nada.
   useEffect(() => {
     if (estado?.sucesso === true) {
-      setCampos({ data: hoje, statusId: statusSugerido, descricao: '' })
+      setCampos({ data: hoje, statusId: statusSugerido, statusPersonalizado: '', descricao: '' })
     }
   }, [estado, hoje, statusSugerido])
 
+  // Ao escolher "Personalizado…", o cursor já vai para o campo de texto —
+  // sem isso, quem escolheu teria que clicar de novo para começar a digitar.
+  useEffect(() => {
+    if (ehPersonalizado) campoPersonalizado.current?.focus()
+  }, [ehPersonalizado])
+
   function definir<C extends keyof typeof campos>(nome: C, valor: string): void {
     setCampos((atual) => ({ ...atual, [nome]: valor }))
-  }
-
-  if (status.length === 0) {
-    return (
-      <div className="aviso aviso-atencao">
-        <span aria-hidden="true">▲</span>
-        <div>
-          <b>Nenhuma situação cadastrada.</b> A lista de situações do processo é
-          definida pelo escritório. Sem ela não há como lançar andamento — nada é
-          inventado aqui.
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -145,15 +143,60 @@ export function FormularioDeAndamento({
                   {item.nome}
                 </option>
               ))}
+              <option value={SENTINELA_STATUS_PERSONALIZADO}>+ Personalizado…</option>
             </select>
             {erros['statusId'] !== undefined && (
               <p className="dica dica-erro" role="alert">
                 {erros['statusId']}
               </p>
             )}
+
+            {/*
+              O texto digitado aqui vira uma entrada NOVA na lista do
+              escritório, não uma anotação solta — a próxima vez que alguém
+              for lançar andamento, ela já aparece pronta no <select> acima,
+              sem precisar ser digitada de novo. Ver `statusParaGravar` em
+              `src/lib/andamentos.ts`.
+            */}
+            {ehPersonalizado && (
+              <div className="mt-2">
+                <input
+                  ref={campoPersonalizado}
+                  id="statusPersonalizado"
+                  name="statusPersonalizado"
+                  required
+                  maxLength={60}
+                  placeholder="Digite a situação"
+                  className="campo-entrada"
+                  value={campos.statusPersonalizado}
+                  onChange={(evento) => definir('statusPersonalizado', evento.target.value)}
+                />
+                {erros['statusPersonalizado'] !== undefined ? (
+                  <p className="dica dica-erro" role="alert">
+                    {erros['statusPersonalizado']}
+                  </p>
+                ) : (
+                  <p className="dica">
+                    Passa a existir na lista de situações — nas próximas vezes, escolha
+                    ela em vez de digitar de novo.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {status.length === 0 && !ehPersonalizado && (
+        <div className="aviso aviso-atencao mb-4">
+          <span aria-hidden="true">▲</span>
+          <div>
+            <b>Nenhuma situação cadastrada ainda.</b> Escolha &ldquo;+
+            Personalizado…&rdquo; acima para criar a primeira — as próximas ficam
+            prontas na lista.
+          </div>
+        </div>
+      )}
 
       <div className="mb-[15px]">
         <label className="campo-rotulo" htmlFor="descricao">

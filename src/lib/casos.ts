@@ -577,3 +577,78 @@ export async function atualizarCaso(
 
   return { situacao: 'atualizado' }
 }
+
+// ---------------------------------------------------------------------------
+// Exclusão
+// ---------------------------------------------------------------------------
+
+export type ResultadoDaExclusaoDeCaso =
+  | { situacao: 'excluido' }
+  | { situacao: 'nao_encontrado' }
+  /** Tem rastro: a exclusão é recusada e a tela diz o que existe. */
+  | { situacao: 'tem_historico'; andamentos: number; documentos: number }
+
+/**
+ * Apaga um caso — e SÓ o caso que ainda não deixou rastro.
+ *
+ * Mesma lógica de `excluirCliente`, em escala menor: o problema real que isto
+ * resolve é o caso cadastrado por engano — vinculado ao cliente errado, ou um
+ * teste que ficou. Esse caso não tem nada dentro, e apagá-lo não destrói
+ * nada.
+ *
+ * Caso com andamento ou com documento (contrato, principalmente) é outra
+ * coisa: ali existe histórico do processo que o próprio cliente consulta, e
+ * documento que pode estar assinado. Apagar isso é destruir prova de
+ * diligência, e nenhuma tela deve poder fazê-lo com dois cliques — por isso a
+ * recusa vem com os números, em vez de um "não é possível" sem explicação.
+ *
+ * As parcelas de honorários somem junto, por cascata: são dado do próprio
+ * caso, não histórico de nada.
+ */
+export async function excluirCaso(
+  sessao: SessaoServidor,
+  casoId: string,
+  emailDoAutor: string | null,
+): Promise<ResultadoDaExclusaoDeCaso> {
+  exigirEquipe(sessao)
+
+  // Regra 2: o id vem da tela, mas quem decide se ele pode ser tocado é o
+  // filtro montado a partir da sessão.
+  const caso = await prisma.caso.findFirst({
+    where: filtroDeCasos(sessao, { id: casoId }),
+    select: {
+      id: true,
+      assunto: true,
+      numeroProcesso: true,
+      clienteId: true,
+      _count: { select: { andamentos: true, documentos: true } },
+    },
+  })
+  if (caso === null) return { situacao: 'nao_encontrado' }
+
+  if (caso._count.andamentos > 0 || caso._count.documentos > 0) {
+    return {
+      situacao: 'tem_historico',
+      andamentos: caso._count.andamentos,
+      documentos: caso._count.documentos,
+    }
+  }
+
+  await prisma.caso.delete({ where: { id: caso.id } })
+
+  await registrarAuditoria({
+    usuarioId: sessao.usuarioId,
+    usuarioEmail: emailDoAutor,
+    acao: AcaoAuditoria.EXCLUSAO,
+    entidade: 'caso',
+    entidadeId: caso.id,
+    detalhes: {
+      // Em texto: a linha do caso não existe mais para ser consultada.
+      assunto: caso.assunto,
+      numeroProcesso: caso.numeroProcesso,
+      clienteId: caso.clienteId,
+    },
+  })
+
+  return { situacao: 'excluido' }
+}

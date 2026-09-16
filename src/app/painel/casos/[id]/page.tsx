@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { ExcluirCasoBotao } from '@/componentes/excluir-caso-botao'
 import { LinhaDoTempo } from '@/componentes/linha-do-tempo'
 import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
@@ -88,6 +89,7 @@ export default async function PaginaDoCaso({
             >
               Editar
             </Link>
+            <ExcluirCasoBotao casoId={caso.id} titulo={titulo} />
           </>
         }
       />

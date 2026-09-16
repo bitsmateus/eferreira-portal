@@ -24,6 +24,7 @@ export async function registrarAndamento(
   const campos: CamposDeAndamento = {
     data: texto(dados, 'data'),
     statusId: texto(dados, 'statusId'),
+    statusPersonalizado: texto(dados, 'statusPersonalizado'),
     descricao: texto(dados, 'descricao'),
   }
 

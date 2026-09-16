@@ -199,6 +199,28 @@ export default async function PaginaDaFichaDoCliente({
           </div>
 
           <div>
+            {/*
+              O acesso do cliente vem primeiro na coluna, e não por último —
+              pedido do escritório em 16/09/2026: é o dado mais consultado
+              nesta ficha ("o cliente já entra?") e ficava escondido depois
+              de rolar por Qualificação e Contato inteiros.
+            */}
+            <AcessoDoCliente
+              clienteId={cliente.id}
+              temEmail={temEmail}
+              assinadoEmIso={
+                cliente.contratoAssinadoEm === null
+                  ? null
+                  : dataParaDiaCivil(cliente.contratoAssinadoEm)
+              }
+              assinadoEmFormatado={
+                cliente.contratoAssinadoEm === null
+                  ? null
+                  : formatarData(cliente.contratoAssinadoEm)
+              }
+              hojeIso={diaEmSaoPaulo(new Date())}
+            />
+
             <div className="cartao mb-4">
               <div className="cartao-cabecalho">
                 <h2>Qualificação</h2>
@@ -294,21 +316,6 @@ export default async function PaginaDaFichaDoCliente({
               </div>
             </div>
 
-            <AcessoDoCliente
-              clienteId={cliente.id}
-              temEmail={temEmail}
-              assinadoEmIso={
-                cliente.contratoAssinadoEm === null
-                  ? null
-                  : dataParaDiaCivil(cliente.contratoAssinadoEm)
-              }
-              assinadoEmFormatado={
-                cliente.contratoAssinadoEm === null
-                  ? null
-                  : formatarData(cliente.contratoAssinadoEm)
-              }
-              hojeIso={diaEmSaoPaulo(new Date())}
-            />
           </div>
         </div>
       </div>

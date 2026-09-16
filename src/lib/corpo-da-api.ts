@@ -61,6 +61,9 @@ export function camposDeAndamentoDoCorpo(
   return {
     data: comoTexto(corpo['data']),
     statusId: comoTexto(corpo['statusId']),
+    // A situação personalizada é recurso da tela, não da API — quem chama a
+    // API sempre manda um statusId de verdade, já existente.
+    statusPersonalizado: '',
     descricao: comoTexto(corpo['descricao']),
   }
 }

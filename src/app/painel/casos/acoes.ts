@@ -7,6 +7,7 @@ import {
   LINHAS_DE_PARCELA,
   atualizarCaso,
   criarCaso,
+  excluirCaso,
   lerParcelas,
   somaDasParcelasConfere,
   validarCaso,
@@ -184,4 +185,59 @@ export async function salvarEdicaoDeCaso(
   revalidatePath('/painel/casos')
   revalidatePath(`/painel/casos/${id}`)
   redirect(`/painel/casos/${id}`)
+}
+
+export type EstadoDaExclusaoDeCaso = { erro?: string } | undefined
+
+/**
+ * Apaga um caso que ainda não deixou rastro.
+ *
+ * A confirmação viaja no corpo do formulário e é exigida aqui, não só na
+ * tela: um POST solto nesta ação não pode apagar caso de ninguém.
+ */
+export async function excluirCasoDaLista(
+  casoId: string,
+  _estado: EstadoDaExclusaoDeCaso,
+  dados: FormData,
+): Promise<EstadoDaExclusaoDeCaso> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  if (texto(dados, 'confirmacao') !== 'excluir') {
+    return { erro: 'Exclusão não confirmada.' }
+  }
+
+  const resultado = await excluirCaso(sessao, casoId, await emailDaSessao(sessao))
+
+  if (resultado.situacao === 'nao_encontrado') {
+    return { erro: 'Caso não encontrado.' }
+  }
+
+  if (resultado.situacao === 'tem_historico') {
+    const partes: string[] = []
+    if (resultado.andamentos > 0) {
+      partes.push(
+        resultado.andamentos === 1
+          ? '1 andamento lançado'
+          : `${resultado.andamentos} andamentos lançados`,
+      )
+    }
+    if (resultado.documentos > 0) {
+      partes.push(
+        resultado.documentos === 1
+          ? '1 documento na pasta'
+          : `${resultado.documentos} documentos na pasta`,
+      )
+    }
+
+    return {
+      erro:
+        `Este caso não pode ser excluído porque já tem ${partes.join(', ')}. ` +
+        'Apagar isso destruiria histórico de processo e documento. Se o cadastro ' +
+        'está errado, corrija pela edição.',
+    }
+  }
+
+  revalidatePath('/painel/casos')
+  revalidatePath('/painel/clientes')
+  redirect('/painel/casos')
 }
