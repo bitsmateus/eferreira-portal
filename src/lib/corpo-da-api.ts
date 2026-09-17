@@ -65,5 +65,8 @@ export function camposDeAndamentoDoCorpo(
     // API sempre manda um statusId de verdade, já existente.
     statusPersonalizado: '',
     descricao: comoTexto(corpo['descricao']),
+    // Encerrar o caso junto com o andamento também é recurso da tela — a API
+    // continua com o único jeito de mudar a situação do caso: PATCH no caso.
+    encerraOCaso: '',
   }
 }

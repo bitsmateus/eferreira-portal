@@ -36,6 +36,7 @@ function dados(statusId: string, statusPersonalizado = '') {
     statusId,
     statusPersonalizado,
     descricao: 'Descrição de teste, com mais de dez caracteres.',
+    encerraOCaso: false,
   }
 }
 

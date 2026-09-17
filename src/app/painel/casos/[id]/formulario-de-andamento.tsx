@@ -66,6 +66,7 @@ export function FormularioDeAndamento({
     statusId: statusSugerido,
     statusPersonalizado: '',
     descricao: '',
+    encerraOCaso: false,
   })
 
   const campoPersonalizado = useRef<HTMLInputElement>(null)
@@ -75,7 +76,13 @@ export function FormularioDeAndamento({
   // outro em seguida. Só no SUCESSO: a recusa não apaga nada.
   useEffect(() => {
     if (estado?.sucesso === true) {
-      setCampos({ data: hoje, statusId: statusSugerido, statusPersonalizado: '', descricao: '' })
+      setCampos({
+        data: hoje,
+        statusId: statusSugerido,
+        statusPersonalizado: '',
+        descricao: '',
+        encerraOCaso: false,
+      })
     }
   }, [estado, hoje, statusSugerido])
 
@@ -85,7 +92,10 @@ export function FormularioDeAndamento({
     if (ehPersonalizado) campoPersonalizado.current?.focus()
   }, [ehPersonalizado])
 
-  function definir<C extends keyof typeof campos>(nome: C, valor: string): void {
+  function definir<C extends Exclude<keyof typeof campos, 'encerraOCaso'>>(
+    nome: C,
+    valor: string,
+  ): void {
     setCampos((atual) => ({ ...atual, [nome]: valor }))
   }
 
@@ -230,6 +240,26 @@ export function FormularioDeAndamento({
             advogado.
           </p>
         )}
+      </div>
+
+      <div className="mb-[15px] flex items-start gap-2">
+        <input
+          id="encerraOCaso"
+          name="encerraOCaso"
+          type="checkbox"
+          className="mt-[3px]"
+          checked={campos.encerraOCaso}
+          onChange={(evento) =>
+            setCampos((atual) => ({ ...atual, encerraOCaso: evento.target.checked }))
+          }
+        />
+        <label htmlFor="encerraOCaso" className="text-[13px]">
+          Este andamento encerra o caso
+          <span className="block text-[12px] text-texto-2">
+            Ao lançar, o caso passa para &ldquo;Arquivado&rdquo; — o mesmo que trocar
+            a situação pela edição, só que num passo só.
+          </span>
+        </label>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

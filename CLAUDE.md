@@ -307,6 +307,25 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**"Este andamento encerra o caso" está de pé** (17/09/2026), pedido do
+escritório: até aqui, arquivar um caso exigia dois passos — lançar o
+andamento e depois abrir "Editar" só para trocar a situação. Agora o
+formulário de "Novo andamento" tem uma caixinha logo acima de "Lançar
+andamento", e marcá-la arquiva o caso no mesmo clique.
+
+O andamento e o arquivamento do caso acontecem na MESMA transação — não tem
+como um valer sem o outro. A auditoria (regra 6) guarda a mudança de
+situação como um registro próprio (`entidade: 'caso'`, `motivo:
+'encerrado_junto_com_o_andamento'`), distinto de uma edição manual, e
+aponta para o andamento que a causou. Marcar a caixinha de novo num caso já
+arquivado não grava nada repetido — não é fato novo.
+
+Ficou junto do pedido anterior de reorganizar a tela: "Editar", "Gerar
+documento" e "Excluir" saíram do topo da ficha do caso e foram para a mesma
+linha de "Lançar andamento", que é onde a atenção já está.
+
+355 testes unitários e 110 contra o banco.
+
 **Documento assinado pelos dois e o portal continuava dizendo "aguardando"
 — achada a causa, e ela é séria** (17/09/2026). O escritório assinou de
 ponta a ponta um contrato de teste (as duas partes, pelo e-mail da D4Sign) e

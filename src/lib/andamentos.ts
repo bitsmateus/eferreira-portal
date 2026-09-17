@@ -13,7 +13,7 @@
  * tribunais está fora do contrato — não existe aqui nem "preparada para".
  */
 
-import { AcaoAuditoria, type Prisma } from '@prisma/client'
+import { AcaoAuditoria, SituacaoCaso, type Prisma } from '@prisma/client'
 import { z } from 'zod'
 
 import { exigirEquipe, filtroDeAndamentos, filtroDeCasos, type SessaoServidor } from '@/lib/autorizacao'
@@ -81,6 +81,13 @@ export const esquemaDeAndamento = z
       .trim()
       .min(10, 'Escreva o que aconteceu, pensando em quem não é advogado.')
       .max(2000, 'Descrição longa demais.'),
+    /**
+     * A caixinha "Este andamento encerra o caso" do formulário. Vem como
+     * `'on'` (valor padrão de checkbox marcada) ou string vazia (desmarcada
+     * nem aparece no FormData) — nunca um booleano de verdade, porque tudo
+     * que chega de um `<form>` é texto.
+     */
+    encerraOCaso: z.string().transform((valor) => valor === 'on'),
   })
   .superRefine((dados, contexto) => {
     if (dados.statusId === SENTINELA_STATUS_PERSONALIZADO && dados.statusPersonalizado === '') {
@@ -236,12 +243,19 @@ export async function lancarAndamento(
   // Regra 2: só se lança andamento em caso que ESTA sessão enxerga.
   const caso = await prisma.caso.findFirst({
     where: filtroDeCasos(sessao, { id: casoId }),
-    select: { id: true, clienteId: true },
+    select: { id: true, clienteId: true, situacao: true },
   })
   if (caso === null) return { situacao: 'caso_nao_encontrado' }
 
   const status = await statusParaGravar(dados)
   if (status === null) return { situacao: 'status_invalido' }
+
+  // A caixinha "Este andamento encerra o caso" — pedido do escritório
+  // (17/09/2026) para não precisar de um segundo passo (abrir "Editar" e
+  // trocar a situação) só para arquivar o caso. Só grava e audita se houver
+  // mudança de verdade: marcar de novo um caso que já está arquivado não é
+  // fato novo nenhum.
+  const vaiArquivar = dados.encerraOCaso && caso.situacao !== SituacaoCaso.ARQUIVADO
 
   const andamentoId = await prisma.$transaction(async (transacao) => {
     const criado = await transacao.andamento.create({
@@ -271,6 +285,30 @@ export async function lancarAndamento(
       },
       transacao,
     )
+
+    if (vaiArquivar) {
+      await transacao.caso.update({
+        where: { id: caso.id },
+        data: { situacao: SituacaoCaso.ARQUIVADO },
+      })
+
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.ATUALIZACAO,
+          entidade: 'caso',
+          entidadeId: caso.id,
+          detalhes: {
+            motivo: 'encerrado_junto_com_o_andamento',
+            andamentoId: criado.id,
+            situacaoAnterior: caso.situacao,
+            situacaoNova: SituacaoCaso.ARQUIVADO,
+          },
+        },
+        transacao,
+      )
+    }
 
     return criado.id
   })

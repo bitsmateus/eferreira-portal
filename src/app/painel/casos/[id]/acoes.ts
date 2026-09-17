@@ -26,6 +26,7 @@ export async function registrarAndamento(
     statusId: texto(dados, 'statusId'),
     statusPersonalizado: texto(dados, 'statusPersonalizado'),
     descricao: texto(dados, 'descricao'),
+    encerraOCaso: texto(dados, 'encerraOCaso'),
   }
 
   const conferido = validarAndamento(campos)

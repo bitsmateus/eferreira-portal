@@ -18,6 +18,7 @@ function campos(troca: Partial<Record<string, string>> = {}) {
     statusId: 'processo-distribuido',
     statusPersonalizado: '',
     descricao: 'Petição inicial distribuída à 3ª Vara Cível. Custas recolhidas.',
+    encerraOCaso: '',
     ...troca,
   } as Parameters<typeof validarAndamento>[0]
 }
@@ -179,5 +180,25 @@ describe('situação personalizada', () => {
     )
 
     expect(resultado.ok).toBe(false)
+  })
+})
+
+// "Este andamento encerra o caso" — a caixinha que arquiva o caso junto com
+// o lançamento, em vez de exigir um segundo passo pela edição.
+describe('encerraOCaso', () => {
+  it('caixinha marcada ("on", como o navegador manda) vira true', () => {
+    const resultado = validarAndamento(campos({ encerraOCaso: 'on' }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.encerraOCaso).toBe(true)
+  })
+
+  it('caixinha desmarcada (campo ausente do FormData) vira false', () => {
+    const resultado = validarAndamento(campos({ encerraOCaso: '' }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.encerraOCaso).toBe(false)
   })
 })
