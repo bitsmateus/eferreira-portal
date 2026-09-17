@@ -26,13 +26,15 @@ import { TipoPessoa } from '@prisma/client'
  * de a lista mudar conforme o tipo de pessoa.
  *
  * Para pessoa física, a qualificação é dela mesma. Para pessoa jurídica, RG,
- * estado civil, profissão, nacionalidade e nome da mãe **não se aplicam à
- * empresa** — são do sócio, que o escritório pediu como "o mesmo cadastro da
- * PF ligado ao cadastro do PJ" e mora no `RepresentanteLegal`. Exigi-los da
- * empresa impediria cadastrar qualquer CNPJ.
+ * estado civil, profissão e nacionalidade **não se aplicam à empresa** — são
+ * do sócio, que o escritório pediu como "o mesmo cadastro da PF ligado ao
+ * cadastro do PJ" e mora no `RepresentanteLegal`. Exigi-los da empresa
+ * impediria cadastrar qualquer CNPJ.
  *
  * Data de nascimento ficou de fora: o escritório tirou da lista, e nenhum dos
- * modelos de documento a usa.
+ * modelos de documento a usa. Nome da mãe saiu da lista de obrigatórios em
+ * 17/09/2026, a pedido do escritório — fica registrado no cadastro mas nunca
+ * bloqueia a gravação, nem da pessoa física nem do representante legal.
  *
  * Bloqueiam a gravação, a pedido do escritório: "é melhor não deixar salvar,
  * para não criar futuras pendências".
@@ -57,7 +59,6 @@ export const OBRIGATORIOS_DA_PESSOA = [
   ['estadoCivil', 'Estado civil', 'O estado civil é obrigatório.'],
   ['profissao', 'Profissão', 'A profissão é obrigatória.'],
   ['nacionalidade', 'Nacionalidade', 'A nacionalidade é obrigatória.'],
-  ['nomeMae', 'Nome da mãe', 'O nome da mãe é obrigatório.'],
 ] as const
 
 export type CampoObrigatorio =

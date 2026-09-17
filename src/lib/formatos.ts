@@ -59,6 +59,17 @@ export function formatarNumeroDeProcesso(valor: string): string {
   )
 }
 
+/**
+ * Link de "fale conosco" pelo WhatsApp, a partir de um telefone com DDD.
+ *
+ * O `wa.me` exige o número completo com código do país — sem ele, o link abre
+ * o WhatsApp sem conversa nenhuma selecionada, em vez de já abrir a conversa
+ * com o escritório. `55` é fixo porque o sistema é só para o Brasil.
+ */
+export function linkDoWhatsapp(numeroComDdd: string): string {
+  return `https://wa.me/55${somenteDigitos(numeroComDdd)}`
+}
+
 /** Guarda só os dígitos quando o telefone tem 10 ou 11; senão, o que foi digitado. */
 export function normalizarTelefone(valor: string): string {
   const limpo = valor.trim()

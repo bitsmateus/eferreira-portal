@@ -120,6 +120,27 @@ export async function montarPrevia(
 
   if (casoId !== null && caso === null) return { situacao: 'nao_encontrado' }
 
+  // Regra 10: o modelo do contrato (cláusula 2ª) só descreve honorários de
+  // valor fixo. Êxito e percentual sobre proveito econômico são modalidades
+  // novas, combinadas com o escritório em 17/09/2026, mas cujo TEXTO da
+  // cláusula ainda não foi mandado — inventar a redação seria reescrever
+  // texto jurídico por conta própria. Enquanto isso não chegar, o caso
+  // guarda o percentual normalmente (é dado do caso), só o CONTRATO deste
+  // caso específico não sai.
+  if (
+    tipo === TipoDocumento.CONTRATO &&
+    caso !== null &&
+    (caso.percentualExito !== null || caso.percentualProveitoEconomico !== null)
+  ) {
+    return {
+      situacao: 'faltam_dados',
+      faltando: [
+        'o texto da cláusula de honorários de êxito ou de proveito econômico — o modelo do contrato só descreve valor fixo, e falta o texto que o escritório vai enviar para essas modalidades. Para gerar o contrato agora, remova o percentual e use só honorários fixos neste caso',
+      ],
+      ondePreencher: `/painel/casos/${caso.id}`,
+    }
+  }
+
   // Empresa não assina sozinha: quem assina é o representante legal.
   const vinculo = cliente.representantes[0] ?? null
   const representante = vinculo?.pessoaFisica ?? null

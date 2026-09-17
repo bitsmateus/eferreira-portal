@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { TipoPessoa } from '@prisma/client'
 
 import {
   registrarAssinatura,
@@ -11,10 +12,13 @@ import {
 import {
   atualizarCliente,
   criarCliente,
+  criarClienteComRepresentante,
   excluirCliente,
   reconhecerPorDocumento,
   validarCliente,
+  validarRepresentante,
   type CamposDeCliente,
+  type CamposDoRepresentante,
 } from '@/lib/clientes'
 import { buscarEnderecoPorCep, type EnderecoDoCep } from '@/lib/cep'
 import { texto, type ErrosDeCampo } from '@/lib/formulario'
@@ -51,6 +55,21 @@ function lerCampos(dados: FormData): CamposDeCliente {
   }
 }
 
+function lerCamposDoRepresentante(dados: FormData): CamposDoRepresentante {
+  return {
+    representanteDocumento: texto(dados, 'representanteDocumento'),
+    representanteNome: texto(dados, 'representanteNome'),
+    representanteRg: texto(dados, 'representanteRg'),
+    representanteEstadoCivil: texto(dados, 'representanteEstadoCivil'),
+    representanteProfissao: texto(dados, 'representanteProfissao'),
+    representanteNacionalidade: texto(dados, 'representanteNacionalidade'),
+    representanteNomeMae: texto(dados, 'representanteNomeMae'),
+    representanteEmail: texto(dados, 'representanteEmail'),
+    representanteTelefone: texto(dados, 'representanteTelefone'),
+    representanteQualificacao: texto(dados, 'representanteQualificacao'),
+  }
+}
+
 export async function cadastrarCliente(
   _estado: EstadoDoCliente,
   dados: FormData,
@@ -59,6 +78,40 @@ export async function cadastrarCliente(
 
   const conferido = validarCliente(lerCampos(dados))
   if (!conferido.ok) return { erros: conferido.erros }
+
+  // Pessoa jurídica não nasce sem representante legal — decisão de
+  // 17/09/2026. As duas validações rodam antes de qualquer gravação: a
+  // pessoa vê tudo o que falta de uma vez, em vez de descobrir aos poucos.
+  if (conferido.dados.tipoPessoa === TipoPessoa.JURIDICA) {
+    const representante = validarRepresentante(lerCamposDoRepresentante(dados))
+    if (!representante.ok) return { erros: representante.erros }
+
+    const resultado = await criarClienteComRepresentante(
+      sessao,
+      conferido.dados,
+      representante.dados,
+      await emailDaSessao(sessao),
+    )
+
+    if (resultado.situacao === 'ja_existe') {
+      return {
+        duplicado: { id: resultado.clienteId, nome: resultado.nome },
+        mensagem:
+          'Este CPF/CNPJ já está cadastrado. Abra a ficha existente em vez de criar um segundo registro.',
+      }
+    }
+
+    if (resultado.situacao === 'representante_e_pessoa_juridica') {
+      return {
+        erros: {
+          representanteDocumento: `Este CPF pertence a ${resultado.nome}, cadastrado como pessoa jurídica — o representante legal precisa ser uma pessoa física.`,
+        },
+      }
+    }
+
+    revalidatePath('/painel/clientes')
+    redirect(`/painel/clientes/${resultado.clienteId}`)
+  }
 
   const resultado = await criarCliente(
     sessao,

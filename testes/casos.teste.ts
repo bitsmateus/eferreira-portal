@@ -18,6 +18,8 @@ function campos(troca: Partial<Record<string, string>> = {}) {
     situacao: SituacaoCaso.EM_ANDAMENTO,
     responsavelId: '',
     honorarios: '',
+    percentualExito: '',
+    percentualProveitoEconomico: '',
     ...troca,
   } as Parameters<typeof validarCaso>[0]
 }
@@ -226,5 +228,73 @@ describe('honorários e parcelas (regra 12: sem controle de pagamento)', () => {
   it('não cobra a soma quando não há parcelas nem total', () => {
     expect(somaDasParcelasConfere(null, [])).toBe(true)
     expect(somaDasParcelasConfere(175000, [])).toBe(true)
+  })
+})
+
+// Reunião de 17/09/2026: o caso pode combinar fixo, êxito e percentual sobre
+// o proveito econômico — cada um opcional e independente dos outros.
+describe('percentualExito e percentualProveitoEconomico', () => {
+  it('aceita em branco — nenhuma das duas modalidades usada', () => {
+    const resultado = validarCaso(campos())
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.percentualExito).toBeNull()
+    expect(resultado.dados.percentualProveitoEconomico).toBeNull()
+  })
+
+  it('aceita um número inteiro entre 10 e 30 para cada modalidade', () => {
+    const resultado = validarCaso(
+      campos({ percentualExito: '20', percentualProveitoEconomico: '15' }),
+    )
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.percentualExito).toBe(20)
+    expect(resultado.dados.percentualProveitoEconomico).toBe(15)
+  })
+
+  it.each(['percentualExito', 'percentualProveitoEconomico'] as const)(
+    'recusa %s fora da faixa de 10 a 30',
+    (campo) => {
+      expect(validarCaso(campos({ [campo]: '9' })).ok).toBe(false)
+      expect(validarCaso(campos({ [campo]: '31' })).ok).toBe(false)
+      expect(validarCaso(campos({ [campo]: '0' })).ok).toBe(false)
+    },
+  )
+
+  it.each(['percentualExito', 'percentualProveitoEconomico'] as const)(
+    'recusa %s com casa decimal — o escritório descreveu como número inteiro',
+    (campo) => {
+      const resultado = validarCaso(campos({ [campo]: '20,5' }))
+
+      expect(resultado.ok).toBe(false)
+      if (resultado.ok) return
+      expect(resultado.erros[campo]).toMatch(/inteiro/i)
+    },
+  )
+
+  it('as duas modalidades são independentes uma da outra', () => {
+    const resultado = validarCaso(campos({ percentualExito: '20' }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.percentualExito).toBe(20)
+    expect(resultado.dados.percentualProveitoEconomico).toBeNull()
+  })
+
+  it('pode combinar com honorários fixos no mesmo caso', () => {
+    const resultado = validarCaso(
+      campos({ honorarios: '1.750,00', percentualExito: '20' }),
+    )
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+
+    expect(resultado.dados.honorarios).toBe(175000)
+    expect(resultado.dados.percentualExito).toBe(20)
   })
 })

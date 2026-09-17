@@ -195,6 +195,114 @@ export function validarCliente(
 }
 
 // ---------------------------------------------------------------------------
+// Representante legal — obrigatório ao CADASTRAR uma pessoa jurídica
+// (reunião de 17/09/2026: "quando eu cadastrar uma empresa, eu preciso
+// cadastrar um representante legal também").
+//
+// Os nomes dos campos já nascem com o prefixo `representante`: o formulário
+// de cliente é UM SÓ para os dois cadastros (empresa + sócio) na mesma
+// submissão, e sem o prefixo os erros de `documento`, `nome`, `rg` etc. do
+// sócio se confundiriam com os da própria empresa no mesmo objeto de erros.
+// ---------------------------------------------------------------------------
+
+const textoObrigatorioDoRepresentante = (mensagem: string) =>
+  z.string().trim().min(1, mensagem).max(180, 'Texto longo demais para este campo.')
+
+export const esquemaDoRepresentante = z
+  .object({
+    representanteDocumento: z
+      .string()
+      .trim()
+      .transform((valor, contexto) => {
+        const preparado = prepararDocumento(valor)
+        if (!preparado.ok) {
+          contexto.addIssue({ code: z.ZodIssueCode.custom, message: preparado.motivo })
+          return z.NEVER
+        }
+        if (preparado.tipo !== 'CPF') {
+          contexto.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'O representante legal é sempre uma pessoa física — informe o CPF dele, não o CNPJ da empresa.',
+          })
+          return z.NEVER
+        }
+        return preparado.documento
+      }),
+    representanteNome: z
+      .string()
+      .trim()
+      .min(3, 'Informe o nome completo do representante legal.')
+      .max(180, 'Nome longo demais.'),
+    representanteRg: textoObrigatorioDoRepresentante(
+      'O RG do representante legal é obrigatório.',
+    ),
+    representanteEstadoCivil: textoObrigatorioDoRepresentante(
+      'O estado civil do representante legal é obrigatório.',
+    ),
+    representanteProfissao: textoObrigatorioDoRepresentante(
+      'A profissão do representante legal é obrigatória.',
+    ),
+    representanteNacionalidade: textoObrigatorioDoRepresentante(
+      'A nacionalidade do representante legal é obrigatória.',
+    ),
+    // Opcional, mesma decisão de 17/09/2026 que tirou o nome da mãe dos
+    // obrigatórios do cliente pessoa física (ver campos-do-cliente.ts).
+    representanteNomeMae: opcional,
+    representanteEmail: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .transform((valor, contexto) => {
+        const conferido = z.string().min(1).email().safeParse(valor)
+        if (!conferido.success) {
+          contexto.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Informe um e-mail válido do representante legal.',
+          })
+          return z.NEVER
+        }
+        return conferido.data
+      }),
+    representanteTelefone: z
+      .string()
+      .trim()
+      .min(1, 'O telefone do representante legal é obrigatório.')
+      .transform((valor) => normalizarTelefone(valor)),
+    /// Como consta no contrato social: "sócio", "sócio administrador". Livre
+    /// e opcional, mesmo campo que já existia em `vincularRepresentante`.
+    representanteQualificacao: opcional,
+  })
+  .transform((campos) => ({
+    documento: campos.representanteDocumento,
+    nome: campos.representanteNome,
+    rg: campos.representanteRg,
+    estadoCivil: campos.representanteEstadoCivil,
+    profissao: campos.representanteProfissao,
+    nacionalidade: campos.representanteNacionalidade,
+    nomeMae: campos.representanteNomeMae,
+    email: campos.representanteEmail,
+    telefone: campos.representanteTelefone,
+    qualificacao: campos.representanteQualificacao,
+  }))
+
+export type DadosDoRepresentante = z.output<typeof esquemaDoRepresentante>
+export type CamposDoRepresentante = Record<
+  keyof z.input<typeof esquemaDoRepresentante>,
+  string
+>
+
+export function validarRepresentante(
+  campos: CamposDoRepresentante,
+): ResultadoDeFormulario<DadosDoRepresentante> {
+  const conferido = esquemaDoRepresentante.safeParse(campos)
+  if (!conferido.success) {
+    return { ok: false, erros: errosPorCampo(conferido.error) }
+  }
+  return { ok: true, dados: conferido.data }
+}
+
+// ---------------------------------------------------------------------------
 // Busca — Anexo I, 2.1: por nome, CPF ou CNPJ
 // ---------------------------------------------------------------------------
 
@@ -714,6 +822,148 @@ export async function criarCliente(
   return { situacao: 'criado', clienteId }
 }
 
+/** Documento do representante já pertence a outro CNPJ cadastrado. */
+class RepresentanteEhPessoaJuridica extends Error {
+  constructor(public readonly nome: string) {
+    super(`O documento do representante legal pertence a ${nome}, uma pessoa jurídica.`)
+  }
+}
+
+export type ResultadoDeCadastroDeEmpresa =
+  | { situacao: 'criado'; clienteId: string }
+  | { situacao: 'ja_existe'; clienteId: string; nome: string }
+  | { situacao: 'representante_e_pessoa_juridica'; nome: string }
+
+/**
+ * Cadastra uma pessoa jurídica JÁ COM o representante legal, na mesma
+ * transação — decisão de 17/09/2026, que fechou a lacuna registrada mais
+ * abaixo em `vincularRepresentante`: até aqui era possível salvar uma empresa
+ * sem sócio nenhum, e só a geração de documento (`src/lib/geracao.ts`)
+ * percebia a falta, tarde demais no fluxo.
+ *
+ * Regra 4 continua valendo para o CPF do sócio: se ele já é cliente pessoa
+ * física, é reaproveitado (a mesma pessoa pode representar várias empresas);
+ * se não existe, nasce um cliente pessoa física novo, só com o que este
+ * formulário pediu — endereço e demais campos ficam em branco até alguém
+ * preenchê-los na ficha dele, se um dia ele também virar cliente por conta
+ * própria.
+ */
+export async function criarClienteComRepresentante(
+  sessao: SessaoServidor,
+  dados: DadosDeCliente,
+  representante: DadosDoRepresentante,
+  emailDoAutor: string | null,
+): Promise<ResultadoDeCadastroDeEmpresa> {
+  exigirEquipe(sessao)
+
+  const existente = await prisma.cliente.findUnique({
+    where: { documento: dados.documento },
+    select: { id: true, nome: true },
+  })
+  if (existente !== null) {
+    return { situacao: 'ja_existe', clienteId: existente.id, nome: existente.nome }
+  }
+
+  let clienteId: string
+  try {
+    clienteId = await prisma.$transaction(async (transacao) => {
+      const socioExistente = await transacao.cliente.findFirst({
+        where: filtroDeClientes(sessao, { documento: representante.documento }),
+        select: { id: true, nome: true, tipoPessoa: true },
+      })
+
+      if (socioExistente !== null && socioExistente.tipoPessoa !== TipoPessoa.FISICA) {
+        throw new RepresentanteEhPessoaJuridica(socioExistente.nome)
+      }
+
+      const empresa = await transacao.cliente.create({
+        data: {
+          ...dados,
+          nomeBusca: normalizarParaBusca(dados.nome),
+          criadoPorId: sessao.usuarioId,
+        },
+        select: { id: true },
+      })
+
+      const socio =
+        socioExistente ??
+        (await transacao.cliente.create({
+          data: {
+            tipoPessoa: TipoPessoa.FISICA,
+            documento: representante.documento,
+            nome: representante.nome,
+            nomeBusca: normalizarParaBusca(representante.nome),
+            rg: representante.rg,
+            estadoCivil: representante.estadoCivil,
+            profissao: representante.profissao,
+            nacionalidade: representante.nacionalidade,
+            nomeMae: representante.nomeMae,
+            email: representante.email,
+            telefone: representante.telefone,
+            criadoPorId: sessao.usuarioId,
+          },
+          select: { id: true },
+        }))
+
+      await transacao.representanteLegal.create({
+        data: {
+          pessoaJuridicaId: empresa.id,
+          pessoaFisicaId: socio.id,
+          qualificacao: representante.qualificacao,
+        },
+      })
+
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.CRIACAO,
+          entidade: 'cliente',
+          entidadeId: empresa.id,
+          detalhes: { documento: dados.documento, nome: dados.nome },
+        },
+        transacao,
+      )
+
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.CRIACAO,
+          entidade: 'representante_legal',
+          entidadeId: empresa.id,
+          detalhes: {
+            pessoaFisicaId: socio.id,
+            reaproveitado: socioExistente !== null,
+            qualificacao: representante.qualificacao,
+          },
+        },
+        transacao,
+      )
+
+      return empresa.id
+    })
+  } catch (erro) {
+    if (erro instanceof RepresentanteEhPessoaJuridica) {
+      return { situacao: 'representante_e_pessoa_juridica', nome: erro.nome }
+    }
+    // Mesma corrida que `criarCliente` já trata: entre a checagem acima e o
+    // `create`, cabe outro cadastro com o mesmo documento.
+    if (ehViolacaoDeUnicidade(erro)) {
+      const existenteAgora = await prisma.cliente.findUnique({
+        where: { documento: dados.documento },
+        select: { id: true, nome: true },
+      })
+      if (existenteAgora !== null) {
+        return { situacao: 'ja_existe', clienteId: existenteAgora.id, nome: existenteAgora.nome }
+      }
+    }
+    throw erro
+  }
+
+  return { situacao: 'criado', clienteId }
+}
+
 export type ResultadoDeAtualizacao =
   | { situacao: 'atualizado' }
   | { situacao: 'nao_encontrado' }
@@ -783,9 +1033,16 @@ export async function atualizarCliente(
 // Representante legal — o "sócio" (Anexo II, 3.5, respondido em 14/09/2026)
 //
 // "Seria o mesmo cadastro da PF mas está ligado ao cadastro do PJ." Por isso
-// não existe função para criar um representante: cria-se um cliente pessoa
-// física normal e vincula-se. Assim a mesma pessoa representa várias empresas
-// sem cadastro duplicado, que é a regra 4 aplicada a este caso.
+// não existe função para criar um representante avulso: cria-se um cliente
+// pessoa física normal e vincula-se. Assim a mesma pessoa representa várias
+// empresas sem cadastro duplicado, que é a regra 4 aplicada a este caso.
+//
+// Desde 17/09/2026 o PRIMEIRO representante nasce junto com a empresa, em
+// `criarClienteComRepresentante`, acima — o pedido do escritório foi tornar
+// isso obrigatório no cadastro, não só na ficha depois. `vincularRepresentante`
+// continua existindo para o que aquela função não cobre: uma segunda empresa
+// para o mesmo sócio, um segundo sócio para a mesma empresa, ou uma empresa
+// cadastrada antes desta mudança e que ainda não tinha ninguém vinculado.
 // ---------------------------------------------------------------------------
 
 export type ResultadoDeVinculo =

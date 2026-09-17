@@ -50,6 +50,16 @@ export const ESCRITORIO = {
   emailDoAdvogado: 'sergioferreira@eferreira.adv.br',
   whatsapp: '11 93806.3696',
 
+  /**
+   * Número do botão "Fale conosco" do portal do cliente (`/consultar` e
+   * `/meus-processos`), passado pelo escritório em 17/09/2026. É um número
+   * DIFERENTE do `whatsapp` do advogado acima (aquele é o pessoal dele, citado
+   * na procuração) — os dois convivem porque servem propósitos diferentes:
+   * este é o suporte geral, aquele é a assinatura de um documento específico.
+   * Vale confirmar com o escritório se a intenção era mesmo dois números.
+   */
+  whatsappDeSuporte: '11 4580-3696',
+
   endereco: 'Rua Olegário Paiva, nº 180, 4º andar, Sala 411, Centro',
   cidade: 'Mogi das Cruzes',
   uf: 'SP',

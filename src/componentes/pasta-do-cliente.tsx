@@ -34,9 +34,17 @@ const ETIQUETA_DO_ENVIO: Record<
   CANCELADO: { tom: 'erro', texto: 'Cancelado' },
 }
 
-/** Anexo não se assina, e o PDF que já voltou assinado também não. */
-function vaiParaAssinatura(tipo: TipoDocumento, assinadoEm: Date | null): boolean {
-  return tipo !== TipoDocumento.ANEXO && assinadoEm === null
+/**
+ * O PDF que já voltou assinado não se manda assinar de novo.
+ *
+ * Anexo TAMBÉM vai para assinatura desde 17/09/2026 — pedido do escritório
+ * para termo de acordo e outros documentos avulsos, com signatários
+ * escolhidos na hora do envio (ver `partes.ts` e a tela de assinatura). O
+ * parâmetro `tipo` fica só para não quebrar quem já chama esta função com
+ * ele — hoje ela não distingue mais por tipo.
+ */
+function vaiParaAssinatura(_tipo: TipoDocumento, assinadoEm: Date | null): boolean {
+  return assinadoEm === null
 }
 
 /** Rótulo curto do ícone, a partir do tipo de conteúdo. */

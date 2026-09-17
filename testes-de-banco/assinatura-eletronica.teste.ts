@@ -13,7 +13,13 @@
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { PerfilUsuario, SituacaoDoEnvio, TipoDocumento, TipoPessoa } from '@prisma/client'
+import {
+  PapelDaParte,
+  PerfilUsuario,
+  SituacaoDoEnvio,
+  TipoDocumento,
+  TipoPessoa,
+} from '@prisma/client'
 
 import { envioDoDocumento, enviosDoCliente, prepararEnvio } from '@/lib/assinaturas'
 import { SemAutorizacao } from '@/lib/autorizacao'
@@ -233,12 +239,15 @@ describe('os envios de um cliente não se misturam com os de outro', () => {
 })
 
 describe('o que o preparo recusa antes de gastar crédito', () => {
-  it('anexo não vai para assinatura', async () => {
+  // Desde 17/09/2026, anexo VAI para assinatura — só que ninguém assina
+  // "automaticamente" como no contrato: sem escolha na tela, não há para quem
+  // mandar. Ver `partes.ts` e `SignatarioAvulso`.
+  it('anexo sem signatário escolhido não tem para quem mandar', async () => {
     const anexo = await prisma.documento.create({
       data: {
         clienteId: a.clienteId,
         tipo: TipoDocumento.ANEXO,
-        nome: 'RG.pdf',
+        nome: 'Termo de acordo.pdf',
         chaveArquivo: 'documentos/teste-assinatura-anexo',
         tipoConteudo: 'application/pdf',
         tamanhoBytes: 10,
@@ -247,7 +256,36 @@ describe('o que o preparo recusa antes de gastar crédito', () => {
     })
 
     const preparo = await prepararEnvio(sessaoDaEquipe(), anexo.id)
-    expect(preparo.situacao).toBe('tipo_nao_assinavel')
+    expect(preparo.situacao).toBe('sem_signatarios')
+  })
+
+  it('anexo com signatário avulso escolhido segue adiante', async () => {
+    const anexo = await prisma.documento.create({
+      data: {
+        clienteId: a.clienteId,
+        tipo: TipoDocumento.ANEXO,
+        nome: 'Termo de acordo com testemunha.pdf',
+        chaveArquivo: 'documentos/teste-assinatura-anexo-com-avulso',
+        tipoConteudo: 'application/pdf',
+        tamanhoBytes: 10,
+      },
+      select: { id: true },
+    })
+
+    const preparo = await prepararEnvio(sessaoDaEquipe(), anexo.id, [
+      { nome: 'Testemunha de Teste', email: 'testemunha@exemplo.invalido', papel: PapelDaParte.TESTEMUNHA },
+    ])
+
+    // Não trava em `sem_signatarios` nem `sem_email` — a única coisa que
+    // impede 'pronto' aqui é a consulta de saldo não achar a D4Sign, que
+    // este arquivo trata como esperado (ver o comentário de `D4SIGN_URL`).
+    expect(preparo.situacao).not.toBe('sem_signatarios')
+    expect(preparo.situacao).not.toBe('sem_email')
+    if (preparo.situacao === 'pronto') {
+      expect(preparo.partes).toEqual([
+        { papel: PapelDaParte.TESTEMUNHA, nome: 'Testemunha de Teste', email: 'testemunha@exemplo.invalido' },
+      ])
+    }
   })
 
   it('documento já assinado não vai para assinatura', async () => {

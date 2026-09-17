@@ -39,13 +39,16 @@ export function camposDeClienteDoCorpo(
 }
 
 /**
- * Honorários entram vazios de propósito: são a cláusula de pagamento do
- * contrato, digitada no painel junto com o documento que vai ser assinado.
- * Ver a nota da regra 12 em `src/app/api/v1/casos/route.ts`.
+ * Honorários (fixo, êxito e proveito econômico) entram vazios de propósito:
+ * são a cláusula de pagamento do contrato, digitada no painel junto com o
+ * documento que vai ser assinado. Ver a nota da regra 12 em
+ * `src/app/api/v1/casos/route.ts`.
  */
 export function camposDeCasoDoCorpo(corpo: Record<string, unknown>): CamposDeCaso {
   return {
     honorarios: '',
+    percentualExito: '',
+    percentualProveitoEconomico: '',
     numeroProcesso: comoTexto(corpo['numeroProcesso']),
     assunto: comoTexto(corpo['assunto']),
     vara: comoTexto(corpo['vara']),

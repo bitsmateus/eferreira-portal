@@ -96,6 +96,40 @@ const honorarios = z
   })
 
 /**
+ * Honorários de êxito e percentual sobre proveito econômico — as duas
+ * modalidades combináveis com o valor fixo acima (17/09/2026). As duas usam
+ * a mesma faixa: 10 a 30, número inteiro, sem casas decimais — foi assim que
+ * o escritório descreveu em reunião.
+ */
+function percentualDeHonorario(rotulo: string) {
+  return z
+    .string()
+    .trim()
+    .transform((valor, contexto) => {
+      if (valor === '') return null
+
+      const numero = Number(valor.replace(',', '.'))
+      if (!Number.isInteger(numero)) {
+        contexto.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Informe ${rotulo} como um número inteiro, de 10 a 30.`,
+        })
+        return z.NEVER
+      }
+
+      if (numero < 10 || numero > 30) {
+        contexto.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${rotulo} precisa estar entre 10% e 30%.`,
+        })
+        return z.NEVER
+      }
+
+      return numero
+    })
+}
+
+/**
  * Quantas linhas de parcela o formulário mostra. Linhas fixas em vez de um
  * botão "adicionar": o contrato do escritório nunca passou de três parcelas, e
  * assim o formulário funciona sem JavaScript.
@@ -155,6 +189,10 @@ export function somaDasParcelasConfere(
 
 export const esquemaDeCaso = z.object({
   honorarios,
+  percentualExito: percentualDeHonorario('o percentual de honorários de êxito'),
+  percentualProveitoEconomico: percentualDeHonorario(
+    'o percentual sobre o proveito econômico',
+  ),
   numeroProcesso: numeroDoProcesso,
   assunto: z
     .string()

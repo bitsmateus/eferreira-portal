@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TipoDocumento, TipoPessoa } from '@prisma/client'
+import { PapelDaParte, TipoDocumento, TipoPessoa } from '@prisma/client'
 
 import {
   ACAO_ASSINAR,
   emailDoEscritorio,
+  lerAvulsos,
   mensagemDoEnvio,
   nomeDoAssinado,
   papeisSemEmail,
@@ -112,6 +113,47 @@ describe('papeisSemEmail', () => {
   it('não aponta nada quando está tudo preenchido', () => {
     const partes = partesQueAssinam(TipoDocumento.CONTRATO, PESSOA_FISICA, null)
     expect(papeisSemEmail(partes)).toEqual([])
+  })
+})
+
+// Documento avulso (ANEXO): quem assina vem da tela, não de `partesQueAssinam`
+// (17/09/2026). `lerAvulsos` é o portão de entrada dessa lista, e nunca confia
+// no JSON que a tela mandou sem checar de novo aqui — regra 2 aplicada a um
+// formulário que não tem sessão de cliente, mas ainda assim recebe dado bruto.
+describe('lerAvulsos', () => {
+  it('lê uma lista válida de signatários avulsos', () => {
+    const json = JSON.stringify([
+      { nome: 'Fulano Advogado', email: 'fulano@exemplo.com.br', papel: PapelDaParte.ADVOGADO },
+      { nome: 'Beltrana Testemunha', email: 'beltrana@exemplo.com.br', papel: PapelDaParte.TESTEMUNHA },
+    ])
+
+    const lidos = lerAvulsos(json)
+
+    expect(lidos).toHaveLength(2)
+    expect(lidos[0]).toEqual({
+      nome: 'Fulano Advogado',
+      email: 'fulano@exemplo.com.br',
+      papel: PapelDaParte.ADVOGADO,
+    })
+  })
+
+  it('devolve lista vazia para JSON malformado', () => {
+    expect(lerAvulsos('{isto não é json')).toEqual([])
+    expect(lerAvulsos('')).toEqual([])
+  })
+
+  it('devolve lista vazia quando o JSON não tem a forma esperada', () => {
+    expect(lerAvulsos(JSON.stringify({ nome: 'Sem ser um array' }))).toEqual([])
+    expect(lerAvulsos(JSON.stringify([{ nome: 'Sem e-mail nem papel' }]))).toEqual([])
+    expect(
+      lerAvulsos(
+        JSON.stringify([{ nome: 'Papel inválido', email: 'x@x.com', papel: 'INVENTADO' }]),
+      ),
+    ).toEqual([])
+  })
+
+  it('devolve lista vazia para uma lista vazia', () => {
+    expect(lerAvulsos('[]')).toEqual([])
   })
 })
 

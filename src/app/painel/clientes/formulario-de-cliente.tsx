@@ -56,6 +56,38 @@ export const VALORES_VAZIOS: ValoresDoCliente = {
   uf: '',
 }
 
+/**
+ * O sócio, coletado na MESMA submissão do cadastro da empresa — decisão de
+ * 17/09/2026. Só aparece quando `reconhecerAoDigitar` é verdadeiro (isto é,
+ * no cadastro novo, nunca na edição): uma empresa já cadastrada tem seus
+ * representantes geridos na ficha, por `RepresentantesLegais`.
+ */
+export type ValoresDoRepresentante = {
+  documento: string
+  nome: string
+  rg: string
+  estadoCivil: string
+  profissao: string
+  nacionalidade: string
+  nomeMae: string
+  email: string
+  telefone: string
+  qualificacao: string
+}
+
+const VALORES_VAZIOS_DO_REPRESENTANTE: ValoresDoRepresentante = {
+  documento: '',
+  nome: '',
+  rg: '',
+  estadoCivil: '',
+  profissao: '',
+  nacionalidade: '',
+  nomeMae: '',
+  email: '',
+  telefone: '',
+  qualificacao: '',
+}
+
 type Props = {
   acao: (estado: EstadoDoCliente, dados: FormData) => Promise<EstadoDoCliente>
   valores: ValoresDoCliente
@@ -182,6 +214,19 @@ export function FormularioDeCliente({
    * volta com tudo no lugar e o erro apontando o que falta preencher.
    */
   const [campos, setCampos] = useState<ValoresDoCliente>(valores)
+
+  const [representante, setRepresentante] = useState<ValoresDoRepresentante>(
+    VALORES_VAZIOS_DO_REPRESENTANTE,
+  )
+
+  function definirRepresentante<C extends keyof ValoresDoRepresentante>(
+    campo: C,
+    nomeHtml: string,
+    valor: string,
+  ): void {
+    setRepresentante((atual) => ({ ...atual, [campo]: valor }))
+    setCorrigidos((atual) => (atual.has(nomeHtml) ? atual : new Set(atual).add(nomeHtml)))
+  }
 
   const [reconhecimento, setReconhecimento] = useState<Reconhecimento>({
     estado: 'vazio',
@@ -612,15 +657,270 @@ export function FormularioDeCliente({
               </div>
             </div>
 
-            {ehPessoaJuridica && (
+            {ehPessoaJuridica && !reconhecerAoDigitar && (
               <div className="aviso aviso-info mb-[15px]">
                 <span aria-hidden="true">▲</span>
                 <div>
                   <b>Qualificação pessoal é do sócio, não da empresa.</b> RG, estado
-                  civil, profissão, nacionalidade e nome da mãe ficam no cadastro do
-                  representante legal — que é um cliente pessoa física ligado a esta
-                  empresa. Você vincula o representante na ficha, depois de salvar.
+                  civil, profissão e nacionalidade ficam no cadastro do representante
+                  legal — que é um cliente pessoa física ligado a esta empresa. Gerencie
+                  os representantes na ficha, mais abaixo.
                 </div>
+              </div>
+            )}
+
+            {ehPessoaJuridica && reconhecerAoDigitar && (
+              <div className="mb-[15px] rounded-lg border border-borda p-3.5">
+                <p className="mb-3 text-[13px] font-medium text-texto">
+                  Representante legal
+                </p>
+                <p className="dica mb-3">
+                  Quem assina pela empresa — a procuração e o contrato saem no nome
+                  dele. RG, estado civil, profissão e nacionalidade são dele, não da
+                  empresa. Se este CPF já for cliente cadastrado, o sistema reaproveita
+                  o cadastro em vez de duplicar.
+                </p>
+
+                <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteDocumento"
+                      rotulo="CPF do sócio"
+                      erro={erros['representanteDocumento']}
+                      obrigatorio
+                    >
+                      <input
+                        id="representanteDocumento"
+                        name="representanteDocumento"
+                        inputMode="numeric"
+                        className="campo-entrada mono"
+                        placeholder="000.000.000-00"
+                        value={representante.documento}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'documento',
+                            'representanteDocumento',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteNome"
+                      rotulo="Nome completo"
+                      erro={erros['representanteNome']}
+                      obrigatorio
+                    >
+                      <input
+                        id="representanteNome"
+                        name="representanteNome"
+                        className="campo-entrada"
+                        value={representante.nome}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'nome',
+                            'representanteNome',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteRg"
+                      rotulo="RG"
+                      erro={erros['representanteRg']}
+                      obrigatorio
+                    >
+                      <input
+                        id="representanteRg"
+                        name="representanteRg"
+                        className="campo-entrada"
+                        value={representante.rg}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'rg',
+                            'representanteRg',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteEstadoCivil"
+                      rotulo="Estado civil"
+                      erro={erros['representanteEstadoCivil']}
+                      obrigatorio
+                    >
+                      <input
+                        id="representanteEstadoCivil"
+                        name="representanteEstadoCivil"
+                        className="campo-entrada"
+                        value={representante.estadoCivil}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'estadoCivil',
+                            'representanteEstadoCivil',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteProfissao"
+                      rotulo="Profissão"
+                      erro={erros['representanteProfissao']}
+                      obrigatorio
+                    >
+                      <input
+                        id="representanteProfissao"
+                        name="representanteProfissao"
+                        className="campo-entrada"
+                        value={representante.profissao}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'profissao',
+                            'representanteProfissao',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteNacionalidade"
+                      rotulo="Nacionalidade"
+                      erro={erros['representanteNacionalidade']}
+                      obrigatorio
+                    >
+                      <input
+                        id="representanteNacionalidade"
+                        name="representanteNacionalidade"
+                        className="campo-entrada"
+                        value={representante.nacionalidade}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'nacionalidade',
+                            'representanteNacionalidade',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteNomeMae"
+                      rotulo="Nome da mãe"
+                      erro={erros['representanteNomeMae']}
+                    >
+                      <input
+                        id="representanteNomeMae"
+                        name="representanteNomeMae"
+                        className="campo-entrada"
+                        value={representante.nomeMae}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'nomeMae',
+                            'representanteNomeMae',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                  <div className="flex-1">
+                    <Campo
+                      nome="representanteQualificacao"
+                      rotulo="Qualificação"
+                      erro={erros['representanteQualificacao']}
+                      dica={<p className="dica">Ex.: sócio, sócio administrador.</p>}
+                    >
+                      <input
+                        id="representanteQualificacao"
+                        name="representanteQualificacao"
+                        className="campo-entrada"
+                        placeholder="sócio administrador"
+                        value={representante.qualificacao}
+                        onChange={(evento) =>
+                          definirRepresentante(
+                            'qualificacao',
+                            'representanteQualificacao',
+                            evento.target.value,
+                          )
+                        }
+                      />
+                    </Campo>
+                  </div>
+                </div>
+
+                <Campo
+                  nome="representanteEmail"
+                  rotulo="E-mail"
+                  erro={erros['representanteEmail']}
+                  obrigatorio
+                >
+                  <input
+                    id="representanteEmail"
+                    name="representanteEmail"
+                    type="email"
+                    className="campo-entrada"
+                    value={representante.email}
+                    onChange={(evento) =>
+                      definirRepresentante(
+                        'email',
+                        'representanteEmail',
+                        evento.target.value,
+                      )
+                    }
+                  />
+                </Campo>
+
+                <Campo
+                  nome="representanteTelefone"
+                  rotulo="Telefone"
+                  erro={erros['representanteTelefone']}
+                  obrigatorio
+                >
+                  <input
+                    id="representanteTelefone"
+                    name="representanteTelefone"
+                    inputMode="tel"
+                    className="campo-entrada mono"
+                    placeholder="(11) 90000-0000"
+                    value={representante.telefone}
+                    onChange={(evento) =>
+                      definirRepresentante(
+                        'telefone',
+                        'representanteTelefone',
+                        evento.target.value,
+                      )
+                    }
+                    onBlur={() =>
+                      setRepresentante((atual) => ({
+                        ...atual,
+                        telefone: formatarTelefone(atual.telefone),
+                      }))
+                    }
+                  />
+                </Campo>
               </div>
             )}
 

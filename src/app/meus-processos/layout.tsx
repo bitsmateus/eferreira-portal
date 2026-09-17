@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { Marca } from '@/componentes/marca'
 import { SemAutorizacao } from '@/lib/autorizacao'
 import { formatarDocumento } from '@/lib/documento'
+import { ESCRITORIO } from '@/lib/escritorio'
+import { linkDoWhatsapp } from '@/lib/formatos'
 import { prisma } from '@/lib/prisma'
 import { exigirSessaoDeCliente } from '@/lib/sessao'
 import { sairDaConsulta } from './acoes'
@@ -38,7 +40,16 @@ export default async function LayoutDaAreaDoCliente({
       <header className="flex flex-wrap items-center gap-3 bg-grafite-800 px-5 py-3.5">
         <Marca tamanho="pequena" />
 
-        <div className="ml-auto text-right text-[11.5px] leading-snug text-[#8A8A92]">
+        <a
+          href={linkDoWhatsapp(ESCRITORIO.whatsappDeSuporte)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto text-[11.5px] text-[#B9B9C0] underline underline-offset-2 hover:text-[#EDEDED]"
+        >
+          Fale conosco
+        </a>
+
+        <div className="text-right text-[11.5px] leading-snug text-[#8A8A92]">
           <b className="block text-[12.5px] text-[#E4E4E8]">{sessao.nome}</b>
           <span className="mono">
             {cliente === null ? '' : formatarDocumento(cliente.documento)}

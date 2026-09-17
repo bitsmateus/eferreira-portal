@@ -73,6 +73,16 @@ enum PermissaoApi {
   ESCREVER
 }
 
+/// As etiquetas do cadastro unificado de partes (abaixo). Não existe "CLIENTE"
+/// aqui: cliente já tem cadastro próprio, com o vínculo Cliente/Caso — este
+/// cadastro é só para quem fica de fora dele.
+enum PapelDaParte {
+  ADVOGADO
+  PARTE_CONTRARIA
+  TESTEMUNHA
+  OUTROS
+}
+
 enum AcaoAuditoria {
   CRIACAO
   ATUALIZACAO
@@ -125,6 +135,7 @@ model Usuario {
   andamentosLancados  Andamento[]           @relation("AndamentoAutor")
   documentosEnviados  Documento[]           @relation("DocumentoEnviadoPor")
   assinaturasPedidas  EnvioParaAssinatura[] @relation("EnvioPedidoPor")
+  partesCadastradas   Parte[]               @relation("ParteCriadaPor")
   registrosAuditoria  Auditoria[]
   tokensDeRedefinicaoDeSenha TokenDeRedefinicaoDeSenha[]
 
@@ -340,7 +351,24 @@ model Caso {
   /// pagamentos, somente a adicionar". Não existe — e não deve passar a
   /// existir — baixa de parcela, situação de pagamento, inadimplência nem
   /// relatório financeiro. Se parecer necessário, pare e avise.
+  ///
+  /// É a modalidade "fixo" das quatro combinadas em 17/09/2026 — à vista
+  /// (sem `parcelas`) ou parcelado (com `parcelas`). Convive com as duas de
+  /// baixo: um caso pode ter fixo, êxito, proveito econômico, ou as três.
   honorariosEmCentavos Int?
+
+  /// Honorários de êxito: percentual de 10 a 30, devido só ao final da
+  /// demanda, sem entrada nem parcela — pedido do escritório em 17/09/2026.
+  ///
+  /// ATENÇÃO: o modelo do contrato (cláusula 2ª) ainda só descreve o valor
+  /// fixo acima. `montarPrevia`, em src/lib/geracao.ts, recusa gerar CONTRATO
+  /// para um caso com este campo preenchido até o escritório mandar o texto
+  /// da cláusula — regra 10 proíbe inventar cláusula nova. Ver CLAUDE.md.
+  percentualExito Int?
+
+  /// Percentual sobre o proveito econômico obtido — de 10 a 30, mesma
+  /// pendência de texto contratual do campo acima.
+  percentualProveitoEconomico Int?
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -598,6 +626,49 @@ model EnvioParaAssinatura {
   @@index([documentoId])
   @@index([situacao])
   @@map("envio_para_assinatura")
+}
+
+// ---------------------------------------------------------------------------
+// Parte — cadastro unificado para quem assina um documento AVULSO sem ser
+// cliente do escritório (reunião de 17/09/2026): parte contrária, testemunha,
+// advogado externo ou outro papel livre.
+//
+// De propósito, uma tabela PRÓPRIA, sem nenhuma ligação com `Cliente`: o
+// escritório foi explícito — "eu não sei se vai ser cliente ou não, é
+// informação transitória, não quero contaminar meu banco de dados principal
+// de clientes". A mesma pessoa pode um dia aparecer nos dois cadastros, sem
+// vínculo automático entre eles.
+//
+// Não guarda documento (CPF/CNPJ) nem endereço: só o que a D4Sign precisa
+// para mandar o e-mail de assinatura. Quem de fato assinou um envio fica
+// gravado em `EnvioParaAssinatura.signatarios` (JSON, um retrato daquele
+// momento) — apagar ou editar uma `Parte` depois não muda o que já foi
+// enviado, do mesmo jeito que editar um `Cliente` não reescreve andamento
+// já lançado.
+// ---------------------------------------------------------------------------
+
+model Parte {
+  id String @id @default(cuid())
+
+  nome     String
+  email    String
+  telefone String?
+  papel    PapelDaParte
+
+  /// Texto livre: "advogado da parte contrária no caso X", "testemunha do
+  /// acordo Y". Não entra em nenhum documento — é só para quem cadastra
+  /// lembrar depois quem é quem.
+  observacoes String?
+
+  criadoPorId String?
+  criadoPor   Usuario? @relation("ParteCriadaPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([papel])
+  @@index([nome])
+  @@map("parte")
 }
 
 // ---------------------------------------------------------------------------

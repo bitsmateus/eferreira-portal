@@ -307,6 +307,90 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Reunião de demonstração com o escritório em 17/09/2026** — cinco pedidos
+saíram dali, todos implementados e testados:
+
+1. **Representante legal virou obrigatório no CADASTRO de pessoa jurídica**,
+   não só na ficha depois. "Quando eu cadastrar uma empresa, eu preciso
+   cadastrar um representante legal também" — até aqui dava para salvar um
+   CNPJ sem sócio nenhum, e só a geração de documento percebia a falta,
+   tarde no fluxo. Agora o formulário de cadastro de cliente, quando o
+   documento digitado é um CNPJ, pede as informações do sócio (mesmos campos
+   da pessoa física, e-mail e telefone obrigatórios) e cria os dois — empresa
+   e sócio — na mesma transação. Regra 4 continua valendo para o sócio: se o
+   CPF já é cliente cadastrado, reaproveita em vez de duplicar. A tela de
+   "Representantes legais" na ficha continua existindo, para adicionar mais
+   sócios depois ou resolver empresa cadastrada antes desta mudança.
+
+2. **Nome da mãe deixou de ser obrigatório**, para qualquer pessoa física —
+   cliente ou representante legal. Pedido explícito do escritório nesta
+   reunião; o campo continua existindo no cadastro, só não bloqueia mais a
+   gravação.
+
+3. **Botão "Fale conosco pelo WhatsApp"** em `/consultar` e `/meus-processos`
+   — as telas do CLIENTE, não o painel interno da equipe (a reunião falou
+   "no painel e no menu de login" pensando na experiência de quem consulta o
+   processo, não de quem já trabalha na ferramenta). Número:
+   `(11) 4580-3696`, guardado em `ESCRITORIO.whatsappDeSuporte`. **Atenção:**
+   esse número é DIFERENTE do `ESCRITORIO.whatsapp` já cadastrado (o pessoal
+   do advogado, citado na procuração) — os dois convivem de propósito, mas
+   vale confirmar com o escritório se realmente são dois números distintos.
+
+4. **Honorários ganharam três modalidades combináveis**: fixo (à vista ou
+   parcelado, como já era), êxito (percentual de 10% a 30%, sem entrada) e
+   percentual sobre o proveito econômico (10% a 30%). Um caso pode ter uma,
+   duas ou as três ao mesmo tempo — migração `20260917193752`, campos
+   `percentualExito` e `percentualProveitoEconomico` no `Caso`.
+
+   **Isto não gera contrato ainda, de propósito.** A cláusula 2ª do modelo
+   (`contrato-de-prestacao-de-servicos.html`) pressupõe um valor fixo por
+   extenso — "os honorários... serão de {{valor}}... pagos da seguinte
+   forma". Escrever a redação das duas modalidades novas seria reescrever
+   texto jurídico por conta própria, e a regra 10 proíbe isso. Por isso
+   `montarPrevia` (`src/lib/geracao.ts`) recusa gerar CONTRATO — só o
+   contrato, procuração e declaração continuam livres — para qualquer caso
+   com `percentualExito` ou `percentualProveitoEconomico` preenchido, com uma
+   mensagem que diz para tirar o percentual e usar só o fixo enquanto o
+   modelo não chega. **Falta pedir ao escritório o texto da cláusula para as
+   duas modalidades novas** (e para as combinações com o fixo).
+
+5. **Cadastro de partes e assinatura de documento avulso.** Pedido do
+   escritório: anexar um documento pronto (ex.: termo de acordo) e mandar
+   para assinatura de gente que não é cliente — parte contrária, testemunha,
+   advogado externo. Modelo novo, `Parte` (migração `20260917194611`),
+   **de propósito sem nenhuma ligação com `Cliente`**: "eu não sei se vai ser
+   cliente ou não, é informação transitória, não quero contaminar meu banco
+   de dados principal de clientes". Tela em `/painel/partes` (cadastrar,
+   listar, excluir — sem trava de "tem histórico", porque nada aponta para
+   uma `Parte` por chave estrangeira; quem já assinou fica gravado como JSON
+   em `EnvioParaAssinatura.signatarios`, um retrato daquele envio).
+
+   Documento do tipo ANEXO agora VAI para assinatura — antes não ia. A
+   diferença para contrato/procuração/declaração: ninguém assina
+   "automaticamente" a partir do cliente. Na tela de envio
+   (`/painel/documentos/[id]/assinatura`), quando o documento é um anexo, a
+   pessoa escolhe quem assina — do cadastro de Partes, e/ou digitado na hora,
+   sem entrar no cadastro — antes de qualquer preparo. A lista escolhida
+   viaja para o servidor como JSON, e `lerAvulsos` (`src/lib/assinaturas.ts`)
+   nunca confia nela sem validar de novo.
+
+   **Isto reverte, só para documento avulso, uma decisão de 14/09/2026**:
+   "testemunhas ficam no papel, cada uma seria mais um endereço a cadastrar".
+   Contrato, procuração e declaração — os três que o próprio sistema gera —
+   continuam sem testemunha nenhuma na D4Sign; a mudança vale só para ANEXO.
+
+   Achado no meio do caminho: os dois componentes novos (`lista.tsx` de
+   Partes e o formulário de assinatura de anexo) importavam `ROTULO_DO_PAPEL`
+   direto de `assinaturas.ts` — um arquivo de servidor que arrasta Prisma,
+   Argon2 e nodemailer. O build de produção quebrou por causa disso
+   (`Module not found: '@node-rs/argon2-wasm32-wasi'`), e a correção foi a
+   mesma separação de sempre (`campos-do-cliente.ts`, `arquivos.ts`): os
+   rótulos saíram para `src/lib/rotulos-de-assinatura.ts`, sem nada de
+   servidor, para um componente `'use client'` poder importar só o que
+   precisa desenhar.
+
+391 testes unitários, 124 contra o banco.
+
 **Passada de responsividade em todo o painel** (17/09/2026), pedido do
 escritório para terminar o sistema: celular, tablet e telas menores em
 geral. Achados dois defeitos estruturais que afetavam o painel inteiro, mais

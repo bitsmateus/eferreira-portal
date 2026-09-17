@@ -77,11 +77,18 @@ describe('o asterisco da tela bate com a recusa do servidor', () => {
 describe('a lista muda com o tipo de pessoa', () => {
   // A qualificação pessoal é do sócio, não da empresa. Exigi-la do CNPJ
   // impediria cadastrar qualquer pessoa jurídica.
-  it('empresa não precisa de RG, estado civil, profissão, nacionalidade nem nome da mãe', () => {
-    for (const campo of ['rg', 'estadoCivil', 'profissao', 'nacionalidade', 'nomeMae']) {
+  it('empresa não precisa de RG, estado civil, profissão nem nacionalidade', () => {
+    for (const campo of ['rg', 'estadoCivil', 'profissao', 'nacionalidade']) {
       expect(ehObrigatorio(campo, TipoPessoa.JURIDICA)).toBe(false)
       expect(ehObrigatorio(campo, TipoPessoa.FISICA)).toBe(true)
     }
+  })
+
+  // O escritório tirou da lista em 17/09/2026: fica no cadastro, mas nunca
+  // bloqueia a gravação — nem da pessoa física, nem do representante legal.
+  it('nome da mãe não é obrigatório para ninguém', () => {
+    expect(ehObrigatorio('nomeMae', TipoPessoa.FISICA)).toBe(false)
+    expect(ehObrigatorio('nomeMae', TipoPessoa.JURIDICA)).toBe(false)
   })
 
   it('contato e endereço valem para os dois', () => {

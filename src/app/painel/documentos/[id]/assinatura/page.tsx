@@ -28,9 +28,11 @@ import {
 } from '@/lib/assinaturas'
 import { filtroDeDocumentos } from '@/lib/autorizacao'
 import { formatarDataHora } from '@/lib/datas'
+import { listarPartes } from '@/lib/partes'
 import { prisma } from '@/lib/prisma'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
 import { BotaoDeConferencia, ConfirmacaoDeEnvio } from './formulario'
+import { FormularioDeAnexo } from './formulario-de-anexo'
 
 export const metadata: Metadata = {
   title: 'Assinatura eletrônica — E. Ferreira Advogados',
@@ -229,10 +231,37 @@ export default async function PaginaDaAssinatura({
           <div className="aviso aviso-info">
             <span aria-hidden="true">●</span>
             <div>
-              Este documento não vai para assinatura: ou é um anexo que o escritório
-              recebeu, ou é o próprio PDF que já voltou assinado.
+              Este documento não vai para assinatura: é o próprio PDF que já voltou
+              assinado da D4Sign.
             </div>
           </div>
+        </Cartao>
+      </>
+    )
+  }
+
+  // Anexo não tem signatário automático — a pessoa escolhe quem assina antes
+  // de qualquer preparo. Ver `FormularioDeAnexo` e `partes.ts`.
+  if (preparo.situacao === 'sem_signatarios') {
+    const partesCadastradas = await listarPartes(sessao)
+
+    return (
+      <>
+        {topo}
+        <Cartao>
+          <a
+            href={`/painel/documentos/${documento.id}/arquivo`}
+            target="_blank"
+            rel="noreferrer"
+            className="botao botao-secundario botao-pequeno mb-4 inline-flex"
+          >
+            Conferir o documento antes de enviar
+          </a>
+
+          <FormularioDeAnexo
+            documentoId={documento.id}
+            partesCadastradas={partesCadastradas}
+          />
         </Cartao>
       </>
     )

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 
 import { Marca } from '@/componentes/marca'
+import { ESCRITORIO } from '@/lib/escritorio'
+import { linkDoWhatsapp } from '@/lib/formatos'
 import { FormularioDeConsulta } from './formulario'
 
 export const metadata: Metadata = {
@@ -59,7 +61,19 @@ export default function PaginaDeConsulta() {
           só quer consultar o processo. O motivo em si continua documentado
           aqui em cima e em docs/area-do-cliente.md.
         */}
-        <p className="mt-7 border-t border-borda pt-[18px] text-center text-[11.5px] text-texto-3">
+        <p className="mt-4 text-center text-[11.5px] text-texto-3">
+          Não conseguiu acessar ou não recebeu o código?{' '}
+          <a
+            href={linkDoWhatsapp(ESCRITORIO.whatsappDeSuporte)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2"
+          >
+            Fale conosco pelo WhatsApp
+          </a>
+        </p>
+
+        <p className="mt-3.5 border-t border-borda pt-[18px] text-center text-[11.5px] text-texto-3">
           É da equipe do escritório?{' '}
           <a href="/entrar" className="underline underline-offset-2">
             Entrar no painel

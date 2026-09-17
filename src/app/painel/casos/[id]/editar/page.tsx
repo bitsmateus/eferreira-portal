@@ -38,6 +38,12 @@ export default async function PaginaDeEdicaoDeCaso({
       caso.honorariosEmCentavos === null
         ? ''
         : formatarReais(caso.honorariosEmCentavos).replace('R$ ', ''),
+    percentualExito:
+      caso.percentualExito === null ? '' : String(caso.percentualExito),
+    percentualProveitoEconomico:
+      caso.percentualProveitoEconomico === null
+        ? ''
+        : String(caso.percentualProveitoEconomico),
     parcelas: caso.parcelas.map((parcela) => ({
       valor: formatarReais(parcela.valorEmCentavos).replace('R$ ', ''),
       vencimento: dataParaDiaCivil(parcela.vencimento),

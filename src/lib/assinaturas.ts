@@ -45,12 +45,15 @@
 
 import {
   AcaoAuditoria,
+  PapelDaParte,
   SituacaoDoEnvio,
   TipoDocumento,
   TipoPessoa,
 } from '@prisma/client'
+import { z } from 'zod'
 
 import { exigirEquipe, filtroDeDocumentos, type SessaoServidor } from '@/lib/autorizacao'
+import { ROTULO_DO_PAPEL, type PapelNaAssinatura } from '@/lib/rotulos-de-assinatura'
 import { prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import {
@@ -81,15 +84,20 @@ import {
  * O código da D4Sign para "assinar". Os outros são aprovar, reconhecer e
  * testemunhar, e nenhum documento deste sistema usa esses papéis hoje.
  *
- * TESTEMUNHAS FICAM NO PAPEL. O contrato do escritório tem linhas de
- * testemunha, e elas não entram na lista de signatários: cada testemunha
- * eletrônica seria mais um endereço que o escritório teria de cadastrar e mais
- * gente a esperar para o documento fechar. Combinado em 14/09/2026 —
- * confirmar na demonstração.
+ * TESTEMUNHAS ELETRÔNICAS FICAVAM DE FORA — decisão revista em 17/09/2026.
+ * Até aqui, o contrato do escritório tinha linhas de testemunha em papel, e
+ * elas não entravam na lista de signatários da D4Sign: "cada testemunha
+ * eletrônica seria mais um endereço a cadastrar e mais gente a esperar"
+ * (14/09/2026). O escritório voltou atrás nesta reunião, especificamente para
+ * DOCUMENTOS AVULSOS (`ANEXO`, ver `partesAvulsasQueAssinam` abaixo): um
+ * termo de acordo pode exigir testemunha, parte contrária e advogado externo
+ * assinando eletronicamente, escolhidos na hora do envio. Contrato,
+ * procuração e declaração — os três que o próprio sistema gera — continuam
+ * assinados só por quem `partesQueAssinam` decide, sem testemunha nenhuma.
  */
 export const ACAO_ASSINAR = '1'
 
-export type PapelNaAssinatura = 'cliente' | 'representante' | 'escritorio'
+export type { PapelNaAssinatura }
 
 export type ParteQueAssina = {
   papel: PapelNaAssinatura
@@ -98,10 +106,48 @@ export type ParteQueAssina = {
   email: string | null
 }
 
-export const ROTULO_DO_PAPEL: Record<PapelNaAssinatura, string> = {
-  cliente: 'Cliente',
-  representante: 'Representante legal',
-  escritorio: 'Escritório',
+// Reexportado para quem já importava daqui — `ROTULO_DO_PAPEL` de verdade
+// mora em `rotulos-de-assinatura.ts`, sem nada de servidor: é o que permite a
+// tela de assinatura ('use client') mostrar o rótulo do papel sem arrastar
+// Prisma, sessão e D4Sign inteiros para o pacote do navegador.
+export { ROTULO_DO_PAPEL }
+
+// ---------------------------------------------------------------------------
+// Signatários avulsos — só para documentos do tipo ANEXO (17/09/2026)
+// ---------------------------------------------------------------------------
+
+/** O que a tela de envio manda: escolhido do cadastro de partes, ou digitado na hora. */
+export type SignatarioAvulso = {
+  nome: string
+  email: string
+  papel: PapelDaParte
+}
+
+const esquemaDeSignatarioAvulso = z.object({
+  nome: z.string().trim().min(2).max(180),
+  email: z.string().trim().toLowerCase().email(),
+  papel: z.nativeEnum(PapelDaParte),
+})
+
+const esquemaDeAvulsos = z.array(esquemaDeSignatarioAvulso)
+
+/**
+ * Lê a lista de signatários avulsos que a tela mandou, como JSON num campo
+ * escondido — nunca confiando no que veio de lá sem checar de novo aqui.
+ * Devolve lista vazia para qualquer entrada malformada: quem decide se uma
+ * lista vazia é aceitável é `prepararEnvio` (`sem_signatarios`), não este
+ * leitor.
+ */
+export function lerAvulsos(json: string): SignatarioAvulso[] {
+  let bruto: unknown
+  try {
+    bruto = JSON.parse(json)
+  } catch {
+    return []
+  }
+
+  const conferido = esquemaDeAvulsos.safeParse(bruto)
+  return conferido.success ? conferido.data : []
 }
 
 /**
@@ -133,8 +179,10 @@ export type ClienteQueAssina = {
  *  - **contrato**: o cliente e o escritório — é bilateral.
  *  - **pessoa jurídica**: empresa não assina, quem assina é o representante
  *    legal. Sem e-mail próprio dele, vale o da empresa.
- *  - **anexo**: nada. Anexo é arquivo que o escritório recebeu, não documento
- *    que o sistema emitiu.
+ *  - **anexo**: nada AQUI — um anexo não tem cliente nem representante
+ *    decidindo quem assina por regra fixa. Quem assina um anexo vem de fora,
+ *    escolhido na hora do envio (ver `SignatarioAvulso`, acima, e o uso em
+ *    `prepararEnvio`).
  */
 export function partesQueAssinam(
   tipo: TipoDocumento,
@@ -238,6 +286,8 @@ export type ResultadoDoPreparo =
   | { situacao: 'ja_enviado'; envio: EnvioEmAndamento }
   | { situacao: 'sem_email'; faltando: string[]; ondePreencher: string }
   | { situacao: 'sem_creditos' }
+  /** Anexo sem ninguém escolhido para assinar ainda. */
+  | { situacao: 'sem_signatarios' }
 
 const ENVIO = {
   id: true,
@@ -325,10 +375,16 @@ export async function enviosDoCliente(
 /**
  * Tudo que a tela de confirmação precisa, sem gastar crédito e sem mandar
  * e-mail nenhum. Ler o saldo é chamada de leitura da D4Sign.
+ *
+ * `avulsos` só importa para documento do tipo ANEXO: é a lista escolhida na
+ * tela (do cadastro de partes, ou digitada na hora) de quem vai assinar. Para
+ * os demais tipos, quem assina continua vindo de `partesQueAssinam` — o
+ * parâmetro é ignorado.
  */
 export async function prepararEnvio(
   sessao: SessaoServidor,
   documentoId: string,
+  avulsos: readonly SignatarioAvulso[] = [],
 ): Promise<ResultadoDoPreparo> {
   exigirEquipe(sessao)
 
@@ -362,8 +418,9 @@ export async function prepararEnvio(
 
   if (documento === null) return { situacao: 'nao_encontrado' }
 
-  // O PDF que voltou assinado não se manda assinar de novo.
-  if (documento.tipo === TipoDocumento.ANEXO || documento.origemDaAssinatura !== null) {
+  // O PDF que voltou assinado não se manda assinar de novo — isso vale para
+  // qualquer tipo, inclusive o anexo que já tiver voltado assinado.
+  if (documento.origemDaAssinatura !== null) {
     return { situacao: 'tipo_nao_assinavel' }
   }
 
@@ -380,7 +437,20 @@ export async function prepararEnvio(
   }
 
   const representante = documento.cliente.representantes[0]?.pessoaFisica ?? null
-  const partes = partesQueAssinam(documento.tipo, documento.cliente, representante)
+  const partes: ParteQueAssina[] =
+    documento.tipo === TipoDocumento.ANEXO
+      ? avulsos.map((avulso) => ({
+          papel: avulso.papel,
+          nome: avulso.nome,
+          email: avulso.email,
+        }))
+      : partesQueAssinam(documento.tipo, documento.cliente, representante)
+
+  // Anexo não tem ninguém "automático" — sem escolha na tela, não há para
+  // quem mandar. Os demais tipos sempre têm ao menos o cliente.
+  if (documento.tipo === TipoDocumento.ANEXO && partes.length === 0) {
+    return { situacao: 'sem_signatarios' }
+  }
 
   const faltando = papeisSemEmail(partes)
   if (faltando.length > 0) {
@@ -436,10 +506,11 @@ export async function enviarParaAssinatura(
   sessao: SessaoServidor,
   documentoId: string,
   emailDoAutor: string | null,
+  avulsos: readonly SignatarioAvulso[] = [],
 ): Promise<ResultadoDoEnvio> {
   // As mesmas conferências da tela, refeitas no servidor: entre a tela e o
   // clique o cadastro pode ter mudado, e a tela não decide nada (regra 2).
-  const preparo = await prepararEnvio(sessao, documentoId)
+  const preparo = await prepararEnvio(sessao, documentoId, avulsos)
   if (preparo.situacao !== 'pronto') return preparo
 
   const configuracao = configuracaoD4Sign()

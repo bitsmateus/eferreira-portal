@@ -19,6 +19,8 @@ export type ValoresDoCaso = {
   situacao: string
   responsavelId: string
   honorarios: string
+  percentualExito: string
+  percentualProveitoEconomico: string
   parcelas: readonly { valor: string; vencimento: string }[]
 }
 
@@ -30,6 +32,8 @@ export const VALORES_VAZIOS: ValoresDoCaso = {
   situacao: SituacaoCaso.EM_ANDAMENTO,
   responsavelId: '',
   honorarios: '',
+  percentualExito: '',
+  percentualProveitoEconomico: '',
   parcelas: [],
 }
 
@@ -131,6 +135,8 @@ export function FormularioDeCaso({
     situacao: valores.situacao,
     responsavelId: valores.responsavelId,
     honorarios: valores.honorarios,
+    percentualExito: valores.percentualExito,
+    percentualProveitoEconomico: valores.percentualProveitoEconomico,
   })
 
   // Linhas fixas em vez de "adicionar parcela": sem JavaScript extra, e o
@@ -352,15 +358,16 @@ export function FormularioDeCaso({
 
             <h2 className="mb-1 text-[14px] font-semibold">Honorários</h2>
             <p className="mb-4 text-[12px] text-texto-2">
-              Usados para escrever a cláusula 2ª do contrato. Pode ficar em branco e
-              ser preenchido depois.
+              Usados para escrever a cláusula 2ª do contrato. As três modalidades
+              abaixo podem ser combinadas no mesmo caso — pode ter só uma, duas ou as
+              três, conforme o que foi combinado com o cliente.
             </p>
 
             <Campo
               nome="honorarios"
-              rotulo="Valor total"
+              rotulo="Honorários fixos — valor total"
               erro={erros['honorarios']}
-              dica="Como no contrato: 1.750,00"
+              dica="À vista ou parcelado (parcelas abaixo). Como no contrato: 1.750,00"
             >
               <input
                 id="honorarios"
@@ -372,6 +379,60 @@ export function FormularioDeCaso({
                 onChange={(evento) => definir('honorarios', evento.target.value)}
               />
             </Campo>
+
+            <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
+              <div className="flex-1">
+                <Campo
+                  nome="percentualExito"
+                  rotulo="Honorários de êxito (%)"
+                  erro={erros['percentualExito']}
+                  dica="De 10 a 30. Só devido ao final, sem entrada."
+                >
+                  <input
+                    id="percentualExito"
+                    name="percentualExito"
+                    inputMode="numeric"
+                    className="campo-entrada mono"
+                    placeholder="20"
+                    value={campos.percentualExito}
+                    onChange={(evento) => definir('percentualExito', evento.target.value)}
+                  />
+                </Campo>
+              </div>
+              <div className="flex-1">
+                <Campo
+                  nome="percentualProveitoEconomico"
+                  rotulo="Sobre o proveito econômico (%)"
+                  erro={erros['percentualProveitoEconomico']}
+                  dica="De 10 a 30, sobre o proveito obtido pelo cliente."
+                >
+                  <input
+                    id="percentualProveitoEconomico"
+                    name="percentualProveitoEconomico"
+                    inputMode="numeric"
+                    className="campo-entrada mono"
+                    placeholder="20"
+                    value={campos.percentualProveitoEconomico}
+                    onChange={(evento) =>
+                      definir('percentualProveitoEconomico', evento.target.value)
+                    }
+                  />
+                </Campo>
+              </div>
+            </div>
+
+            {(campos.percentualExito !== '' ||
+              campos.percentualProveitoEconomico !== '') && (
+              <div className="aviso aviso-atencao mb-[15px]">
+                <span aria-hidden="true">▲</span>
+                <div>
+                  <b>O contrato ainda não sai com honorários de êxito ou de proveito
+                  econômico.</b> O modelo que o escritório mandou só descreve valor
+                  fixo — falta o texto dessa cláusula. Os dados ficam salvos no caso,
+                  mas gerar o contrato é bloqueado até o escritório mandar o modelo.
+                </div>
+              </div>
+            )}
 
             <div className="mb-[15px]">
               <span className="campo-rotulo">Parcelas</span>
