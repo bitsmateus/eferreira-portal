@@ -47,8 +47,12 @@ export function FormularioDeAnexo({
         </div>
       )}
 
+      {/*
+        `min-w-0` nos dois filhos do grid — mesma armadilha do
+        `min-height: auto` do flexbox, no eixo horizontal.
+      */}
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-        <div className="cartao">
+        <div className="cartao min-w-0">
           <div className="cartao-cabecalho">
             <h2>Arquivo</h2>
           </div>
@@ -146,7 +150,7 @@ export function FormularioDeAnexo({
           </div>
         </div>
 
-        <div className="aviso aviso-info self-start">
+        <div className="aviso aviso-info min-w-0 self-start">
           <span aria-hidden="true">▲</span>
           <div>
             <b>Nenhum arquivo fica público.</b> O documento é guardado com nome

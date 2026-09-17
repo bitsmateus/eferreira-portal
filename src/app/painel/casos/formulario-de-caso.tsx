@@ -194,8 +194,12 @@ export function FormularioDeCaso({
         </div>
       )}
 
+      {/*
+        `min-w-0` nos dois filhos do grid — mesma armadilha do
+        `min-height: auto` do flexbox, no eixo horizontal.
+      */}
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-        <div className="cartao">
+        <div className="cartao min-w-0">
           <div className="cartao-cabecalho">
             <h2>Dados do caso</h2>
             <span className="ml-auto text-[11.5px] text-texto-3">
@@ -439,7 +443,7 @@ export function FormularioDeCaso({
           </div>
         </div>
 
-        <div className="aviso aviso-atencao self-start">
+        <div className="aviso aviso-atencao min-w-0 self-start">
           <span aria-hidden="true">▲</span>
           <div>
             <b>Lançamento é manual.</b> A captura automática de movimentações nos

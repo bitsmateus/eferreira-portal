@@ -84,8 +84,14 @@ export default async function PaginaDoCaso({
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
+        {/*
+          `min-w-0` nos filhos do grid: sem isto, um item de largura mínima
+          grande (texto longo sem quebra, tabela) empurra a coluna além do
+          espaço disponível em vez de rolar por dentro dela — a mesma
+          armadilha do `min-height: auto` do flexbox, no eixo horizontal.
+        */}
         <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-          <div>
+          <div className="min-w-0">
             <div className="cartao">
               <div className="cartao-cabecalho">
                 <h2>Novo andamento</h2>
@@ -133,7 +139,7 @@ export default async function PaginaDoCaso({
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="cartao mb-4">
               <div className="cartao-cabecalho">
                 <h2>Dados do caso</h2>

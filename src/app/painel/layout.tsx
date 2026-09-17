@@ -3,6 +3,7 @@ import { PerfilUsuario } from '@prisma/client'
 
 import { Marca } from '@/componentes/marca'
 import { MenuLateral } from '@/componentes/menu-lateral'
+import { MenuMobile } from '@/componentes/menu-mobile'
 import { sessaoDoServidor } from '@/lib/sessao'
 import { ehEquipe } from '@/lib/autorizacao'
 import { prisma } from '@/lib/prisma'
@@ -12,6 +13,41 @@ const NOME_DO_PERFIL: Record<PerfilUsuario, string> = {
   OPERADOR: 'Operador',
   ADMINISTRADOR: 'Administrador',
   CLIENTE: 'Cliente',
+}
+
+/**
+ * O conteúdo da barra lateral, usado duas vezes: fixo em telas largas
+ * (`<aside>`, abaixo) e dentro da gaveta do `MenuMobile` em telas estreitas
+ * — a mesma navegação, o mesmo rodapé de sessão, só o contêiner muda.
+ */
+function ConteudoDoMenu({
+  usuario,
+}: {
+  usuario: { nome: string; perfil: PerfilUsuario } | null
+}) {
+  return (
+    <>
+      <Marca />
+
+      <MenuLateral />
+
+      <div className="mt-auto border-t border-[#3A3A3A] pt-3.5 text-[11.5px] leading-snug text-[#78787F]">
+        Conectado como
+        <br />
+        <b className="text-[#C8C8CE]">{usuario?.nome ?? '—'}</b>
+        <br />
+        {usuario === null ? '—' : NOME_DO_PERFIL[usuario.perfil]}
+        <form action={sair} className="mt-3">
+          <button
+            type="submit"
+            className="text-[11.5px] text-[#B9B9C0] underline underline-offset-2 hover:text-[#EDEDED]"
+          >
+            Sair
+          </button>
+        </form>
+      </div>
+    </>
+  )
 }
 
 export default async function LayoutDoPainel({
@@ -50,30 +86,15 @@ export default async function LayoutDoPainel({
      */
     <div className="grid h-screen grid-cols-1 overflow-hidden md:grid-cols-[232px_1fr]">
       <aside className="hidden flex-col gap-6 overflow-y-auto bg-grafite-800 px-3.5 py-5 md:flex">
-        <Marca />
-
-        <MenuLateral />
-
-        <div className="mt-auto border-t border-[#3A3A3A] pt-3.5 text-[11.5px] leading-snug text-[#78787F]">
-          Conectado como
-          <br />
-          <b className="text-[#C8C8CE]">{usuario?.nome ?? '—'}</b>
-          <br />
-          {usuario === null ? '—' : NOME_DO_PERFIL[usuario.perfil]}
-          <form action={sair} className="mt-3">
-            <button
-              type="submit"
-              className="text-[11.5px] text-[#B9B9C0] underline underline-offset-2 hover:text-[#EDEDED]"
-            >
-              Sair
-            </button>
-          </form>
-        </div>
+        <ConteudoDoMenu usuario={usuario} />
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-col bg-fundo">
         <div className="flex items-center gap-3 bg-grafite-800 px-4 py-3 md:hidden">
           <Marca tamanho="pequena" />
+          <MenuMobile>
+            <ConteudoDoMenu usuario={usuario} />
+          </MenuMobile>
         </div>
         {children}
       </div>

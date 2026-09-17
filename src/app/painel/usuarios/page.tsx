@@ -43,11 +43,15 @@ export default async function PaginaDeUsuarios() {
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
+        {/*
+          `min-w-0` nos dois filhos do grid — mesma armadilha do
+          `min-height: auto` do flexbox, no eixo horizontal.
+        */}
         <div className="grid gap-4 lg:grid-cols-[1fr_1.3fr]">
-          <div>
+          <div className="min-w-0">
             <NovoUsuario />
           </div>
-          <div>
+          <div className="min-w-0">
             <ListaDeUsuarios usuarios={usuarios} idDoUsuarioAtual={sessao.usuarioId} />
           </div>
         </div>

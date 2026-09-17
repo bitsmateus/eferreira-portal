@@ -434,8 +434,12 @@ export function FormularioDeCliente({
         </div>
       )}
 
+      {/*
+        `min-w-0` nos dois filhos do grid — mesma armadilha do
+        `min-height: auto` do flexbox, no eixo horizontal.
+      */}
       <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-        <div className="cartao">
+        <div className="cartao min-w-0">
           <div className="cartao-cabecalho">
             <h2>Identificação</h2>
             <span className="ml-auto text-[11.5px] text-texto-3">
@@ -765,7 +769,7 @@ export function FormularioDeCliente({
           </div>
         </div>
 
-        <div>
+        <div className="min-w-0">
           <div className="cartao mb-4">
             <div className="cartao-cabecalho">
               <h2>O que acontece ao salvar</h2>

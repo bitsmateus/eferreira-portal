@@ -107,7 +107,7 @@ function CardDeRelatorio({
   linhas: readonly { rotulo: string; valor: number; href?: string }[]
 }) {
   return (
-    <div className="cartao">
+    <div className="cartao min-w-0">
       <div className="cartao-cabecalho">
         <h2>{titulo}</h2>
       </div>
@@ -181,7 +181,7 @@ async function TabelaDeClientesNoPainel({
     <div className="cartao mb-4">
       <div className="cartao-cabecalho">
         <h2>Clientes filtrados</h2>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <span className="text-[12px] text-texto-2">
             {lista.linhas.length === 1 ? '1 resultado' : `${lista.linhas.length} resultados`}
           </span>
@@ -283,7 +283,7 @@ async function TabelaDeCasosNoPainel({
     <div className="cartao mb-4">
       <div className="cartao-cabecalho">
         <h2>Casos filtrados</h2>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
           <span className="text-[12px] text-texto-2">
             {lista.linhas.length === 1 ? '1 resultado' : `${lista.linhas.length} resultados`}
           </span>

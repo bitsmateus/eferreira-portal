@@ -289,7 +289,7 @@ export function ListaDeCredenciais({
               </div>
             </div>
 
-            <div className="ml-auto flex items-center gap-2.5">
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2.5">
               {credencial.ativa ? (
                 <Etiqueta tom={credencial.ehDeProducao ? 'ok' : 'info'}>
                   {credencial.ehDeProducao ? 'Ativa' : 'Sandbox'}

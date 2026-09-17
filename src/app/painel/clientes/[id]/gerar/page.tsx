@@ -74,8 +74,14 @@ export default async function PaginaDeGeracao({
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
+        {/*
+          `min-w-0` nos dois filhos do grid — mesma armadilha do
+          `min-height: auto` do flexbox, no eixo horizontal. Sem isto, o
+          iframe da prévia (que tem largura própria fixa) empurraria a coluna
+          da direita além do espaço disponível.
+        */}
         <div className="grid gap-4 lg:grid-cols-[1fr_1.4fr]">
-          <div>
+          <div className="min-w-0">
             <div className="cartao mb-4">
               <div className="cartao-cabecalho">
                 <h2>O que gerar</h2>
@@ -185,7 +191,7 @@ export default async function PaginaDeGeracao({
             </div>
           </div>
 
-          <div className="cartao">
+          <div className="cartao min-w-0">
             <div className="cartao-cabecalho">
               <h2>Prévia</h2>
               {previa?.situacao === 'pronto' && (

@@ -130,8 +130,15 @@ export default async function PaginaDaApi() {
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
+        {/*
+          `min-w-0` nos dois filhos do grid: sem isto, o exemplo de código e a
+          tabela de endpoints (ambos já com rolagem própria) forçam a coluna
+          a crescer além do espaço disponível em vez de rolar por dentro —
+          mesma armadilha do `min-height: auto` do flexbox, no eixo
+          horizontal.
+        */}
         <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-          <div>
+          <div className="min-w-0">
             <div className="cartao mb-4">
               <div className="cartao-cabecalho">
                 <h2>Consulta por CPF ou CNPJ</h2>
@@ -189,7 +196,7 @@ export default async function PaginaDaApi() {
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="mb-4">
               <NovaCredencial />
             </div>

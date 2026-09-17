@@ -93,8 +93,14 @@ export default async function PaginaDaFichaDoCliente({
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
+        {/*
+          `min-w-0` nos dois filhos diretos do grid: sem isto, uma tabela
+          larga (Casos vinculados) força a coluna a crescer além da largura
+          disponível em vez de rolar por dentro — a mesma armadilha do
+          `min-height: auto` do flexbox, só que em grid e no eixo horizontal.
+        */}
         <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-          <div>
+          <div className="min-w-0">
             <div className="cartao">
               <div className="cartao-cabecalho">
                 <h2>Casos vinculados</h2>
@@ -198,7 +204,7 @@ export default async function PaginaDaFichaDoCliente({
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0">
             {/*
               O acesso do cliente vem primeiro na coluna, e não por último —
               pedido do escritório em 16/09/2026: é o dado mais consultado

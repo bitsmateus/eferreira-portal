@@ -307,6 +307,50 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Passada de responsividade em todo o painel** (17/09/2026), pedido do
+escritório para terminar o sistema: celular, tablet e telas menores em
+geral. Achados dois defeitos estruturais que afetavam o painel inteiro, mais
+alguns pontuais — todos corrigidos e conferidos com capturas de tela reais
+em 375px (celular) e 820px (tablet), contra o build de produção.
+
+1. **A barra lateral inteira sumia no celular.** Abaixo de `md`, o `<aside>`
+   com toda a navegação (Painel, Clientes, Casos, Usuários, API) e o "Sair"
+   ficava com `hidden`, e a barra de topo do celular só mostrava a logo —
+   sem hambúrguer, sem nada. Quem abrisse o sistema no celular não tinha
+   como trocar de tela nem sair da conta. `menu-mobile.tsx` é a correção:
+   um botão ☰ que abre uma gaveta (mesmo conteúdo do `<aside>`, via
+   `ConteudoDoMenu` compartilhado) deslizando da esquerda, com fundo
+   escurecido — fecha sozinha ao navegar, pelo X, pelo Esc ou clicando fora.
+
+2. **Toda tela de duas colunas (`grid lg:grid-cols-[...]`) podia estourar a
+   largura no tablet.** Um item de grid tem `min-width: auto` por padrão —
+   a mesma armadilha do `min-height: auto` do flexbox que já tinha aparecido
+   na barra lateral (ver mais abaixo), só que no eixo horizontal. Na
+   prática: uma tabela larga (Casos vinculados, na ficha do cliente) forçava
+   a coluna inteira a crescer além do espaço disponível, cortando botões e
+   colunas no tablet mesmo com a tabela tendo sua própria rolagem interna.
+   `min-w-0` nos filhos diretos de todo grid de duas colunas do painel —
+   ficha do cliente, ficha do caso, gerar documento, API, Usuários e os três
+   formulários — resolve, deixando a rolagem interna de cada tabela agir de
+   verdade em vez de brigar com o grid por espaço.
+
+3. **Botões de ação por linha (Assinar/Abrir/Baixar/Excluir na pasta do
+   cliente, Revogar na API) não quebravam linha** quando não cabiam ao lado
+   do texto — cortavam no meio, sem rolagem nem quebra. `flex-wrap` nesses
+   grupos, e defensivamente em `.cartao-cabecalho` (usado em toda a tela).
+
+4. **A rolagem lateral das tabelas ganhou uma "sombra de rolagem"** — duas
+   faixas que aparecem só no lado em que ainda há conteúdo para ver,
+   apagando sozinhas conforme a rolagem chega à borda. A rolagem em si já
+   funcionava (conferido programaticamente); só faltava dar a ver que ela
+   existe, num celular sem barra de rolagem visível.
+
+Formulários, telas públicas (`/entrar`, `/consultar`, `/recuperar-senha`) e
+o restante do painel já colapsavam para uma coluna corretamente — conferido,
+não mexido.
+
+355 testes unitários e 110 contra o banco.
+
 **"Este andamento encerra o caso" está de pé** (17/09/2026), pedido do
 escritório: até aqui, arquivar um caso exigia dois passos — lançar o
 andamento e depois abrir "Editar" só para trocar a situação. Agora o

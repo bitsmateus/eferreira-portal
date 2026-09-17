@@ -82,7 +82,7 @@
   }
 
   .cartao-cabecalho {
-    @apply flex items-center gap-2.5 border-b border-borda px-[18px] py-3.5;
+    @apply flex flex-wrap items-center gap-2.5 border-b border-borda px-[18px] py-3.5;
   }
 
   .cartao-cabecalho h2 {
@@ -111,8 +111,31 @@
     @apply border-b-0;
   }
 
+  /*
+   * A tabela rola de lado no celular (há coluna demais para a largura da
+   * tela). A rolagem em si sempre funcionou — o que faltava era dar a ver
+   * que ela existe. A "sombra de rolagem" abaixo é a técnica clássica: duas
+   * faixas de sombra que só aparecem no lado em que ainda há conteúdo para
+   * rolar, e que a própria rolagem acende e apaga sozinha
+   * (`background-attachment: local` gruda o fundo no conteúdo que rola, e o
+   * `scroll` prende a sombra na borda fixa do contêiner).
+   */
   .rolagem-lateral {
     @apply overflow-x-auto;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    background-image:
+      linear-gradient(to right, #fff 30%, rgba(255, 255, 255, 0)),
+      linear-gradient(to left, #fff 30%, rgba(255, 255, 255, 0)),
+      linear-gradient(to right, rgba(30, 30, 30, 0.12), rgba(30, 30, 30, 0)),
+      linear-gradient(to left, rgba(30, 30, 30, 0.12), rgba(30, 30, 30, 0));
+    background-position:
+      left,
+      right,
+      left,
+      right;
+    background-size: 24px 100%, 24px 100%, 8px 100%, 8px 100%;
+    background-attachment: local, local, scroll, scroll;
   }
 
   .etiqueta {
