@@ -307,6 +307,48 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Documento assinado pelos dois e o portal continuava dizendo "aguardando"
+— achada a causa, e ela é séria** (17/09/2026). O escritório assinou de
+ponta a ponta um contrato de teste (as duas partes, pelo e-mail da D4Sign) e
+o painel continuou marcando "Aguardando assinatura" mesmo depois de conferir
+de novo. Não era cache nem código travado: `conferirAssinatura` de fato
+perguntava à D4Sign a cada clique — o problema estava do lado de lá.
+
+Direto no painel da D4Sign (o escritório olhou por conta própria): o
+documento tinha **seis vagas de assinatura para duas pessoas**. O signatário
+do escritório (que tem conta na D4Sign) apareceu três vezes, todas assinadas
+— a plataforma absorveu as cópias sem reclamar. O signatário do cliente (sem
+conta, `foreign`) também apareceu três vezes, mas só UMA foi completada; as
+outras duas ficaram como "Não possui conta" — "a assinar" para sempre, porque
+ninguém jamais abriria aqueles links duplicados. Por isso a % de assinatura
+nunca fechava, mesmo com as duas partes de verdade já tendo assinado.
+
+A causa: `createlist` da D4Sign **não é idempotente** — cada chamada
+ACRESCENTA signatários à lista do documento, nunca substitui os que já
+existem. `enviarParaAssinatura`, ao **retomar** um envio que tinha parado no
+cofre (`NO_COFRE`), sempre chamava `definirSignatarios` de novo antes de
+tentar `mandarAssinar` — e nas últimas 24h esse caminho de retomada foi
+percorrido várias vezes, por causa dos dois bugs já corrigidos do
+`foresign`/`foreign` e da validação errada do `createlist`. Cada tentativa
+teimosa cadastrou os mesmos dois signatários de novo, sem nunca substituir os
+anteriores.
+
+Corrigido com um campo novo, `signatariosDefinidosEm` (migração
+`20260917120018`): gravado assim que `definirSignatarios` funciona pela
+primeira vez, ANTES de tentar `mandarAssinar` — se este falhar e alguém
+clicar "tentar de novo", o código agora pula o `createlist` e só repete o
+passo que realmente falhou. Dois testes contra o banco de verdade provam
+isso: um com `signatariosDefinidosEm` já preenchido (o `fetch` dublado
+falharia o teste se `createlist` fosse chamado) e outro sem, confirmando que
+o primeiro envio de verdade continua cadastrando os signatários normalmente.
+
+**O documento de teste em si ficou preso** — tem duas vagas fantasmas que
+nunca vão ser assinadas, e a integração não apaga nada da D4Sign (pedido do
+escritório, 14/09/2026). A saída é manual, pelo painel da D4Sign: usar
+"Opções" nas duas vagas "Não possui conta" pendentes daquele documento
+específico para cancelá-las ou resolvê-las por lá. Depois disso o portal deve
+conferir certo na próxima vez.
+
 **O timbre continuava "quebrado" mesmo depois da marca d'água mais fraca —
 a causa de verdade era outra, e agora está corrigida** (16/09/2026). O
 escritório voltou a reportar cabeçalho e rodapé "fora do lugar", por cima do

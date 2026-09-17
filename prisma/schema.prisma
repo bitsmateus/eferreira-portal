@@ -567,6 +567,15 @@ model EnvioParaAssinatura {
   /// informação perdida.
   situacaoNaD4Sign String?
 
+  /// Preenchido assim que a D4Sign confirma o cadastro dos signatários
+  /// (createlist). Tentar de novo depois de uma falha em `mandarAssinar` NÃO
+  /// pode repetir esse passo: createlist não é idempotente na D4Sign — cada
+  /// chamada ACRESCENTA signatários, nunca substitui os que já existem. Sem
+  /// este campo, um retry recriava a lista inteira e o documento ficava com
+  /// sósias do mesmo signatário, alguns "sem conta" que ninguém jamais
+  /// completaria — e o envio nunca fechava 100% na D4Sign.
+  signatariosDefinidosEm DateTime?
+
   /// Para quem o e-mail de assinatura foi, com nome e papel. É a resposta à
   /// pergunta "para qual endereço isto foi?", feita sempre depois do envio.
   signatarios Json

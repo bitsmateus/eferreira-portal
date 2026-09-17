@@ -457,15 +457,20 @@ export async function enviarParaAssinatura(
   // cópias do mesmo documento no cofre do escritório, e apagar está proibido.
   let envioId: string
   let uuid: string
+  // Se um retry anterior já cadastrou os signatários com sucesso, uma nova
+  // tentativa NÃO pode repetir esse passo — ver o comentário grande logo
+  // abaixo, no bloco que usa esta variável.
+  let signatariosJaDefinidos = false
 
   if (preparo.retomavel !== null) {
     envioId = preparo.retomavel.id
     const anterior = await prisma.envioParaAssinatura.findUnique({
       where: { id: envioId },
-      select: { uuidDocumento: true },
+      select: { uuidDocumento: true, signatariosDefinidosEm: true },
     })
     if (anterior === null) return { situacao: 'nao_encontrado' }
     uuid = anterior.uuidDocumento
+    signatariosJaDefinidos = anterior.signatariosDefinidosEm !== null
   } else {
     const pdf = await lerArquivo(documento.chaveArquivo)
     uuid = await subirDocumento(configuracao, configuracao.cofre, documento.nome, pdf)
@@ -487,14 +492,39 @@ export async function enviarParaAssinatura(
   }
 
   try {
-    await definirSignatarios(
-      configuracao,
-      uuid,
-      preparo.partes.map((parte) => ({
-        email: (parte.email ?? '').trim(),
-        acao: ACAO_ASSINAR,
-      })),
-    )
+    // ─────────────────────────────────────────────────────────────────────
+    // createlist NÃO É IDEMPOTENTE NA D4Sign: cada chamada ACRESCENTA
+    // signatários à lista do documento, nunca substitui os que já estão lá.
+    //
+    // Sem esta trava, um retry depois de `mandarAssinar` falhar (por
+    // exemplo, a instabilidade corrigida em 16-17/09/2026) cadastrava os
+    // MESMOS dois signatários de novo — e de novo a cada nova tentativa —,
+    // deixando o documento com sósias duplicados. O signatário do escritório
+    // tem conta na D4Sign e ela absorveu os duplicados sem avisar; o
+    // signatário externo (sem conta, `foreign`) ganhou vagas "a assinar"
+    // extras que ninguém jamais completaria — e o documento nunca fechava
+    // 100%, mesmo com as duas partes de verdade já tendo assinado.
+    //
+    // `signatariosJaDefinidos` é a memória de que esse passo já funcionou
+    // para ESTE envio: um retry só repete o que realmente falhou antes.
+    // ─────────────────────────────────────────────────────────────────────
+    if (!signatariosJaDefinidos) {
+      await definirSignatarios(
+        configuracao,
+        uuid,
+        preparo.partes.map((parte) => ({
+          email: (parte.email ?? '').trim(),
+          acao: ACAO_ASSINAR,
+        })),
+      )
+
+      // Gravado imediatamente, antes de `mandarAssinar`: se o próximo passo
+      // falhar, o retry seguinte já sabe que não deve repetir este.
+      await prisma.envioParaAssinatura.update({
+        where: { id: envioId },
+        data: { signatariosDefinidosEm: new Date() },
+      })
+    }
 
     // O passo que cobra. Depois dele não há volta: o e-mail já saiu.
     await mandarAssinar(
