@@ -34,11 +34,18 @@ export function FormularioDeAndamento({
   hoje,
   /** Sem nenhum andamento ainda, o primeiro da lista vem escolhido. */
   statusSugerido,
+  /**
+   * Editar, gerar documento e excluir — pedido do escritório (17/09/2026)
+   * para ficarem ao lado de "Lançar andamento", em vez de lá no topo da
+   * página. Continuam ações do CASO, não do andamento; só a posição mudou.
+   */
+  acoesDoCaso,
 }: {
   casoId: string
   status: readonly Status[]
   hoje: string
   statusSugerido: string
+  acoesDoCaso?: React.ReactNode
 }) {
   const [estado, enviar] = useActionState(
     registrarAndamento.bind(null, casoId),
@@ -225,7 +232,10 @@ export function FormularioDeAndamento({
         )}
       </div>
 
-      <BotaoLancar />
+      <div className="flex flex-wrap items-center gap-3">
+        <BotaoLancar />
+        {acoesDoCaso}
+      </div>
     </form>
   )
 }

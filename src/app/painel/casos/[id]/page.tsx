@@ -80,24 +80,7 @@ export default async function PaginaDoCaso({
             {caso.vara !== null && <> · {caso.vara}</>}
           </>
         }
-        acoes={
-          <>
-            <EtiquetaDeSituacaoDoCaso situacao={caso.situacao} />
-            <Link
-              href={`/painel/casos/${caso.id}/editar`}
-              className="botao botao-secundario"
-            >
-              Editar
-            </Link>
-            <Link
-              href={`/painel/clientes/${caso.cliente.id}/gerar?casoId=${caso.id}`}
-              className="botao botao-secundario"
-            >
-              Gerar documento
-            </Link>
-            <ExcluirCasoBotao casoId={caso.id} titulo={titulo} />
-          </>
-        }
+        acoes={<EtiquetaDeSituacaoDoCaso situacao={caso.situacao} />}
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
@@ -113,6 +96,23 @@ export default async function PaginaDoCaso({
                   status={status}
                   hoje={hoje}
                   statusSugerido={statusSugerido}
+                  acoesDoCaso={
+                    <>
+                      <Link
+                        href={`/painel/casos/${caso.id}/editar`}
+                        className="botao botao-secundario"
+                      >
+                        Editar
+                      </Link>
+                      <Link
+                        href={`/painel/clientes/${caso.cliente.id}/gerar?casoId=${caso.id}`}
+                        className="botao botao-secundario"
+                      >
+                        Gerar documento
+                      </Link>
+                      <ExcluirCasoBotao casoId={caso.id} titulo={titulo} />
+                    </>
+                  }
                 />
 
                 <div className="my-[22px] border-t border-borda" />
