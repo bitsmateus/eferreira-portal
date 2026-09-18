@@ -307,6 +307,46 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Documentos "cortados" — achada a causa, e ela vinha do início** (18/09/2026).
+O escritório reportou que todo documento gerado estava saindo com o texto
+sobreposto pelo cabeçalho e pelo rodapé — não só documento longo: uma
+procuração de uma página só já nascia com o cabeçalho por cima da primeira
+linha do texto.
+
+Reproduzido gerando contrato, procuração (PF e PJ) e declaração pelo mesmo
+caminho da aplicação, com dados de teste propositalmente compridos, e
+inspecionando os PDFs de verdade: o cabeçalho colava sobre a última linha da
+cláusula de cada página e o rodapé sobre a primeira do topo seguinte, em
+TODO documento, começando já na página 1 — sinal de que não era acúmulo de
+erro em documento longo, era estrutural.
+
+A causa: `src/modelos/estilo.css` tinha `@page { size: A4; margin: 0; }`.
+Um `@page` com `margin: 0` **explícito** faz o Chromium ignorar o `margin`
+de `page.pdf()` (em `src/lib/pdf.ts`) para o fluxo do corpo do texto — o
+texto passa a começar no canto físico da folha (y=0), por baixo de onde o
+`headerTemplate`/`footerTemplate` são desenhados (que continuam vindo do
+`margin` do `page.pdf()`, por isso pareciam certos isoladamente). Isolado
+com um teste à parte, fora do código do sistema: com `@page { margin: 0 }`,
+um parágrafo de teste nascia colado no topo físico da página, ignorando
+completamente os 4,14cm de margem pedidos; bastou tirar o `margin: 0` do
+`@page` (deixando só `size: A4`) para o texto voltar a respeitar a margem
+em todas as páginas de um PDF de 6 páginas gerado só para o teste.
+
+A correção foi uma linha: tirar `margin: 0` do `@page`. De brinde, a
+`.marca-dagua` (`position: fixed; top: 4.14cm`) passou a alinhar certinho
+com o texto em toda página sem precisar de nenhuma conta nova — o comentário
+antigo dizia que a origem de um elemento fixo era o canto físico da folha
+"porque" o `@page` não declarava margem; era o contrário: é exatamente por
+`@page` não declarar margem nenhuma (nem `0`) que a origem de um elemento
+fixo passa a ser a MESMA área que `page.pdf({ margin })` reserva. Os dois
+comentários grandes em `estilo.css` foram reescritos para não repetir o
+raciocínio invertido.
+
+Conferido de novo, pelo caminho real da aplicação: contrato de 4 páginas,
+procuração PF e PJ, declaração — cabeçalho, marca d'água e rodapé sem tocar
+o texto em nenhuma página. 399 testes unitários, 135 contra o banco, `tsc`
+e `npm run build` verdes.
+
 **Quatro itens da lista de melhorias, feitos em 18/09/2026** — os que não
 dependiam de resposta do escritório, depois da reunião de 17/09:
 

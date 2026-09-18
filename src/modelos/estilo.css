@@ -8,17 +8,34 @@
  * Papel A4 com margens de documento jurídico, texto justificado e serifado.
  */
 
-/* As margens NÃO vêm mais daqui: `page.pdf({ margin })`, em `src/lib/pdf.ts`,
-   é quem manda agora — é o que permite o `headerTemplate`/`footerTemplate`
-   do Chromium reservar exatamente essa faixa para o timbre (ver o comentário
-   grande em `src/lib/timbre.ts`). Se as duas fontes de margem divergissem, o
-   texto usaria uma medida e o timbre outra. As medidas são as mesmas de
-   sempre: 4,14cm no topo (para caber o monograma), 3cm nas laterais e 2,75cm
-   no pé (para o rodapé impresso do papel), conferidas no .docx enviado em
-   14/09/2026. */
+/* As margens NÃO vêm daqui: `page.pdf({ margin })`, em `src/lib/pdf.ts`, é
+   quem manda — é o que permite o `headerTemplate`/`footerTemplate` do
+   Chromium reservar exatamente essa faixa para o timbre (ver o comentário
+   grande em `src/lib/timbre.ts`). As medidas são as mesmas de sempre: 4,14cm
+   no topo (para caber o monograma), 3cm nas laterais e 2,75cm no pé (para o
+   rodapé impresso do papel), conferidas no .docx enviado em 14/09/2026.
+
+   CRÍTICO: este `@page` não pode declarar `margin` — nem `0`. Um `@page` com
+   `margin: 0` explícito faz o Chromium IGNORAR o `margin` do `page.pdf()`
+   para o fluxo do corpo do texto — o texto passa a começar no canto FÍSICO
+   da folha (y=0), por baixo de onde o cabeçalho é desenhado, em TODAS as
+   páginas, não só na primeira. Foi isto que causou os documentos "cortados"
+   reportados em 18/09/2026: cabeçalho e rodapé (que continuam vindo do
+   `margin` do `page.pdf()`, e por isso pareciam corretos isoladamente)
+   ficavam por cima da primeira e da última linha de texto de cada página,
+   mesmo em documento de uma página só — não era um efeito acumulado de
+   documento longo, era todo documento, sempre.
+
+   Sem `margin` nenhum aqui, `page.pdf({ margin })` volta a ser a ÚNICA fonte
+   de verdade, como o parágrafo acima sempre pretendeu — e de brinde, a área
+   útil que um elemento `position: fixed` (a `.marca-dagua`, abaixo) enxerga
+   como origem passa a ser a MESMA área reservada pelo `page.pdf()`, então
+   `top: 4.14cm` nela alinha certinho com o texto em toda página, sem precisar
+   de nenhuma conta extra. Comprovado gerando um PDF de 6 páginas com caixas
+   coloridas no lugar do timbre: cabeçalho, marca d'água e rodapé bateram na
+   mesma posição em todas as páginas, sem tocar o texto. */
 @page {
   size: A4;
-  margin: 0;
 }
 
 * {
@@ -50,12 +67,14 @@ body {
    cabeçalho e rodapé de uma página acabavam pintados por cima do texto de
    outra.
 
-   `top: 4.14cm` porque o `@page` acima não declara mais margem nenhuma
-   (ela vem de `page.pdf({ margin })`, em `src/lib/pdf.ts`) — e sem margem
-   no `@page`, a origem de um elemento `fixed` é o canto físico da folha, não
-   a área útil. `left: 0` pelo mesmo motivo: a imagem já nasce do tamanho da
-   folha inteira (21cm) e não precisa de deslocamento para sangrar até as
-   duas bordas. */
+   `top: 4.14cm` porque é onde a área útil começa — e como o `@page` acima
+   não declara `margin` nenhum (ver o comentário grande dele: declarar
+   `margin: 0` ali quebra o `margin` do `page.pdf()` para o corpo do texto),
+   a origem de um elemento `fixed` é a MESMA área reservada por
+   `page.pdf({ margin })`, então este `top` bate com onde o texto começa, em
+   toda página. `left: 0` porque a imagem já nasce do tamanho da folha
+   inteira (21cm) e não precisa de deslocamento para sangrar até as duas
+   bordas. */
 .marca-dagua {
   position: fixed;
   top: 4.14cm;
