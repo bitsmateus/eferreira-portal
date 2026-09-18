@@ -4,13 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * O menu do protótipo. Os itens ainda sem tela ficam visíveis e apagados, com
- * o motivo — é mais honesto com quem usa do que esconder.
+ * O menu do protótipo.
  *
- * "Documentos" dizia "Entra na Sprint 3" muito depois de a Sprint 3 ter
- * entregue a geração de documentos. Um aviso que envelhece e ninguém percebe
- * é pior do que nenhum: quem lê conclui que o sistema está atrasado. O texto
- * agora diz onde os documentos ESTÃO, que é o que a pessoa quer saber.
+ * "Documentos" ficava apagado, com o motivo em texto ("cada documento fica
+ * na pasta do cliente a que pertence"), até 18/09/2026 — item 2 da lista de
+ * melhorias: a pergunta do dia a dia é "quais contratos estão aguardando
+ * assinatura?", e isso só se respondia abrindo cliente por cliente.
+ * `/painel/documentos` cruza todos os clientes; a pasta de cada cliente
+ * continua existindo do mesmo jeito. Sem item apagado no menu no momento —
+ * se um novo entrar antes de ter tela, o padrão de antes (item sem `href`,
+ * desenhado como texto fosco com o motivo) está no histórico do git.
  */
 const MENU = [
   {
@@ -23,12 +26,7 @@ const MENU = [
       { icone: '◉', rotulo: 'Clientes', href: '/painel/clientes' },
       { icone: '▦', rotulo: 'Casos', href: '/painel/casos' },
       { icone: '◈', rotulo: 'Partes', href: '/painel/partes' },
-      {
-        icone: '▣',
-        rotulo: 'Documentos',
-        href: null,
-        motivo: 'Cada documento fica na pasta do cliente a que pertence',
-      },
+      { icone: '▣', rotulo: 'Documentos', href: '/painel/documentos' },
     ],
   },
   {
@@ -65,18 +63,6 @@ export function MenuLateral() {
                 {item.rotulo}
               </>
             )
-
-            if (item.href === null) {
-              return (
-                <div
-                  key={item.rotulo}
-                  title={'motivo' in item ? item.motivo : 'Entra numa próxima etapa'}
-                  className="flex cursor-default items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] text-[#B9B9C0] opacity-40"
-                >
-                  {conteudo}
-                </div>
-              )
-            }
 
             const ativo = estaAtivo(caminho, item.href)
 

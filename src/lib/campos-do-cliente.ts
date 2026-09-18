@@ -91,3 +91,29 @@ export function ehObrigatorio(campo: string, tipoPessoa: TipoPessoa): boolean {
   if ((SEMPRE_OBRIGATORIOS as readonly string[]).includes(campo)) return true
   return obrigatoriosPara(tipoPessoa).some(([nome]) => nome === campo)
 }
+
+/**
+ * Estado civil como lista fechada, item 3 da lista de melhorias: "em seis
+ * meses haverá 'solteira', 'Solteira' e 'SOLTEIRO' no banco" com campo livre.
+ *
+ * Cada forma gramatical entra como opção própria — masculina e feminina —
+ * em vez de guardar um "estado civil" neutro e um "gênero" à parte: o campo
+ * já existe como texto solto desde a Sprint 3 e documento assinado precisa
+ * do texto certo ("solteira", não "solteiro" para uma cliente mulher); somar
+ * um campo novo de gênero mudaria o esquema por um problema que a lista
+ * fechada já resolve sozinha. Continua sendo texto no banco (`estadoCivil
+ * String?`) — só a TELA passa a oferecer estas opções em vez de campo livre.
+ */
+export const ESTADOS_CIVIS = [
+  'Solteiro',
+  'Solteira',
+  'Casado',
+  'Casada',
+  'Divorciado',
+  'Divorciada',
+  'Viúvo',
+  'Viúva',
+  'Separado judicialmente',
+  'Separada judicialmente',
+  'União estável',
+] as const

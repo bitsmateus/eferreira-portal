@@ -4,9 +4,14 @@ import { notFound } from 'next/navigation'
 import { TipoPessoa } from '@prisma/client'
 
 import { AcessoDoCliente } from '@/componentes/acesso-do-cliente'
+import { AlternarSituacaoDoClienteBotao } from '@/componentes/alternar-situacao-do-cliente-botao'
 import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { RepresentantesLegais } from '@/componentes/representantes-legais'
-import { EtiquetaDeAcesso, EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
+import {
+  EtiquetaDeAcesso,
+  EtiquetaDeSituacaoDoCaso,
+  EtiquetaDeSituacaoDoCliente,
+} from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { enviosDoCliente } from '@/lib/assinaturas'
 import { obterCliente } from '@/lib/clientes'
@@ -70,6 +75,11 @@ export default async function PaginaDaFichaDoCliente({
         acoes={
           <>
             <EtiquetaDeAcesso acessoLiberado={acessoLiberado} temEmail={temEmail} />
+            <EtiquetaDeSituacaoDoCliente situacao={cliente.situacao} />
+            <AlternarSituacaoDoClienteBotao
+              clienteId={cliente.id}
+              situacao={cliente.situacao}
+            />
             <Link
               href={`/painel/clientes/${cliente.id}/editar`}
               className="botao botao-secundario"

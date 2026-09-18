@@ -3,7 +3,7 @@
  * com os mesmos rótulos do protótipo aprovado.
  */
 
-import { SituacaoCaso } from '@prisma/client'
+import { SituacaoCaso, SituacaoCliente } from '@prisma/client'
 
 import { Etiqueta } from '@/componentes/etiqueta'
 import { ROTULO_DA_SITUACAO } from '@/lib/situacao-do-caso'
@@ -25,6 +25,17 @@ export function EtiquetaDeAcesso({
   if (!temEmail) return <Etiqueta tom="erro">Sem e-mail</Etiqueta>
   if (acessoLiberado) return <Etiqueta tom="ok">Liberado</Etiqueta>
   return <Etiqueta tom="atencao">Aguardando assinatura</Etiqueta>
+}
+
+/**
+ * Cliente inativo (item 4 da lista de melhorias). Ativo não mostra nada — é o
+ * estado comum, e uma etiqueta em toda linha de toda lista seria ruído.
+ */
+export function EtiquetaDeSituacaoDoCliente({ situacao }: { situacao: SituacaoCliente }) {
+  if (situacao === SituacaoCliente.INATIVO) {
+    return <Etiqueta tom="neutra">Inativo</Etiqueta>
+  }
+  return null
 }
 
 export function EtiquetaDeSituacaoDoCaso({ situacao }: { situacao: SituacaoCaso }) {

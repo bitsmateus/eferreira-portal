@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { TipoPessoa } from '@prisma/client'
+import { SituacaoCliente, TipoPessoa } from '@prisma/client'
 
 import {
   registrarAssinatura,
@@ -10,6 +10,7 @@ import {
   validarAssinatura,
 } from '@/lib/assinatura'
 import {
+  alterarSituacaoDoCliente,
   atualizarCliente,
   criarCliente,
   criarClienteComRepresentante,
@@ -247,6 +248,61 @@ export async function excluirClienteDaLista(
   revalidatePath('/painel/clientes')
   revalidatePath('/painel/casos')
   redirect('/painel/clientes')
+}
+
+export type EstadoDaSituacaoDoCliente = { erro?: string } | undefined
+
+/**
+ * Desativa um cliente — item 4 da lista de melhorias ("não há como remover
+ * cliente cadastrado por engano"). Não apaga nada; só fecha a porta do
+ * portal dele. Mesmo cuidado de `desativarUsuario`: a confirmação viaja no
+ * corpo do formulário, não só na tela.
+ */
+export async function desativarCliente(
+  clienteId: string,
+  _estado: EstadoDaSituacaoDoCliente,
+  dados: FormData,
+): Promise<EstadoDaSituacaoDoCliente> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  if (texto(dados, 'confirmacao') !== 'desativar') {
+    return { erro: 'Desativação não confirmada.' }
+  }
+
+  const resultado = await alterarSituacaoDoCliente(
+    sessao,
+    clienteId,
+    SituacaoCliente.INATIVO,
+    await emailDaSessao(sessao),
+  )
+
+  if (resultado.situacao === 'nao_encontrado') {
+    return { erro: 'Cliente não encontrado.' }
+  }
+
+  revalidatePath('/painel/clientes')
+  revalidatePath(`/painel/clientes/${clienteId}`)
+  return undefined
+}
+
+/** Reativar não precisa de confirmação: não apaga nada e desfaz na hora. */
+export async function reativarCliente(clienteId: string): Promise<EstadoDaSituacaoDoCliente> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  const resultado = await alterarSituacaoDoCliente(
+    sessao,
+    clienteId,
+    SituacaoCliente.ATIVO,
+    await emailDaSessao(sessao),
+  )
+
+  if (resultado.situacao === 'nao_encontrado') {
+    return { erro: 'Cliente não encontrado.' }
+  }
+
+  revalidatePath('/painel/clientes')
+  revalidatePath(`/painel/clientes/${clienteId}`)
+  return undefined
 }
 
 /**

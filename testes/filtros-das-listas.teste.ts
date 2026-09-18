@@ -28,10 +28,15 @@ import {
 } from '@/lib/casos'
 
 describe('filtros de cliente — leitura da query string', () => {
-  it('lê os três filtros', () => {
+  it('lê os quatro filtros', () => {
     expect(
-      lerFiltrosDeCliente({ tipo: 'JURIDICA', acesso: 'liberado', casos: 'sem' }),
-    ).toEqual({ tipo: 'JURIDICA', acesso: 'liberado', casos: 'sem' })
+      lerFiltrosDeCliente({
+        tipo: 'JURIDICA',
+        acesso: 'liberado',
+        casos: 'sem',
+        situacao: 'inativo',
+      }),
+    ).toEqual({ tipo: 'JURIDICA', acesso: 'liberado', casos: 'sem', situacao: 'inativo' })
   })
 
   it('query vazia não filtra nada', () => {
@@ -42,7 +47,12 @@ describe('filtros de cliente — leitura da query string', () => {
   // O valor vem da URL: qualquer um pode escrever qualquer coisa ali.
   it('valor inventado é ignorado, não vira erro', () => {
     expect(
-      lerFiltrosDeCliente({ tipo: 'MARCIANA', acesso: 'tudo', casos: 'talvez' }),
+      lerFiltrosDeCliente({
+        tipo: 'MARCIANA',
+        acesso: 'tudo',
+        casos: 'talvez',
+        situacao: 'aposentado',
+      }),
     ).toEqual(FILTROS_DE_CLIENTE_VAZIOS)
   })
 })
@@ -95,15 +105,27 @@ describe('filtros de cliente — condição', () => {
     ).toEqual({ AND: [{ casos: { none: {} } }] })
   })
 
-  // Dois filtros ao mesmo tempo somam, nunca se substituem.
+  // Item 4 da lista de melhorias: desativar cliente por engano.
+  it('situação ativo e inativo', () => {
+    expect(
+      condicaoDosFiltrosDeCliente({ ...FILTROS_DE_CLIENTE_VAZIOS, situacao: 'ativo' }),
+    ).toEqual({ AND: [{ situacao: 'ATIVO' }] })
+
+    expect(
+      condicaoDosFiltrosDeCliente({ ...FILTROS_DE_CLIENTE_VAZIOS, situacao: 'inativo' }),
+    ).toEqual({ AND: [{ situacao: 'INATIVO' }] })
+  })
+
+  // Vários filtros ao mesmo tempo somam, nunca se substituem.
   it('filtros combinam com AND', () => {
     const condicao = condicaoDosFiltrosDeCliente({
       tipo: 'JURIDICA',
       acesso: 'liberado',
       casos: 'com',
+      situacao: 'ativo',
     })
 
-    expect(condicao.AND).toHaveLength(3)
+    expect(condicao.AND).toHaveLength(4)
   })
 })
 

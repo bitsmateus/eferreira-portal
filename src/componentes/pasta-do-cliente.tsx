@@ -7,7 +7,7 @@
  */
 
 import Link from 'next/link'
-import { SituacaoDoEnvio, TipoDocumento } from '@prisma/client'
+import { OrigemDoDocumento, SituacaoDoEnvio, TipoDocumento } from '@prisma/client'
 
 import { Etiqueta } from '@/componentes/etiqueta'
 import { ExcluirDocumentoBotao } from '@/componentes/excluir-documento-botao'
@@ -130,8 +130,18 @@ export function PastaDoCliente({
                   {ROTULO_DO_TIPO[documento.tipo]} ·{' '}
                   <span className="mono">{formatarData(documento.criadoEm)}</span> ·{' '}
                   {formatarTamanho(documento.tamanhoBytes)}
-                  {documento.enviadoPor !== null && (
-                    <> · anexado por {documento.enviadoPor.nome}</>
+                  {documento.origem === OrigemDoDocumento.ASSINADO_NA_D4SIGN ? (
+                    <> · recebido da assinatura eletrônica</>
+                  ) : (
+                    documento.enviadoPor !== null && (
+                      <>
+                        {' · '}
+                        {documento.origem === OrigemDoDocumento.GERADO
+                          ? 'gerado por'
+                          : 'anexado por'}{' '}
+                        {documento.enviadoPor.nome}
+                      </>
+                    )
                   )}
                   {mostrarVinculo && documento.caso !== null && (
                     <>

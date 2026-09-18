@@ -4,8 +4,13 @@ import Link from 'next/link'
 import { createPortal } from 'react-dom'
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { SituacaoCliente } from '@prisma/client'
 
-import { excluirClienteDaLista } from '@/app/painel/clientes/acoes'
+import {
+  desativarCliente,
+  excluirClienteDaLista,
+  reativarCliente,
+} from '@/app/painel/clientes/acoes'
 import { descreverHistoricoDoCliente } from '@/lib/clientes'
 import { ModalDeExclusaoForcada } from '@/componentes/modal-exclusao-forcada-de-cliente'
 
@@ -48,19 +53,28 @@ function BotaoDeConfirmar() {
 export function MenuDoCliente({
   clienteId,
   nome,
+  situacao,
   souAdministrador,
 }: {
   clienteId: string
   nome: string
+  situacao: SituacaoCliente
   /** Só o administrador vê a opção de forçar a exclusão de um cliente com histórico. */
   souAdministrador: boolean
 }) {
   const [aberto, setAberto] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
+  const [confirmandoDesativacao, setConfirmandoDesativacao] = useState(false)
   const [modalForcadaAberto, setModalForcadaAberto] = useState(false)
   const [posicao, setPosicao] = useState<{ top: number; left: number } | null>(null)
   const [estado, excluir] = useActionState(
     excluirClienteDaLista.bind(null, clienteId),
+    undefined,
+  )
+  const [estadoDaSituacao, alternarSituacao] = useActionState(
+    situacao === SituacaoCliente.ATIVO
+      ? desativarCliente.bind(null, clienteId)
+      : reativarCliente.bind(null, clienteId),
     undefined,
   )
   const botaoRef = useRef<HTMLButtonElement>(null)
@@ -69,6 +83,7 @@ export function MenuDoCliente({
   function fechar() {
     setAberto(false)
     setConfirmando(false)
+    setConfirmandoDesativacao(false)
   }
 
   function abrir() {
@@ -186,6 +201,54 @@ export function MenuDoCliente({
             >
               Editar o cadastro
             </Link>
+
+            {situacao === SituacaoCliente.INATIVO ? (
+              <form action={alternarSituacao}>
+                <button
+                  type="submit"
+                  role="menuitem"
+                  className="block w-full rounded-md px-2.5 py-1.5 text-left text-[12.5px] hover:bg-prata-100"
+                >
+                  Reativar cliente
+                </button>
+              </form>
+            ) : confirmandoDesativacao ? (
+              <form action={alternarSituacao}>
+                <input type="hidden" name="confirmacao" value="desativar" />
+                <p className="px-2.5 py-1.5 text-[11.5px] leading-relaxed text-texto-2">
+                  Desativar <b className="text-texto">{nome}</b>? Ele para de conseguir
+                  entrar no portal — nada é apagado, e reativar desfaz na hora.
+                </p>
+                <button
+                  type="submit"
+                  className="block w-full rounded-md px-2.5 py-1.5 text-left text-[12.5px] hover:bg-prata-100"
+                >
+                  Confirmar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmandoDesativacao(false)}
+                  className="w-full rounded-md px-2.5 py-1.5 text-left text-[12px] text-texto-2 hover:bg-prata-100"
+                >
+                  Cancelar
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => setConfirmandoDesativacao(true)}
+                className="block w-full rounded-md px-2.5 py-1.5 text-left text-[12.5px] hover:bg-prata-100"
+              >
+                Desativar cliente
+              </button>
+            )}
+
+            {estadoDaSituacao?.erro !== undefined && (
+              <p className="px-2.5 py-1.5 text-[11.5px] leading-relaxed text-erro">
+                {estadoDaSituacao.erro}
+              </p>
+            )}
 
             <div className="my-1 border-t border-prata-100" />
 

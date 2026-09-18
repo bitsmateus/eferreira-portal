@@ -12,7 +12,7 @@ import {
 import { useFormStatus } from 'react-dom'
 import { TipoPessoa } from '@prisma/client'
 
-import { ehObrigatorio } from '@/lib/campos-do-cliente'
+import { ESTADOS_CIVIS, ehObrigatorio } from '@/lib/campos-do-cliente'
 import {
   UNIDADES_FEDERATIVAS,
   formatarCep,
@@ -588,13 +588,20 @@ export function FormularioDeCliente({
                   erro={erros['estadoCivil']}
                   obrigatorio={obrigatorio('estadoCivil')}
                 >
-                  <input
+                  <select
                     id="estadoCivil"
                     name="estadoCivil"
                     className="campo-entrada"
                     value={campos.estadoCivil}
                     onChange={(evento) => definir('estadoCivil', evento.target.value)}
-                  />
+                  >
+                    <option value="">—</option>
+                    {ESTADOS_CIVIS.map((estado) => (
+                      <option key={estado} value={estado}>
+                        {estado}
+                      </option>
+                    ))}
+                  </select>
                 </Campo>
               </div>
               <div className="flex-1">
@@ -760,7 +767,7 @@ export function FormularioDeCliente({
                       erro={erros['representanteEstadoCivil']}
                       obrigatorio
                     >
-                      <input
+                      <select
                         id="representanteEstadoCivil"
                         name="representanteEstadoCivil"
                         className="campo-entrada"
@@ -772,7 +779,14 @@ export function FormularioDeCliente({
                             evento.target.value,
                           )
                         }
-                      />
+                      >
+                        <option value="">—</option>
+                        {ESTADOS_CIVIS.map((estado) => (
+                          <option key={estado} value={estado}>
+                            {estado}
+                          </option>
+                        ))}
+                      </select>
                     </Campo>
                   </div>
                 </div>

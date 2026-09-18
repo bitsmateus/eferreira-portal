@@ -13,7 +13,7 @@
  * desfaz. Ver `src/lib/assinaturas.ts` e `docs/assinatura-eletronica.md`.
  */
 
-import { AcaoAuditoria, TipoDocumento, TipoPessoa } from '@prisma/client'
+import { AcaoAuditoria, OrigemDoDocumento, TipoDocumento, TipoPessoa } from '@prisma/client'
 
 import {
   exigirEquipe,
@@ -241,6 +241,7 @@ export async function gerarDocumento(
           clienteId: cliente.id,
           casoId,
           tipo,
+          origem: OrigemDoDocumento.GERADO,
           nome,
           chaveArquivo: chave,
           tipoConteudo: 'application/pdf',

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { TipoPessoa } from '@prisma/client'
 
 import { MenuDoCliente } from '@/componentes/menu-do-cliente'
-import { EtiquetaDeAcesso } from '@/componentes/situacoes'
+import { EtiquetaDeAcesso, EtiquetaDeSituacaoDoCliente } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import {
   LIMITE_DA_LISTA,
@@ -25,6 +25,7 @@ type Consulta = {
   tipo?: string
   acesso?: string
   casos?: string
+  situacao?: string
 }
 
 export default async function PaginaDeClientes({
@@ -137,6 +138,22 @@ export default async function PaginaDeClientes({
                 </select>
               </div>
 
+              <div className="w-[150px]">
+                <label className="campo-rotulo" htmlFor="situacao">
+                  Situação
+                </label>
+                <select
+                  id="situacao"
+                  name="situacao"
+                  defaultValue={filtros.situacao}
+                  className="campo-entrada"
+                >
+                  <option value="">Todos</option>
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </div>
+
               <button type="submit" className="botao botao-secundario">
                 Filtrar
               </button>
@@ -224,10 +241,13 @@ export default async function PaginaDeClientes({
                           : formatarData(cliente.ultimoAndamentoEm)}
                       </td>
                       <td>
-                        <EtiquetaDeAcesso
-                          acessoLiberado={cliente.acessoLiberado}
-                          temEmail={cliente.temEmail}
-                        />
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <EtiquetaDeAcesso
+                            acessoLiberado={cliente.acessoLiberado}
+                            temEmail={cliente.temEmail}
+                          />
+                          <EtiquetaDeSituacaoDoCliente situacao={cliente.situacao} />
+                        </div>
                       </td>
                       {/*
                         `relative z-10`: sem isto, o `::after` esticado do link
@@ -239,6 +259,7 @@ export default async function PaginaDeClientes({
                         <MenuDoCliente
                           clienteId={cliente.id}
                           nome={cliente.nome}
+                          situacao={cliente.situacao}
                           souAdministrador={sessao.perfil === 'ADMINISTRADOR'}
                         />
                       </td>

@@ -26,7 +26,7 @@
  */
 
 import { randomInt } from 'node:crypto'
-import { AcaoAuditoria, PerfilUsuario, SituacaoUsuario } from '@prisma/client'
+import { AcaoAuditoria, PerfilUsuario, SituacaoCliente, SituacaoUsuario } from '@prisma/client'
 import { z } from 'zod'
 
 import {
@@ -147,16 +147,26 @@ type ClienteElegivel = { id: string; nome: string; email: string }
 
 /**
  * Quem pode receber código: cliente que existe, com **contrato assinado**
- * (Anexo I, 1.d) e com e-mail no cadastro. Devolve null para todo o resto, sem
- * dizer qual dos três motivos — quem chama não deve nem poder distinguir.
+ * (Anexo I, 1.d), com e-mail no cadastro e **ativo** (item 4 da lista de
+ * melhorias — desativar não apaga nada, mas fecha a porta do portal, mesmo
+ * padrão de `SituacaoUsuario` para a equipe). Devolve null para todo o resto,
+ * sem dizer qual dos quatro motivos — quem chama não deve nem poder
+ * distinguir "cliente inativo" de "documento nunca cadastrado".
  */
 async function clienteElegivel(documento: string): Promise<ClienteElegivel | null> {
   const cliente = await prisma.cliente.findUnique({
     where: { documento },
-    select: { id: true, nome: true, email: true, contratoAssinadoEm: true },
+    select: {
+      id: true,
+      nome: true,
+      email: true,
+      contratoAssinadoEm: true,
+      situacao: true,
+    },
   })
 
   if (cliente === null) return null
+  if (cliente.situacao !== SituacaoCliente.ATIVO) return null
   if (cliente.contratoAssinadoEm === null) return null
   if (cliente.email === null || cliente.email.trim() === '') return null
 

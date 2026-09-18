@@ -45,6 +45,7 @@
 
 import {
   AcaoAuditoria,
+  OrigemDoDocumento,
   PapelDaParte,
   SituacaoDoEnvio,
   TipoDocumento,
@@ -89,7 +90,7 @@ import {
  * elas não entravam na lista de signatários da D4Sign: "cada testemunha
  * eletrônica seria mais um endereço a cadastrar e mais gente a esperar"
  * (14/09/2026). O escritório voltou atrás nesta reunião, especificamente para
- * DOCUMENTOS AVULSOS (`ANEXO`, ver `partesAvulsasQueAssinam` abaixo): um
+ * DOCUMENTOS AVULSOS (`ANEXO`, ver `SignatarioAvulso` abaixo): um
  * termo de acordo pode exigir testemunha, parte contrária e advogado externo
  * assinando eletronicamente, escolhidos na hora do envio. Contrato,
  * procuração e declaração — os três que o próprio sistema gera — continuam
@@ -364,6 +365,35 @@ export async function enviosDoCliente(
   for (const linha of linhas) {
     // Ordenado do mais novo para o mais velho: o primeiro de cada documento é
     // o que vale, e os anteriores não sobrescrevem.
+    if (!porDocumento.has(linha.documentoId)) {
+      porDocumento.set(linha.documentoId, comoEnvio(linha))
+    }
+  }
+
+  return porDocumento
+}
+
+/**
+ * O mesmo que `enviosDoCliente`, mas para TODOS os documentos que esta
+ * sessão enxerga — é o que a tela de Documentos usa para saber, sem abrir
+ * cliente por cliente, quem está aguardando assinatura (item 2 da lista de
+ * melhorias). Só a equipe chega aqui: `filtroDeDocumentos` sem `clienteId`
+ * devolveria a base inteira para uma sessão de cliente, se ela conseguisse
+ * chamar isto — o que `exigirEquipe` impede antes de qualquer consulta.
+ */
+export async function enviosRecentes(
+  sessao: SessaoServidor,
+): Promise<Map<string, EnvioEmAndamento>> {
+  exigirEquipe(sessao)
+
+  const linhas = await prisma.envioParaAssinatura.findMany({
+    where: { documento: filtroDeDocumentos(sessao) },
+    select: ENVIO,
+    orderBy: { criadoEm: 'desc' },
+  })
+
+  const porDocumento = new Map<string, EnvioEmAndamento>()
+  for (const linha of linhas) {
     if (!porDocumento.has(linha.documentoId)) {
       porDocumento.set(linha.documentoId, comoEnvio(linha))
     }
@@ -824,6 +854,7 @@ async function arquivarAssinado(
           clienteId: envio.documento.clienteId,
           casoId: envio.documento.casoId,
           tipo: envio.documento.tipo,
+          origem: OrigemDoDocumento.ASSINADO_NA_D4SIGN,
           nome: nomeDoAssinado(envio.documento.nome),
           chaveArquivo: chave,
           tipoConteudo: 'application/pdf',

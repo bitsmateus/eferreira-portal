@@ -31,6 +31,17 @@ enum TipoPessoa {
   JURIDICA
 }
 
+/// "Excluir" cliente cadastrado por engano sem histórico continua apagando a
+/// linha de vez (ver `excluirCliente`); isto aqui é para o outro caso — quem
+/// já tem caso ou documento e não deveria mais estar na lista do dia a dia.
+/// Mesmo padrão de `SituacaoUsuario`: desativar não apaga nada, só impede
+/// login e sinaliza na tela. Pedido do escritório, item 4 da lista de
+/// melhorias ("não há como remover cliente cadastrado por engano").
+enum SituacaoCliente {
+  ATIVO
+  INATIVO
+}
+
 /// Situação do caso. Os dois valores vêm literalmente do protótipo aprovado
 /// (telas "Ficha do cliente" e "Cliente — meus processos"). A lista de status
 /// de ANDAMENTO é outra coisa: é configurável e depende do escritório
@@ -59,6 +70,24 @@ enum TipoDocumento {
   PROCURACAO
   DECLARACAO
   ANEXO
+}
+
+/// De onde um `Documento` veio — item 5 da lista de melhorias ("'anexado por'
+/// aparece em documento que o sistema gerou. Falta distinguir gerado de
+/// anexado"). Note que isto é INDEPENDENTE de `tipo`: a tela de anexo permite
+/// escolher tipo CONTRATO/PROCURAÇÃO/DECLARAÇÃO ao subir, por exemplo, um
+/// contrato assinado em papel e digitalizado — esse documento tem
+/// `tipo: CONTRATO` mas `origem: ANEXADO`, porque ninguém pediu pro sistema
+/// gerar nada.
+enum OrigemDoDocumento {
+  /// Saiu de `gerarDocumento` — contrato, procuração ou declaração escritos
+  /// pelo próprio sistema a partir dos modelos do escritório.
+  GERADO
+  /// Subiu pela tela de anexo (`anexarDocumento`) — de qualquer tipo.
+  ANEXADO
+  /// O PDF assinado que voltou da D4Sign (`arquivarAssinado`). Ninguém
+  /// "anexou" nem "gerou" isto: a plataforma de assinatura devolveu.
+  ASSINADO_NA_D4SIGN
 }
 
 /// O que uma credencial da API pode fazer (Anexo I, 3.c: "controle de
@@ -192,6 +221,15 @@ model Cliente {
   /// Gatilho do Anexo I, 1.d: o acesso do cliente só é liberado depois que o
   /// contrato foi assinado. Nulo = cliente não entra.
   contratoAssinadoEm DateTime?
+
+  /// "Excluir" continua existindo para o cadastro vazio (`excluirCliente`,
+  /// apaga a linha de vez). Isto é para quem já tem histórico e não deveria
+  /// mais aparecer no dia a dia — desativa sem apagar nada, mesmo padrão de
+  /// `SituacaoUsuario`. INATIVO bloqueia o código de acesso do portal do
+  /// cliente (ver `clienteElegivel` em `acesso-do-cliente.ts`), com a MESMA
+  /// resposta genérica de sempre — cliente inativo não pode ser distinguido
+  /// de documento inexistente.
+  situacao SituacaoCliente @default(ATIVO)
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -477,6 +515,14 @@ model Documento {
   caso   Caso?   @relation(fields: [casoId], references: [id], onDelete: SetNull)
 
   tipo         TipoDocumento
+  /// De onde este documento veio — ver o comentário grande no enum, acima.
+  /// Backfill dos registros anteriores a esta coluna: ASSINADO_NA_D4SIGN para
+  /// quem já era o alvo de um envio (`documentoAssinadoId`), GERADO para o
+  /// resto com tipo diferente de ANEXO, ANEXADO para o resto. Não é garantia
+  /// perfeita para dado antigo (um contrato em papel digitalizado antes desta
+  /// coluna existir ficaria classificado como GERADO), mas é a melhor
+  /// inferência possível sem ter guardado a origem desde o início.
+  origem       OrigemDoDocumento @default(ANEXADO)
   nome         String
   /// Chave no object storage. Opaca, gerada pelo servidor.
   chaveArquivo String        @unique

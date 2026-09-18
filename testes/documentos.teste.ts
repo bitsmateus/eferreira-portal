@@ -1,10 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { TipoDocumento } from '@prisma/client'
+import { SituacaoDoEnvio, TipoDocumento } from '@prisma/client'
 
-import { validarAnexo, validarArquivo } from '@/lib/documentos'
+import {
+  algumFiltroDeDocumentoAtivo,
+  lerFiltrosDeDocumento,
+  situacaoDeAssinaturaDoDocumento,
+  validarAnexo,
+  validarArquivo,
+} from '@/lib/documentos'
+import type { EnvioEmAndamento } from '@/lib/assinaturas'
 import { TAMANHO_MAXIMO_BYTES, TIPOS_ACEITOS } from '@/lib/arquivos'
 import { gerarChaveDeArquivo } from '@/lib/armazenamento'
 import { formatarTamanho } from '@/lib/formatos'
+
+function envio(situacao: SituacaoDoEnvio): EnvioEmAndamento {
+  return {
+    id: 'envio-1',
+    documentoId: 'documento-1',
+    situacao,
+    situacaoNaD4Sign: null,
+    enviadoEm: null,
+    conferidoEm: null,
+    assinadoEm: null,
+    partes: [],
+    documentoAssinadoId: null,
+  }
+}
 
 /** `File` do runtime do Node 20+, que é o que a ação de servidor recebe. */
 function arquivo(nome: string, tipo: string, bytes: number): File {
@@ -123,5 +144,59 @@ describe('formatarTamanho', () => {
     expect(formatarTamanho(512)).toBe('512 B')
     expect(formatarTamanho(240 * 1024)).toBe('240 KB')
     expect(formatarTamanho(Math.round(1.4 * 1024 * 1024))).toBe('1,4 MB')
+  })
+})
+
+// Item 2 da lista de melhorias: a tela de Documentos, que cruza todos os
+// clientes para responder "quais contratos estão aguardando assinatura?".
+describe('situacaoDeAssinaturaDoDocumento', () => {
+  it('assinado vale mais que qualquer envio — mesmo um aguardando parado', () => {
+    expect(
+      situacaoDeAssinaturaDoDocumento(
+        { assinadoEm: new Date() },
+        envio(SituacaoDoEnvio.AGUARDANDO),
+      ),
+    ).toBe('assinado')
+  })
+
+  it('aguardando quando o envio mais recente está AGUARDANDO', () => {
+    expect(
+      situacaoDeAssinaturaDoDocumento({ assinadoEm: null }, envio(SituacaoDoEnvio.AGUARDANDO)),
+    ).toBe('aguardando')
+  })
+
+  it('não enviado quando não há envio nenhum', () => {
+    expect(situacaoDeAssinaturaDoDocumento({ assinadoEm: null }, null)).toBe('nao_enviado')
+  })
+
+  it('não enviado para envio parado no cofre ou cancelado — não é "aguardando" de verdade', () => {
+    expect(
+      situacaoDeAssinaturaDoDocumento({ assinadoEm: null }, envio(SituacaoDoEnvio.NO_COFRE)),
+    ).toBe('nao_enviado')
+    expect(
+      situacaoDeAssinaturaDoDocumento({ assinadoEm: null }, envio(SituacaoDoEnvio.CANCELADO)),
+    ).toBe('nao_enviado')
+  })
+})
+
+describe('lerFiltrosDeDocumento', () => {
+  it('lê tipo e situação válidos', () => {
+    expect(
+      lerFiltrosDeDocumento({ tipo: TipoDocumento.CONTRATO, situacao: 'aguardando' }),
+    ).toEqual({ tipo: TipoDocumento.CONTRATO, situacao: 'aguardando' })
+  })
+
+  it('query vazia não filtra nada', () => {
+    const filtros = lerFiltrosDeDocumento({})
+    expect(filtros).toEqual({ tipo: '', situacao: '' })
+    expect(algumFiltroDeDocumentoAtivo(filtros)).toBe(false)
+  })
+
+  // O valor vem da URL: qualquer um pode escrever qualquer coisa ali.
+  it('valor inventado é ignorado, não vira erro', () => {
+    expect(lerFiltrosDeDocumento({ tipo: 'SENTENCA', situacao: 'talvez' })).toEqual({
+      tipo: '',
+      situacao: '',
+    })
   })
 })

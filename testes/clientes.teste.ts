@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { TipoPessoa } from '@prisma/client'
+import { SituacaoCliente, TipoPessoa } from '@prisma/client'
 
 import { interpretarBusca, montarLinha, validarCliente } from '@/lib/clientes'
 import { obrigatoriosPara } from '@/lib/campos-do-cliente'
@@ -250,6 +250,7 @@ describe('montarLinha', () => {
     tipoPessoa: TipoPessoa.FISICA,
     email: 'marcos@email.com.br',
     contratoAssinadoEm: new Date('2026-02-12T12:00:00Z'),
+    situacao: SituacaoCliente.ATIVO,
     criadoEm: new Date('2026-02-12T12:00:00Z'),
     _count: { casos: 2 },
     casos: [

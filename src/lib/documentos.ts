@@ -10,7 +10,13 @@
  * anexou o quê, e quem baixou o quê.
  */
 
-import { AcaoAuditoria, type Prisma, TipoDocumento } from '@prisma/client'
+import {
+  AcaoAuditoria,
+  OrigemDoDocumento,
+  type Prisma,
+  SituacaoDoEnvio,
+  TipoDocumento,
+} from '@prisma/client'
 import { z } from 'zod'
 
 import {
@@ -33,6 +39,8 @@ import {
   TAMANHO_MAXIMO_BYTES,
   TIPOS_ACEITOS,
 } from '@/lib/arquivos'
+import { somenteDigitos } from '@/lib/formatos'
+import type { EnvioEmAndamento } from '@/lib/assinaturas'
 
 // ---------------------------------------------------------------------------
 // Validação do formulário de anexo
@@ -112,6 +120,7 @@ export function validarArquivo(
 const RESUMO = {
   id: true,
   tipo: true,
+  origem: true,
   nome: true,
   tipoConteudo: true,
   tamanhoBytes: true,
@@ -149,6 +158,134 @@ export async function listarDocumentosDoCaso(
     select: RESUMO,
     orderBy: { criadoEm: 'desc' },
   })
+}
+
+// ---------------------------------------------------------------------------
+// Tela de Documentos — item 2 da lista de melhorias: "quais contratos estão
+// aguardando assinatura?" sem abrir cliente por cliente.
+//
+// Só a EQUIPE enxerga isto (`exigirEquipe`, abaixo) — ao contrário da pasta
+// do cliente, que também serve `/meus-processos`, esta tela cruza documento
+// de todos os clientes e não pode ser alcançada por uma sessão de cliente.
+// ---------------------------------------------------------------------------
+
+const RESUMO_GERAL = {
+  ...RESUMO,
+  cliente: { select: { id: true, nome: true, documento: true } },
+} satisfies Prisma.DocumentoSelect
+
+export type LinhaDeDocumentoGeral = Prisma.DocumentoGetPayload<{
+  select: typeof RESUMO_GERAL
+}>
+
+/** O que a tela mostra sobre a assinatura, derivado do envio mais recente. */
+export type SituacaoDeAssinatura = 'assinado' | 'aguardando' | 'nao_enviado'
+
+export function situacaoDeAssinaturaDoDocumento(
+  documento: Pick<LinhaDeDocumentoGeral, 'assinadoEm'>,
+  envio: EnvioEmAndamento | null,
+): SituacaoDeAssinatura {
+  if (documento.assinadoEm !== null) return 'assinado'
+  if (envio !== null && envio.situacao === SituacaoDoEnvio.AGUARDANDO) return 'aguardando'
+  return 'nao_enviado'
+}
+
+export type FiltrosDeDocumento = {
+  /** '' = todos. */
+  tipo: '' | TipoDocumento
+  /** '' = todos. Calculado a partir do envio mais recente, não de uma coluna. */
+  situacao: '' | SituacaoDeAssinatura
+}
+
+export const FILTROS_DE_DOCUMENTO_VAZIOS: FiltrosDeDocumento = { tipo: '', situacao: '' }
+
+export function lerFiltrosDeDocumento(
+  entrada: Record<string, string | undefined>,
+): FiltrosDeDocumento {
+  const tipos = Object.values(TipoDocumento) as readonly string[]
+  const situacoes = ['assinado', 'aguardando', 'nao_enviado'] as const
+
+  const tipo = entrada['tipo']
+  const situacao = entrada['situacao']
+
+  return {
+    tipo: tipo !== undefined && tipos.includes(tipo) ? (tipo as TipoDocumento) : '',
+    situacao:
+      situacao !== undefined && (situacoes as readonly string[]).includes(situacao)
+        ? (situacao as SituacaoDeAssinatura)
+        : '',
+  }
+}
+
+export function algumFiltroDeDocumentoAtivo(filtros: FiltrosDeDocumento): boolean {
+  return filtros.tipo !== '' || filtros.situacao !== ''
+}
+
+/**
+ * Mesma heurística de `interpretarBusca` em `clientes.ts`: dígitos viram
+ * busca por CPF/CNPJ do cliente, o resto vira busca por nome (do cliente ou
+ * do arquivo).
+ */
+function condicaoDaBuscaGeral(termo: string): Prisma.DocumentoWhereInput | undefined {
+  const limpo = termo.trim()
+  if (limpo === '') return undefined
+
+  const digitos = somenteDigitos(limpo)
+  const temLetra = /\p{L}/u.test(limpo)
+
+  if (!temLetra && digitos.length >= 3) {
+    return { cliente: { documento: { contains: digitos } } }
+  }
+
+  return {
+    OR: [
+      { cliente: { nome: { contains: limpo, mode: 'insensitive' } } },
+      { nome: { contains: limpo, mode: 'insensitive' } },
+    ],
+  }
+}
+
+/** Teto de linhas — a mesma ideia das listas de clientes e de casos. */
+export const LIMITE_DA_LISTA_DE_DOCUMENTOS = 300
+
+export type ListaDeDocumentosGeral = {
+  linhas: LinhaDeDocumentoGeral[]
+  /**
+   * Truncada pelo teto de BUSCA (tipo/nome/cliente), antes do filtro de
+   * situação de assinatura — este último é calculado em memória a partir do
+   * envio mais recente, não dá para empurrar para o banco sem duplicar a
+   * lógica de `comoEnvio`. Documentos raros o bastante para o escritório
+   * de um advogado não deveriam nunca chegar perto deste teto.
+   */
+  truncada: boolean
+}
+
+export async function listarTodosOsDocumentos(
+  sessao: SessaoServidor,
+  termo: string,
+  filtros: FiltrosDeDocumento,
+): Promise<ListaDeDocumentosGeral> {
+  exigirEquipe(sessao)
+
+  const condicoes: Prisma.DocumentoWhereInput[] = []
+  const daBusca = condicaoDaBuscaGeral(termo)
+  if (daBusca !== undefined) condicoes.push(daBusca)
+  if (filtros.tipo !== '') condicoes.push({ tipo: filtros.tipo })
+
+  const documentos = await prisma.documento.findMany({
+    where: filtroDeDocumentos(
+      sessao,
+      condicoes.length === 0 ? undefined : { AND: condicoes },
+    ),
+    select: RESUMO_GERAL,
+    orderBy: { criadoEm: 'desc' },
+    take: LIMITE_DA_LISTA_DE_DOCUMENTOS + 1,
+  })
+
+  return {
+    linhas: documentos.slice(0, LIMITE_DA_LISTA_DE_DOCUMENTOS),
+    truncada: documentos.length > LIMITE_DA_LISTA_DE_DOCUMENTOS,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -196,6 +333,7 @@ export async function anexarDocumento(
           clienteId: cliente.id,
           casoId: dados.casoId,
           tipo: dados.tipo,
+          origem: OrigemDoDocumento.ANEXADO,
           nome: arquivo.nome,
           chaveArquivo: chave,
           tipoConteudo: arquivo.tipoConteudo,

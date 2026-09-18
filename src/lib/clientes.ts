@@ -10,7 +10,13 @@
  * por `filtroDeClientes`, montado a partir da sessão do servidor.
  */
 
-import { AcaoAuditoria, PerfilUsuario, type Prisma, TipoPessoa } from '@prisma/client'
+import {
+  AcaoAuditoria,
+  PerfilUsuario,
+  type Prisma,
+  SituacaoCliente,
+  TipoPessoa,
+} from '@prisma/client'
 import { z } from 'zod'
 
 import {
@@ -358,12 +364,15 @@ export type FiltrosDeCliente = {
   acesso: '' | 'liberado' | 'aguardando' | 'sem_email'
   /** '' = todos; 'com'/'sem' casos vinculados. */
   casos: '' | 'com' | 'sem'
+  /** '' = todos. Item 4 da lista de melhorias: desativar cliente por engano. */
+  situacao: '' | 'ativo' | 'inativo'
 }
 
 export const FILTROS_DE_CLIENTE_VAZIOS: FiltrosDeCliente = {
   tipo: '',
   acesso: '',
   casos: '',
+  situacao: '',
 }
 
 /** Lê os filtros da query string, aceitando só o que existe. */
@@ -377,11 +386,17 @@ export function lerFiltrosDeCliente(
     tipo: dentro(entrada['tipo'], ['FISICA', 'JURIDICA'] as const),
     acesso: dentro(entrada['acesso'], ['liberado', 'aguardando', 'sem_email'] as const),
     casos: dentro(entrada['casos'], ['com', 'sem'] as const),
+    situacao: dentro(entrada['situacao'], ['ativo', 'inativo'] as const),
   }
 }
 
 export function algumFiltroDeClienteAtivo(filtros: FiltrosDeCliente): boolean {
-  return filtros.tipo !== '' || filtros.acesso !== '' || filtros.casos !== ''
+  return (
+    filtros.tipo !== '' ||
+    filtros.acesso !== '' ||
+    filtros.casos !== '' ||
+    filtros.situacao !== ''
+  )
 }
 
 /** Traduz os filtros em condição do Prisma. Pura: dá para testar sem banco. */
@@ -407,6 +422,9 @@ export function condicaoDosFiltrosDeCliente(
   if (filtros.casos === 'com') condicoes.push({ casos: { some: {} } })
   if (filtros.casos === 'sem') condicoes.push({ casos: { none: {} } })
 
+  if (filtros.situacao === 'ativo') condicoes.push({ situacao: SituacaoCliente.ATIVO })
+  if (filtros.situacao === 'inativo') condicoes.push({ situacao: SituacaoCliente.INATIVO })
+
   return condicoes.length === 0 ? {} : { AND: condicoes }
 }
 
@@ -428,6 +446,7 @@ const RESUMO = {
   tipoPessoa: true,
   email: true,
   contratoAssinadoEm: true,
+  situacao: true,
   criadoEm: true,
   _count: { select: { casos: true } },
   casos: {
@@ -452,6 +471,7 @@ export type LinhaDeCliente = {
   ultimoAndamentoEm: Date | null
   temEmail: boolean
   acessoLiberado: boolean
+  situacao: SituacaoCliente
 }
 
 /** Achata o resumo do banco na linha que a tabela desenha. */
@@ -473,6 +493,7 @@ export function montarLinha(cliente: ClienteResumido): LinhaDeCliente {
     ultimoAndamentoEm: ultimo,
     temEmail: cliente.email !== null && cliente.email !== '',
     acessoLiberado: cliente.contratoAssinadoEm !== null,
+    situacao: cliente.situacao,
   }
 }
 
@@ -687,6 +708,56 @@ export async function excluirCliente(
   })
 
   return { situacao: 'excluido', nome: cliente.nome }
+}
+
+// ---------------------------------------------------------------------------
+// Situação — desativar sem apagar (item 4 da lista de melhorias: "não há
+// como remover cliente cadastrado por engano"). Mesmo padrão de
+// `alterarSituacaoDoUsuario`, em `usuarios.ts`.
+//
+// Diferente da exclusão, isto não precisa de trava de "tem histórico": um
+// cliente com caso e documento pode perfeitamente ser desativado — é
+// exatamente o caso mais comum (quem terminou o relacionamento com o
+// escritório, ou foi cadastrado em duplicidade depois de já ter caso). Nada
+// é apagado; o cliente só para de conseguir entrar no portal.
+// ---------------------------------------------------------------------------
+
+export type ResultadoDeSituacaoDoCliente =
+  | { situacao: 'alterado' }
+  | { situacao: 'nao_encontrado' }
+
+export async function alterarSituacaoDoCliente(
+  sessao: SessaoServidor,
+  id: string,
+  novaSituacao: SituacaoCliente,
+  emailDoAutor: string | null,
+): Promise<ResultadoDeSituacaoDoCliente> {
+  exigirEquipe(sessao)
+
+  const alvo = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { id }),
+    select: { id: true, situacao: true, nome: true },
+  })
+  if (alvo === null) return { situacao: 'nao_encontrado' }
+  if (alvo.situacao === novaSituacao) return { situacao: 'alterado' }
+
+  await prisma.$transaction(async (transacao) => {
+    await transacao.cliente.update({ where: { id }, data: { situacao: novaSituacao } })
+
+    await registrarAuditoria(
+      {
+        usuarioId: sessao.usuarioId,
+        usuarioEmail: emailDoAutor,
+        acao: AcaoAuditoria.ATUALIZACAO,
+        entidade: 'cliente',
+        entidadeId: id,
+        detalhes: { nome: alvo.nome, situacao: novaSituacao },
+      },
+      transacao,
+    )
+  })
+
+  return { situacao: 'alterado' }
 }
 
 /** A ficha do cliente. Devolve null quando a sessão não pode vê-lo. */

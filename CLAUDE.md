@@ -307,6 +307,75 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Quatro itens da lista de melhorias, feitos em 18/09/2026** — os que não
+dependiam de resposta do escritório, depois da reunião de 17/09:
+
+1. **Tela de Documentos está de pé** (`/painel/documentos`), item 2 da lista
+   — a pergunta do dia a dia era "quais contratos estão aguardando
+   assinatura?", e só se respondia abrindo cliente por cliente. A tela nova
+   cruza documento de todos os clientes, com busca (nome, CPF/CNPJ ou nome do
+   arquivo), filtro por tipo e por situação de assinatura. A situação
+   (assinado/aguardando/não enviado) não é coluna do banco — é calculada a
+   partir do envio mais recente (`situacaoDeAssinaturaDoDocumento`, em
+   `src/lib/documentos.ts`), a mesma lógica que a pasta do cliente já usava,
+   agora olhando para TODOS os documentos (`enviosRecentes`, em
+   `assinaturas.ts`) em vez de um cliente só. A pasta de cada cliente
+   continua existindo do mesmo jeito — esta tela é a visão de cima.
+
+2. **Cliente pode ser desativado**, item 4 ("não há como remover cliente
+   cadastrado por engano"). Campo novo, `Cliente.situacao` (migração
+   `20260918140528`, `SituacaoCliente.ATIVO`/`INATIVO`), mesmo padrão de
+   `SituacaoUsuario`: desativar não apaga nada, só fecha a porta — o cliente
+   inativo para de conseguir pedir código de acesso ao portal, com a MESMA
+   resposta genérica de sempre (`pedirCodigo` nunca revela se o motivo foi
+   "não existe" ou "está desativado"). Desativar pede confirmação (bloqueia
+   o portal de alguém); reativar não pede, porque não desfaz nada que valha
+   a pena proteger com um clique a mais — mesmo cuidado de
+   `desativarUsuario`/`reativarUsuario`, na tela de Usuários. Filtro de
+   situação novo na lista de clientes, e o menu de cada linha ganhou
+   "Desativar"/"Reativar".
+
+3. **Estado civil virou lista fechada**, item 3 ("em seis meses haverá
+   'solteira', 'Solteira' e 'SOLTEIRO' no banco" com campo livre). A lista
+   (`ESTADOS_CIVIS`, em `campos-do-cliente.ts`) tem cada forma gramatical
+   como opção própria — "Solteiro" e "Solteira" separados, e assim por
+   diante — em vez de um campo de gênero à parte: o texto que vai para o
+   documento assinado precisa concordar com a pessoa, e a lista fechada
+   resolve isso sem mudar o esquema. Continua sendo texto solto no banco
+   (`estadoCivil String?`); só a TELA passa a oferecer estas opções, tanto no
+   cadastro do cliente quanto no do representante legal.
+
+4. **"Anexado por" só aparece em documento que alguém realmente anexou**,
+   item 5. Campo novo, `Documento.origem` (mesma migração `20260918140528`,
+   `OrigemDoDocumento`: `GERADO` | `ANEXADO` | `ASSINADO_NA_D4SIGN`),
+   independente do `tipo` — a tela de anexo deixa escolher tipo
+   CONTRATO/PROCURAÇÃO/DECLARAÇÃO ao subir, por exemplo, um contrato
+   assinado em papel e digitalizado, e esse documento é `tipo: CONTRATO` mas
+   `origem: ANEXADO`. Documento que veio de `gerarDocumento` mostra "gerado
+   por", o que veio de `anexarDocumento` mostra "anexado por", e o PDF que
+   voltou assinado da D4Sign mostra "recebido da assinatura eletrônica", sem
+   atribuir a ninguém uma ação automática. Backfill do dado antigo (que não
+   tinha esta coluna) foi por SQL na própria migração — é a melhor inferência
+   possível, não garantia perfeita: um contrato em papel digitalizado ANTES
+   desta coluna existir fica classificado como GERADO por engano. Registrado
+   no comentário do enum, em `schema.prisma`.
+
+**O item 1 da rodada de 17/09 — posição fixa da assinatura no PDF — não
+entrou, e o motivo é técnico, não falta de tempo.** A pesquisa na API da
+D4Sign mostrou que dá para fixar coordenada (x, y, página) de assinatura,
+mas isso pressupõe que a posição é sempre a mesma — e não é: a assinatura de
+contrato, procuração e declaração fica no fim de um texto de tamanho
+VARIÁVEL (o assunto do caso, os honorários, o nome da parte contrária mudam
+o tamanho do documento), então tanto a página quanto a posição na página
+mudam de contrato para contrato. Forçar isso a uma posição fixa exigiria
+quebrar a assinatura para uma página própria (`page-break-before: always`
+antes do bloco de assinatura) — o que é uma mudança de LAYOUT do documento,
+não só de posicionamento técnico, e por isso fica para conversar com o
+escritório antes de implementar, em vez de decidir sozinho que o documento
+ganha uma página a mais.
+
+399 testes unitários, 135 contra o banco, build de produção conferido.
+
 **Reunião de demonstração com o escritório em 17/09/2026** — cinco pedidos
 saíram dali, todos implementados e testados:
 
