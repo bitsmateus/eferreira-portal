@@ -345,3 +345,40 @@ describe('parcelas dos honorários fixos', () => {
     expect(foraDeOrdem).toBe('a primeira em 09/10/2026, a segunda em 09/11/2026')
   })
 })
+
+describe('formatação de dado no documento', () => {
+  // A lista do formulário oferece "Casada", "Solteiro"...; no meio da frase do
+  // documento ("brasileira, casada, nome da mãe") vai em minúscula.
+  it('estado civil vai em minúscula no meio da frase', () => {
+    const valores = valoresDoDocumento(
+      { ...cliente, estadoCivil: 'Casada' },
+      null,
+      null,
+      emitidoEm,
+    )
+
+    expect(valores['cliente.estadoCivil']).toBe('casada')
+  })
+
+  it('estado civil de duas palavras também', () => {
+    const valores = valoresDoDocumento(
+      { ...cliente, estadoCivil: 'Separado judicialmente' },
+      null,
+      null,
+      emitidoEm,
+    )
+
+    expect(valores['cliente.estadoCivil']).toBe('separado judicialmente')
+  })
+
+  it('estado civil em branco continua faltando, não vira texto vazio', () => {
+    const valores = valoresDoDocumento(
+      { ...cliente, estadoCivil: '  ' },
+      null,
+      null,
+      emitidoEm,
+    )
+
+    expect(valores['cliente.estadoCivil']).toBeNull()
+  })
+})

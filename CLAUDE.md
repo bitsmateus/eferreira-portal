@@ -383,7 +383,23 @@ perguntar: (a) os itens 3.1 a 3.4 sempre com o número do arquivo, mesmo quando
 só um bloco entra (só êxito abre em "3.2")? (b) a conta bancária e o Pix
 deixaram de constar — é isso mesmo?
 
-**Verificado:** 431 testes unitários, 139 contra o banco, `tsc`, lint e
+8. **Passada de espaçamento nos PDFs** (21/09/2026, depois de gerar os quatro
+   documentos com dado realista e ler página por página). Três defeitos
+   achados e corrigidos, todos de CSS ou de formatação de dado — nenhuma
+   palavra do escritório foi tocada:
+   - **Assinatura sozinha numa página** (procuração de pessoa jurídica, cuja
+     assinatura tem três linhas): a data ficava no fim da página 1 e a
+     assinatura, sozinha, numa página 2 quase vazia. Agora a data não se separa
+     da assinatura e, quando o bloco não cabe, o parágrafo anterior leva
+     consigo ao menos quatro linhas (`p:has(+ .local-e-data)` em
+     `estilo.css`) — assinatura nunca fica numa página sem texto.
+   - **Título órfão**: "CLÁUSULA TERCEIRA — DOS HONORÁRIOS" ficava sozinho no
+     pé da página 1, com o conteúdo na 2. `h1, h2 { break-after: avoid }`.
+   - **Estado civil com maiúscula no meio da frase** ("brasileira, Casada, nome
+     da mãe"): consequência da lista fechada de 18/09, cujas opções são
+     capitalizadas. O documento passa a escrever em minúscula.
+
+**Verificado:** 434 testes unitários, 139 contra o banco, `tsc`, lint e
 `npm run build`. PDF do contrato com as quatro modalidades gerado e lido
 página a página (margens do timbre ok). Formulário do caso e tela de
 assinatura do contrato conferidos no navegador de verdade — gravou os campos

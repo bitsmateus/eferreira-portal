@@ -93,6 +93,12 @@ body {
 
    Ver src/app/painel/clientes/[id]/gerar/previa/route.ts. */
 
+/* Título nunca fica sozinho no pé da página, com o conteúdo na seguinte. */
+h1,
+h2 {
+  break-after: avoid;
+}
+
 h1 {
   margin: 0 0 1cm;
   font-size: 13pt;
@@ -128,13 +134,27 @@ p {
   text-transform: uppercase;
 }
 
+/* `break-after: avoid` mantém a data junto da assinatura: sem isso, a data
+   ficava no fim de uma página e a assinatura, sozinha, numa página quase vazia
+   (procuração de pessoa jurídica, cuja assinatura tem três linhas). Os
+   espaços foram apertados por isso — 0,9cm/1,2cm em vez de 1,4cm/1,8cm — para
+   a assinatura caber na mesma página do texto sempre que houver como. */
+/* Assinatura nunca fica numa página sem texto: o parágrafo que precede a data
+   não se separa dela, e quando o bloco de assinatura não cabe no fim da página
+   leva consigo pelo menos as quatro últimas linhas desse parágrafo. */
+p:has(+ .local-e-data) {
+  break-after: avoid;
+  widows: 4;
+}
+
 .local-e-data {
-  margin: 1.4cm 0 1.8cm;
+  margin: 0.9cm 0 1.2cm;
   text-align: right;
+  break-after: avoid;
 }
 
 .assinatura {
-  margin-top: 1.4cm;
+  margin-top: 0.9cm;
   text-align: center;
   page-break-inside: avoid;
 }

@@ -295,7 +295,9 @@ export function valoresDoDocumento(
   const valores: Record<string, string | null> = {
     'cliente.nome': ouNulo(cliente.nome),
     'cliente.nacionalidade': ouNulo(cliente.nacionalidade),
-    'cliente.estadoCivil': ouNulo(cliente.estadoCivil),
+    // A lista do formulário oferece "Casada", "Solteiro"...; no meio da frase
+    // do documento ("brasileira, casada, nome da mãe") vai em minúscula.
+    'cliente.estadoCivil': ouNulo(cliente.estadoCivil)?.toLocaleLowerCase('pt-BR') ?? null,
     'cliente.nomeMae': ouNulo(cliente.nomeMae),
     'cliente.rg': ouNulo(cliente.rg),
     'cliente.documentoFormatado': formatarDocumento(cliente.documento),
