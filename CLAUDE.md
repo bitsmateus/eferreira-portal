@@ -257,11 +257,12 @@ Environment.
   do cofre real do escritório — onde nada pode ser apagado.
 
   É o oposto do que a Sprint 5 decidiu para a API ("chave de teste que escreve
-  no banco de produção não é ambiente de testes"). Duas saídas: um token de
-  sandbox da D4Sign para a homologação, ou **deixar `D4SIGN_TOKEN_API` vazio
-  lá** — sem token a instalação simplesmente não assina, e a tela explica.
-  Decisão do escritório; enquanto não vier, não testar assinatura em
-  homologação.
+  no banco de produção não é ambiente de testes"). Havia duas saídas: um
+  token de sandbox da D4Sign para a homologação, ou deixar
+  `D4SIGN_TOKEN_API` vazio lá. **DECIDIDO em 21/09/2026: sem sandbox** — a
+  homologação segue sem assinar (`D4SIGN_TOKEN_API` vazio, como já estava),
+  usando só o token de produção quando for o caso de testar de verdade. Não
+  testar assinatura em homologação.
 - **Serviços que consumirão a API:** será uma **IA de atendimento**, a ser
   construída depois. A chave dela sai com acesso total, por decisão do
   escritório. Nada a gerar por ora.
@@ -286,13 +287,18 @@ Environment.
 7. **O cadastro continua sem o seletor "Tipo"** — derivado do documento.
 8. **Não há download de documentos pela API.** Confirmado.
 
-### O que ainda falta perguntar
+### O que já foi perguntado (21/09/2026)
 
-1. **O bloco de pessoa física da procuração precisa de conferência.** Ele não
-   veio no arquivo novo, que é de cliente PJ; foi mantido o texto do modelo
-   anterior do escritório, encaixado no texto novo.
-2. **A declaração e o contrato continuam com o texto antigo.** Se a procuração
-   foi reescrita, os outros dois talvez também precisem de versão nova.
+1. **O bloco de pessoa física da procuração — RESOLVIDO, nada muda.** Ele não
+   veio no arquivo novo, que é de cliente PJ; tinha ficado o texto do modelo
+   anterior do escritório, encaixado no texto novo. Perguntado se precisava
+   de atualização: a procuração PJ (a nova) é a versão atualizada e vale como
+   está; o bloco PF continua com o texto que já tinha, sem mudança nenhuma —
+   não há texto novo do escritório para ele.
+2. **Declaração e contrato — RESOLVIDO por ora.** "Temos somente esses
+   mesmo" — o texto que já está no sistema (transcrito do .docx de 14/09)
+   continua valendo. Se o escritório mandar uma versão atualizada de
+   qualquer um dos dois, ela substitui; até lá, nada a fazer.
 3. **A cláusula 9ª repetida** continua no contrato que vai para assinatura.
    Registrado que é para seguir assim, mas o defeito é deles.
 
@@ -444,6 +450,7 @@ saíram dali, todos implementados e testados:
    esse número é DIFERENTE do `ESCRITORIO.whatsapp` já cadastrado (o pessoal
    do advogado, citado na procuração) — os dois convivem de propósito, mas
    vale confirmar com o escritório se realmente são dois números distintos.
+   **Perguntado em 21/09/2026, aguardando resposta.**
 
 4. **Honorários ganharam três modalidades combináveis**: fixo (à vista ou
    parcelado, como já era), êxito (percentual de 10% a 30%, sem entrada) e
@@ -462,6 +469,7 @@ saíram dali, todos implementados e testados:
    mensagem que diz para tirar o percentual e usar só o fixo enquanto o
    modelo não chega. **Falta pedir ao escritório o texto da cláusula para as
    duas modalidades novas** (e para as combinações com o fixo).
+   **Perguntado em 21/09/2026, aguardando resposta.**
 
 5. **Cadastro de partes e assinatura de documento avulso.** Pedido do
    escritório: anexar um documento pronto (ex.: termo de acordo) e mandar
@@ -487,6 +495,8 @@ saíram dali, todos implementados e testados:
    "testemunhas ficam no papel, cada uma seria mais um endereço a cadastrar".
    Contrato, procuração e declaração — os três que o próprio sistema gera —
    continuam sem testemunha nenhuma na D4Sign; a mudança vale só para ANEXO.
+   **Confirmação com o escritório perguntada em 21/09/2026, aguardando
+   resposta.**
 
    Achado no meio do caminho: os dois componentes novos (`lista.tsx` de
    Partes e o formulário de assinatura de anexo) importavam `ROTULO_DO_PAPEL`
