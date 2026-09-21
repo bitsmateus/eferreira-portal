@@ -275,3 +275,89 @@ arquivo sair outra.
 3. **A cláusula 9ª repetida** no contrato: o escritório mandou seguir "a versão
    enviada mesmo, sem alterações". Registrado, e o sistema faz assim — mas o
    defeito continua no documento que vai para assinatura.
+
+## Terceira rodada — 21/09/2026: objeto e honorários por partes
+
+O escritório mandou dois arquivos, `Objeto do contrato.docx` e `honorarios do
+contrato.docx`, e o contrato deixou de ser um texto só. **Substituem** as antigas
+Cláusula 1ª (objeto) e Cláusula 2ª (honorários, com conta bancária e Pix).
+
+### Objeto — cinco variações, uma por caso
+
+| Variação | Arquivo | Campo do caso |
+|---|---|---|
+| Consumidor — plano de saúde | `contrato-objeto-consumidor-plano-de-saude.html` | `tipoDeObjeto` |
+| Trabalhista — reclamação ou defesa | `contrato-objeto-trabalhista.html` | idem |
+| Cível — propositura ou defesa | `contrato-objeto-civel.html` | idem |
+| Revisional — revisão e discussão contratual | `contrato-objeto-revisional.html` | idem |
+| Personalizado — diferentes casos | `contrato-objeto-personalizado.html` | idem |
+
+Cada uma tem o item 1.1 e o 1.2 do escritório, transcritos sem alterar palavra. O
+trecho entre colchetes ("[DESCREVER A DEMANDA...]") vira o campo
+`descricaoDoObjeto`, que o operador escreve no caso.
+
+### Honorários — quatro blocos combináveis mais um comum
+
+| Bloco | Arquivo | O que o caso guarda |
+|---|---|---|
+| 1. Fixos | `contrato-honorarios-fixos.html` | valor + **ao menos uma parcela** com vencimento |
+| 2. Êxito | `contrato-honorarios-exito.html` | `percentualExito` (10 a 30) |
+| 3. Proveito econômico | `contrato-honorarios-economia.html` | `percentualProveitoEconomico` (10 a 30), `referenciaDaEconomia`, `prazoDePagamentoDaEconomia` (dias) |
+| 4. Personalizados | `contrato-honorarios-personalizados.html` | `honorariosPersonalizados` + oito campos de texto livre |
+| Comum (3.5 a 3.9) | `contrato-honorarios-comuns.html` | nada — entra sempre |
+
+Entram, na ordem do escritório, os blocos das modalidades marcadas no caso, e
+depois o comum. Qualquer combinação vale ("Fixos + êxito", "as quatro", "só
+personalizados"...). Sem nenhuma modalidade marcada, o contrato não é gerado.
+A escolha dos arquivos está em `src/lib/modelos.ts` (`arquivoDoObjeto`,
+`arquivosDosHonorarios`) e é a mesma que os testes usam.
+
+**O que o sistema exige do caso antes de gerar o contrato** (a tela diz o que falta e
+leva para a edição do caso): tipo de objeto, descrição do objeto, ao menos uma
+modalidade de honorários e, dentro de cada modalidade marcada, todos os campos dela.
+Os campos são opcionais **ao salvar** e obrigatórios **ao gerar**: quem cadastra
+o caso ainda sem acordo fechado não é travado.
+
+### Decisões de tradução, sem mexer no texto do escritório
+
+- **`[FORMA_DE_PAGAMENTO]` e `[VENCIMENTOS]`** saem das parcelas do caso: "parcela
+  única" e "em 09/10/2026", ou "3(três) parcelas, sendo a primeira de R$ 500,00
+  (quinhentos reais), ..." e "a primeira em 09/10/2026, a segunda em ...". O modelo
+  pede o vencimento, e "à vista" sem data não diz quando vence — por isso, sem
+  parcela cadastrada, o contrato **não sai**; quem vai à vista cadastra uma parcela
+  única com a data.
+- **A conta bancária e o Pix** (antigo item 2.2) e o **item 2.3** ("caso não haja
+  proveito econômico, não será devido qualquer valor", que contradiria os honorários
+  fixos) saíram junto com a Cláusula 2ª — o texto novo a substitui inteira.
+- **A natureza do personalizado** entra em minúscula na frase: "cumulativa",
+  "substitutiva" ou "compensável".
+- Os campos livres do bloco 4 entram **tal como escritos**. O texto do modelo é
+  "Pela prestação de [X]", "calculados sobre [X]", "em relação a [X]"; o formulário
+  mostra a frase de cada um como dica, e quem escreve ajusta ao encaixe ("serviços
+  de parecer", não "a elaboração de parecer").
+
+### O que ainda falta perguntar
+
+1. **A numeração.** O arquivo novo chama os honorários de "CLÁUSULA TERCEIRA" (itens
+   3.1 a 3.9) e o objeto de "CLÁUSULA PRIMEIRA". As demais cláusulas (Despesas em
+   diante) continuam com o texto e a numeração de 14/09/2026, então o contrato hoje
+   tem **dois "3"**: a Terceira (honorários) e a "3ª — Despesas Processuais", cujos
+   itens também são 3.1 e 3.2. Existe uma Cláusula Segunda que o sistema não
+   conhece? As outras foram renumeradas? **Combinado: o escritório manda o contrato
+   completo com a numeração final; até lá nada é renumerado (regra 10).**
+2. **Os itens começam sempre em 3.1?** Com só êxito, por exemplo, o contrato abre em
+   "3.2", porque o bloco de êxito é o item 3.2 do arquivo. O sistema segue o arquivo
+   ao pé da letra; se a numeração deve reiniciar por combinação, o escritório
+   precisa dizer como.
+3. **A conta bancária e o Pix** deixaram de constar no contrato. Confirmar que é
+   isso mesmo.
+
+## Testemunhas na assinatura eletrônica — 21/09/2026
+
+"As assinaturas de testemunha vamos manter para os documentos avulso e o contrato
+de honorários." Na tela de envio do contrato, cliente e escritório continuam
+automáticos ("Assinam sempre"), e as **testemunhas** são escolhidas ali, na hora —
+do cadastro de Partes (só as cadastradas como testemunha aparecem) ou digitadas.
+São opcionais, e quem entra pelo contrato entra **sempre como testemunha**, seja
+qual for o papel que chegou do navegador. Procuração e declaração continuam sem
+testemunha. Ver `partesDoEnvio` em `src/lib/assinaturas.ts`.

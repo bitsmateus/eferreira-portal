@@ -14,7 +14,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { SituacaoDoEnvio } from '@prisma/client'
+import { SituacaoDoEnvio, TipoDocumento } from '@prisma/client'
 
 import { Etiqueta } from '@/componentes/etiqueta'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
@@ -368,37 +368,48 @@ export default async function PaginaDaAssinatura({
           Conferir o documento antes de enviar
         </a>
 
-        <p className="mb-3 text-[12.5px] leading-relaxed text-texto-2">
-          Quem recebe o e-mail de assinatura:
-        </p>
+        {documento.tipo === TipoDocumento.CONTRATO ? (
+          // O contrato tem duas partes automáticas e testemunhas escolhidas
+          // aqui (21/09/2026): o formulário mostra quem sempre assina, deixa
+          // escolher as testemunhas e só então abre a confirmação do envio.
+          <FormularioDeAnexo
+            documentoId={documento.id}
+            partesCadastradas={await listarPartes(sessao)}
+            contrato={{ partesFixas: preparo.partes }}
+          />
+        ) : (
+          <>
+            <p className="mb-3 text-[12.5px] leading-relaxed text-texto-2">
+              Quem recebe o e-mail de assinatura:
+            </p>
 
-        <ListaDeSignatarios partes={preparo.partes} />
+            <ListaDeSignatarios partes={preparo.partes} />
 
-        <p className="mb-4 text-[12px] leading-relaxed text-texto-3">
-          {preparo.creditosRestantes === null ? (
-            <>
-              Não foi possível consultar o saldo da conta da D4Sign agora. O envio
-              continua possível, mas sem saber quantos créditos restam.
-            </>
-          ) : (
-            <>
-              A conta do escritório tem{' '}
-              <strong className="text-texto-1">
-                {preparo.creditosRestantes}{' '}
-                {preparo.creditosRestantes === 1 ? 'crédito' : 'créditos'}
-              </strong>{' '}
-              — este envio gasta um.
-            </>
-          )}{' '}
-          As testemunhas do contrato não entram na assinatura eletrônica; elas
-          continuam no papel.
-        </p>
+            <p className="mb-4 text-[12px] leading-relaxed text-texto-3">
+              {preparo.creditosRestantes === null ? (
+                <>
+                  Não foi possível consultar o saldo da conta da D4Sign agora. O
+                  envio continua possível, mas sem saber quantos créditos restam.
+                </>
+              ) : (
+                <>
+                  A conta do escritório tem{' '}
+                  <strong className="text-texto-1">
+                    {preparo.creditosRestantes}{' '}
+                    {preparo.creditosRestantes === 1 ? 'crédito' : 'créditos'}
+                  </strong>{' '}
+                  — este envio gasta um.
+                </>
+              )}
+            </p>
 
-        <ConfirmacaoDeEnvio
-          documentoId={documento.id}
-          quantasPartes={preparo.partes.length}
-          retomando={preparo.retomavel !== null}
-        />
+            <ConfirmacaoDeEnvio
+              documentoId={documento.id}
+              quantasPartes={preparo.partes.length}
+              retomando={preparo.retomavel !== null}
+            />
+          </>
+        )}
       </Cartao>
     </>
   )

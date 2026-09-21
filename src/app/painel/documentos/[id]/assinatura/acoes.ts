@@ -109,9 +109,10 @@ const RECADO_DO_PREPARO: Record<string, string> = {
 }
 
 /**
- * Monta a prévia de quem vai assinar um documento AVULSO, sem gastar crédito
- * e sem mandar nada — é o que a tela mostra antes do botão final de envio,
- * depois que a pessoa escolheu (ou digitou) os signatários.
+ * Monta a prévia de quem vai assinar um documento AVULSO — ou as testemunhas
+ * de um CONTRATO —, sem gastar crédito e sem mandar nada: é o que a tela mostra
+ * antes do botão final de envio, depois que a pessoa escolheu (ou digitou) os
+ * signatários.
  */
 export async function prepararEnvioDeAnexo(
   documentoId: string,
@@ -120,10 +121,10 @@ export async function prepararEnvioDeAnexo(
 ): Promise<EstadoDoPreparoDeAnexo> {
   const sessao = await exigirSessaoDaEquipe()
 
+  // Lista vazia é aceita aqui de propósito: no contrato as testemunhas são
+  // opcionais, e no anexo quem diz que falta gente é `prepararEnvio`
+  // (`sem_signatarios`), com a mesma mensagem de sempre.
   const avulsos: SignatarioAvulso[] = lerAvulsos(texto(dados, 'avulsosJson'))
-  if (avulsos.length === 0) {
-    return { situacao: 'erro', mensagem: 'Escolha ou adicione ao menos um signatário.' }
-  }
 
   const preparo = await prepararEnvio(sessao, documentoId, avulsos)
 

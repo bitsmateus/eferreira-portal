@@ -20,9 +20,131 @@ function campos(troca: Partial<Record<string, string>> = {}) {
     honorarios: '',
     percentualExito: '',
     percentualProveitoEconomico: '',
+    referenciaDaEconomia: '',
+    prazoDePagamentoDaEconomia: '',
+    tipoDeObjeto: '',
+    descricaoDoObjeto: '',
+    honorariosPersonalizados: '',
+    personalizadoServicos: '',
+    personalizadoValorOuPercentual: '',
+    personalizadoBaseDeCalculo: '',
+    personalizadoCondicaoDeExigibilidade: '',
+    personalizadoPagamento: '',
+    personalizadoNatureza: '',
+    personalizadoRelacaoComAsDemais: '',
+    personalizadoCondicoesEspecificas: '',
     ...troca,
   } as Parameters<typeof validarCaso>[0]
 }
+
+describe('objeto e honorários do contrato (21/09/2026)', () => {
+  it('tipo e descrição do objeto são opcionais — o contrato é que os exige', () => {
+    const resultado = validarCaso(campos())
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.tipoDeObjeto).toBeNull()
+    expect(resultado.dados.descricaoDoObjeto).toBeNull()
+  })
+
+  it('aceita cada um dos cinco tipos de objeto e recusa valor fora da lista', () => {
+    for (const tipo of [
+      'CONSUMIDOR_PLANO_DE_SAUDE',
+      'TRABALHISTA',
+      'CIVEL',
+      'REVISIONAL',
+      'PERSONALIZADO',
+    ]) {
+      const resultado = validarCaso(campos({ tipoDeObjeto: tipo }))
+      expect(resultado.ok, tipo).toBe(true)
+    }
+
+    const invalido = validarCaso(campos({ tipoDeObjeto: 'PENAL' }))
+    expect(invalido.ok).toBe(false)
+    if (invalido.ok) return
+    expect(invalido.erros['tipoDeObjeto']).toBe('Tipo de objeto inválido.')
+  })
+
+  it('guarda a descrição do objeto sem os espaços das pontas', () => {
+    const resultado = validarCaso(campos({ descricaoDoObjeto: '  Plano cancelado.  ' }))
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.descricaoDoObjeto).toBe('Plano cancelado.')
+  })
+
+  it('o prazo da economia é um inteiro de 1 a 365 dias', () => {
+    expect(validarCaso(campos({ prazoDePagamentoDaEconomia: '30' })).ok).toBe(true)
+
+    for (const ruim of ['0', '366', '2,5', 'trinta']) {
+      const resultado = validarCaso(campos({ prazoDePagamentoDaEconomia: ruim }))
+      expect(resultado.ok, ruim).toBe(false)
+    }
+  })
+
+  it('a caixinha de personalizados só liga com "on"', () => {
+    const ligada = validarCaso(
+      campos({ honorariosPersonalizados: 'on', personalizadoServicos: 'parecer' }),
+    )
+    expect(ligada.ok).toBe(true)
+    if (!ligada.ok) return
+    expect(ligada.dados.honorariosPersonalizados).toBe(true)
+    expect(ligada.dados.personalizadoServicos).toBe('parecer')
+
+    const desligada = validarCaso(campos())
+    expect(desligada.ok).toBe(true)
+    if (!desligada.ok) return
+    expect(desligada.dados.honorariosPersonalizados).toBe(false)
+  })
+
+  // Quem desmarca uma modalidade não quer o texto antigo guardado: religar
+  // traria de volta, num contrato, dado de outra conversa.
+  it('desmarcar personalizados não deixa os campos guardados', () => {
+    const resultado = validarCaso(
+      campos({
+        personalizadoServicos: 'parecer',
+        personalizadoValorOuPercentual: 'R$ 1,00',
+        personalizadoNatureza: 'CUMULATIVA',
+      }),
+    )
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.personalizadoServicos).toBeNull()
+    expect(resultado.dados.personalizadoValorOuPercentual).toBeNull()
+    expect(resultado.dados.personalizadoNatureza).toBeNull()
+  })
+
+  it('apagar o percentual do proveito econômico apaga referência e prazo', () => {
+    const resultado = validarCaso(
+      campos({
+        percentualProveitoEconomico: '',
+        referenciaDaEconomia: 'a dívida X',
+        prazoDePagamentoDaEconomia: '30',
+      }),
+    )
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.referenciaDaEconomia).toBeNull()
+    expect(resultado.dados.prazoDePagamentoDaEconomia).toBeNull()
+  })
+
+  it('com o percentual do proveito econômico, referência e prazo ficam', () => {
+    const resultado = validarCaso(
+      campos({
+        percentualProveitoEconomico: '15',
+        referenciaDaEconomia: 'a dívida X',
+        prazoDePagamentoDaEconomia: '30',
+      }),
+    )
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.referenciaDaEconomia).toBe('a dívida X')
+    expect(resultado.dados.prazoDePagamentoDaEconomia).toBe(30)
+  })
+})
 
 describe('validarCaso', () => {
   it('guarda o número do processo normalizado, só com dígitos', () => {

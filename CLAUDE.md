@@ -313,6 +313,85 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Contrato por partes: objeto, honorários e testemunhas** (21/09/2026), a
+partir de três respostas do escritório e dois arquivos `.docx` que chegaram
+no WhatsApp. É a maior mudança no contrato desde a Sprint 3, e tem UMA
+pendência que impede de emitir contrato para cliente sem conversar antes — a
+numeração (abaixo).
+
+1. **O contrato deixou de ser um texto só.** `Objeto do contrato.docx` traz
+   cinco variações da cláusula de objeto (consumidor/plano de saúde,
+   trabalhista, cível, revisional, personalizado) e `honorarios do
+   contrato.docx` traz quatro blocos combináveis (fixos, êxito, proveito
+   econômico, personalizados) mais um bloco comum (3.5 a 3.9). Cada variação e
+   cada bloco é um arquivo em `src/modelos/contrato-objeto-*.html` e
+   `contrato-honorarios-*.html`, com o texto do escritório transcrito sem
+   alterar palavra (regra 10); o contrato principal encaixa os dois com
+   `{{>objeto}}` e `{{>honorarios}}`. Quais entram é decisão de
+   `arquivoDoObjeto` e `arquivosDosHonorarios`, em `src/lib/modelos.ts`, as
+   mesmas funções que os testes usam. Mapa completo em
+   `docs/modelos-de-documento.md`.
+
+2. **O caso guarda o que o contrato precisa** (migração
+   `20260921190613`): `tipoDeObjeto`, `descricaoDoObjeto` (o texto que entra
+   no lugar de "[DESCREVER A DEMANDA...]"), `referenciaDaEconomia` e
+   `prazoDePagamentoDaEconomia` (bloco 3), e `honorariosPersonalizados` com
+   oito campos de texto livre (bloco 4). O formulário do caso ganhou a seção
+   "Objeto do contrato" e os campos de cada modalidade, com a frase do modelo
+   como dica em cada campo livre. **Opcionais ao salvar, obrigatórios ao
+   gerar**: quem cadastra o caso ainda sem acordo fechado não é travado; ao
+   gerar, a tela diz exatamente o que falta e leva para a edição do caso.
+
+3. **Honorários fixos exigem ao menos uma parcela.** O modelo do escritório
+   pede "mediante [FORMA_DE_PAGAMENTO], com vencimento [VENCIMENTOS]", e "à
+   vista" sem data não diz quando vence. Em vez de inventar uma data, o
+   contrato **não sai** sem parcela; quem vai à vista cadastra uma parcela
+   única com o vencimento.
+
+4. **A trava de êxito/proveito econômico caiu** — o texto chegou. A antiga
+   Cláusula 2ª (com a conta bancária, o Pix e o item 2.3, "caso não haja
+   proveito econômico, não será devido qualquer valor", que contradiria os
+   honorários fixos) saiu inteira: o texto novo a substitui.
+
+5. **Testemunhas no contrato.** "As assinaturas de testemunha vamos manter
+   para os documentos avulso e o contrato de honorários." Na tela de envio do
+   contrato, cliente e escritório seguem automáticos e as testemunhas são
+   escolhidas ali (do cadastro de Partes — só as do papel testemunha —, ou
+   digitadas), opcionais. `partesDoEnvio` (`src/lib/assinaturas.ts`) impõe que
+   quem entra pelo contrato entra SEMPRE como testemunha, seja qual for o
+   papel que veio do navegador (regra 2). O mesmo formulário do anexo serve
+   aos dois.
+
+6. **WhatsApp confirmado** ("isso mesmo o whatsapp é o oficial mesmo") — ver a
+   reunião de 17/09, item 3.
+
+7. **Um defeito achado no caminho, corrigido:** `aplicarPartes` trocava
+   `{{>parte}}` até dentro de comentário HTML. O comentário do contrato citava
+   `{{>objeto}}`, a parte entrava ali com o comentário dela, o `-->` de dentro
+   fechava o de fora e o resto da nota interna aparecia impresso no contrato.
+   Agora os comentários saem ANTES de encaixar as partes.
+
+**PENDENTE COM O ESCRITÓRIO — a numeração, e enquanto isso NÃO se emite
+contrato para cliente com este texto.** O arquivo novo chama os honorários de
+"CLÁUSULA TERCEIRA" (itens 3.1 a 3.9) e o objeto de "CLÁUSULA PRIMEIRA". As
+demais cláusulas (Despesas em diante) continuam com o texto e a numeração de
+14/09/2026, e por isso o contrato gerado hoje tem dois "3": a Terceira
+(honorários) e a "3ª — Despesas Processuais", cujos itens também são 3.1 e
+3.2. Renumerar seria mexer no texto do escritório (regra 10). **Combinado: o
+escritório manda o contrato completo com a numeração final.** Ainda a
+perguntar: (a) os itens 3.1 a 3.4 sempre com o número do arquivo, mesmo quando
+só um bloco entra (só êxito abre em "3.2")? (b) a conta bancária e o Pix
+deixaram de constar — é isso mesmo?
+
+**Verificado:** 431 testes unitários, 139 contra o banco, `tsc`, lint e
+`npm run build`. PDF do contrato com as quatro modalidades gerado e lido
+página a página (margens do timbre ok). Formulário do caso e tela de
+assinatura do contrato conferidos no navegador de verdade — gravou os campos
+novos, mostrou as testemunhas cadastradas (a parte contrária ficou de fora) e
+a revisão listou as quatro pessoas. O envio em si NÃO foi feito: a integração
+ficou apontada para um endereço morto durante o teste, e nenhum crédito foi
+gasto.
+
 **Documentos "cortados" — achada a causa, e ela vinha do início** (18/09/2026).
 O escritório reportou que todo documento gerado estava saindo com o texto
 sobreposto pelo cabeçalho e pelo rodapé — não só documento longo: uma
@@ -450,7 +529,8 @@ saíram dali, todos implementados e testados:
    esse número é DIFERENTE do `ESCRITORIO.whatsapp` já cadastrado (o pessoal
    do advogado, citado na procuração) — os dois convivem de propósito, mas
    vale confirmar com o escritório se realmente são dois números distintos.
-   **Perguntado em 21/09/2026, aguardando resposta.**
+   **Respondido em 21/09/2026:** "isso mesmo o whatsapp é o oficial mesmo".
+   Confirmado como o número oficial; nada muda no código.
 
 4. **Honorários ganharam três modalidades combináveis**: fixo (à vista ou
    parcelado, como já era), êxito (percentual de 10% a 30%, sem entrada) e
@@ -458,18 +538,11 @@ saíram dali, todos implementados e testados:
    duas ou as três ao mesmo tempo — migração `20260917193752`, campos
    `percentualExito` e `percentualProveitoEconomico` no `Caso`.
 
-   **Isto não gera contrato ainda, de propósito.** A cláusula 2ª do modelo
-   (`contrato-de-prestacao-de-servicos.html`) pressupõe um valor fixo por
-   extenso — "os honorários... serão de {{valor}}... pagos da seguinte
-   forma". Escrever a redação das duas modalidades novas seria reescrever
-   texto jurídico por conta própria, e a regra 10 proíbe isso. Por isso
-   `montarPrevia` (`src/lib/geracao.ts`) recusa gerar CONTRATO — só o
-   contrato, procuração e declaração continuam livres — para qualquer caso
-   com `percentualExito` ou `percentualProveitoEconomico` preenchido, com uma
-   mensagem que diz para tirar o percentual e usar só o fixo enquanto o
-   modelo não chega. **Falta pedir ao escritório o texto da cláusula para as
-   duas modalidades novas** (e para as combinações com o fixo).
-   **Perguntado em 21/09/2026, aguardando resposta.**
+   **RESOLVIDO em 21/09/2026.** Até então isto NÃO gerava contrato, de
+   propósito: a cláusula 2ª só descrevia valor fixo, e escrever a redação das
+   modalidades novas seria reescrever texto jurídico (regra 10). O escritório
+   mandou o texto ("honorarios do contrato.docx") e a trava foi removida —
+   ver a entrada de 21/09/2026, no topo deste "Estado atual".
 
 5. **Cadastro de partes e assinatura de documento avulso.** Pedido do
    escritório: anexar um documento pronto (ex.: termo de acordo) e mandar
@@ -495,8 +568,10 @@ saíram dali, todos implementados e testados:
    "testemunhas ficam no papel, cada uma seria mais um endereço a cadastrar".
    Contrato, procuração e declaração — os três que o próprio sistema gera —
    continuam sem testemunha nenhuma na D4Sign; a mudança vale só para ANEXO.
-   **Confirmação com o escritório perguntada em 21/09/2026, aguardando
-   resposta.**
+   **Confirmado e AMPLIADO em 21/09/2026:** "as assinaturas de testemunha
+   vamos manter para os documentos avulso e o contrato de honorários" — ou
+   seja, o CONTRATO também passa a ter testemunhas na D4Sign (ver o topo deste
+   "Estado atual"). Procuração e declaração continuam sem testemunha.
 
    Achado no meio do caminho: os dois componentes novos (`lista.tsx` de
    Partes e o formulário de assinatura de anexo) importavam `ROTULO_DO_PAPEL`

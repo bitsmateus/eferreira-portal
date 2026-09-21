@@ -27,9 +27,14 @@ import { enviarArquivo, gerarChaveDeArquivo, removerArquivo } from '@/lib/armaze
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import {
   MODELO_DO_TIPO,
+  ROTULOS_DO_CASO,
   aplicarPartes,
+  arquivoDoObjeto,
+  arquivosDosHonorarios,
+  lacunasDoContrato,
   preencherModelo,
   valoresDoDocumento,
+  type CasoParaDocumento,
   type ClienteParaDocumento,
 } from '@/lib/modelos'
 import { gerarPdf, lerModelo, montarPaginaTimbrada } from '@/lib/pdf'
@@ -61,17 +66,32 @@ export type ResultadoDaPrevia =
   | { situacao: 'faltam_dados'; faltando: string[]; ondePreencher: string }
 
 /**
- * Lê o modelo e encaixa as partes que mudam com o tipo de pessoa.
+ * Lê o modelo e encaixa as partes que mudam.
  *
- * Só a procuração tem variantes hoje: o escritório confirmou em 14/09/2026 que
- * "ela pode ser PJ ou PF dependendo do tipo de cliente do contrato". O contrato
- * e a declaração continuam com um texto só.
+ * A procuração muda com o tipo de pessoa: o escritório confirmou em 14/09/2026
+ * que "ela pode ser PJ ou PF dependendo do tipo de cliente do contrato".
+ *
+ * O contrato muda com o caso, desde 21/09/2026: a cláusula de objeto tem cinco
+ * variações e a de honorários quatro blocos combináveis mais um comum. Quais
+ * entram é decisão de `arquivoDoObjeto` e `arquivosDosHonorarios`, as mesmas
+ * funções que os testes usam — uma composição só. A declaração tem texto único.
  */
 async function montarModelo(
   tipo: TipoGeravel,
   tipoPessoa: TipoPessoa,
+  caso: CasoParaDocumento | null,
 ): Promise<string> {
   const modelo = await lerModelo(MODELO_DO_TIPO[tipo] ?? '')
+
+  if (tipo === TipoDocumento.CONTRATO && caso !== null) {
+    const arquivoDoTipoDeObjeto = arquivoDoObjeto(caso.tipoDeObjeto)
+    const [objeto, honorarios] = await Promise.all([
+      arquivoDoTipoDeObjeto === null ? '' : lerModelo(arquivoDoTipoDeObjeto),
+      Promise.all(arquivosDosHonorarios(caso).map((nome) => lerModelo(nome))),
+    ])
+
+    return aplicarPartes(modelo, { objeto, honorarios: honorarios.join('\n') })
+  }
 
   if (tipo !== TipoDocumento.PROCURACAO) return modelo
 
@@ -120,24 +140,18 @@ export async function montarPrevia(
 
   if (casoId !== null && caso === null) return { situacao: 'nao_encontrado' }
 
-  // Regra 10: o modelo do contrato (cláusula 2ª) só descreve honorários de
-  // valor fixo. Êxito e percentual sobre proveito econômico são modalidades
-  // novas, combinadas com o escritório em 17/09/2026, mas cujo TEXTO da
-  // cláusula ainda não foi mandado — inventar a redação seria reescrever
-  // texto jurídico por conta própria. Enquanto isso não chegar, o caso
-  // guarda o percentual normalmente (é dado do caso), só o CONTRATO deste
-  // caso específico não sai.
-  if (
-    tipo === TipoDocumento.CONTRATO &&
-    caso !== null &&
-    (caso.percentualExito !== null || caso.percentualProveitoEconomico !== null)
-  ) {
-    return {
-      situacao: 'faltam_dados',
-      faltando: [
-        'o texto da cláusula de honorários de êxito ou de proveito econômico — o modelo do contrato só descreve valor fixo, e falta o texto que o escritório vai enviar para essas modalidades. Para gerar o contrato agora, remova o percentual e use só honorários fixos neste caso',
-      ],
-      ondePreencher: `/painel/casos/${caso.id}`,
+  // O contrato só existe com o tipo de objeto escolhido e ao menos uma
+  // modalidade de honorários marcada — não há texto para "nenhuma". O que
+  // falta DENTRO de uma modalidade (o percentual, o prazo, os campos do
+  // personalizado) é dito pelos marcadores, mais abaixo.
+  if (tipo === TipoDocumento.CONTRATO && caso !== null) {
+    const lacunas = lacunasDoContrato(caso)
+    if (lacunas.length > 0) {
+      return {
+        situacao: 'faltam_dados',
+        faltando: lacunas,
+        ondePreencher: `/painel/casos/${caso.id}/editar`,
+      }
     }
   }
 
@@ -169,7 +183,7 @@ export async function montarPrevia(
         }
 
   const preenchido = preencherModelo(
-    await montarModelo(tipo, cliente.tipoPessoa),
+    await montarModelo(tipo, cliente.tipoPessoa, caso),
     valoresDoDocumento(
       paraDocumento,
       representante === null
@@ -187,11 +201,17 @@ export async function montarPrevia(
   )
 
   if (!preenchido.ok) {
+    // Só o caso resolve, quando tudo o que falta é dado dele — a mensagem
+    // leva para a edição do caso, e não para o cadastro do cliente.
+    const soFaltaDoCaso =
+      caso !== null && preenchido.faltando.every((rotulo) => ROTULOS_DO_CASO.has(rotulo))
+
     return {
       situacao: 'faltam_dados',
       faltando: preenchido.faltando,
-      ondePreencher:
-        representante === null
+      ondePreencher: soFaltaDoCaso
+        ? `/painel/casos/${caso.id}/editar`
+        : representante === null
           ? `/painel/clientes/${cliente.id}/editar`
           : `/painel/clientes/${representante.id}/editar`,
     }

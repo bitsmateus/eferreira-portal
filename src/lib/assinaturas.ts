@@ -85,16 +85,16 @@ import {
  * O código da D4Sign para "assinar". Os outros são aprovar, reconhecer e
  * testemunhar, e nenhum documento deste sistema usa esses papéis hoje.
  *
- * TESTEMUNHAS ELETRÔNICAS FICAVAM DE FORA — decisão revista em 17/09/2026.
- * Até aqui, o contrato do escritório tinha linhas de testemunha em papel, e
- * elas não entravam na lista de signatários da D4Sign: "cada testemunha
- * eletrônica seria mais um endereço a cadastrar e mais gente a esperar"
- * (14/09/2026). O escritório voltou atrás nesta reunião, especificamente para
- * DOCUMENTOS AVULSOS (`ANEXO`, ver `SignatarioAvulso` abaixo): um
- * termo de acordo pode exigir testemunha, parte contrária e advogado externo
- * assinando eletronicamente, escolhidos na hora do envio. Contrato,
- * procuração e declaração — os três que o próprio sistema gera — continuam
- * assinados só por quem `partesQueAssinam` decide, sem testemunha nenhuma.
+ * TESTEMUNHAS ELETRÔNICAS FICAVAM DE FORA — decisão revista duas vezes.
+ * Até 14/09/2026, o contrato tinha linhas de testemunha em papel, e elas não
+ * entravam na lista de signatários da D4Sign: "cada testemunha eletrônica
+ * seria mais um endereço a cadastrar e mais gente a esperar". Em 17/09 o
+ * escritório voltou atrás para DOCUMENTOS AVULSOS (`ANEXO`, ver
+ * `SignatarioAvulso` abaixo), e em 21/09/2026 confirmou: "as assinaturas de
+ * testemunha vamos manter para os documentos avulso e o contrato de
+ * honorários". Escolhidas na hora do envio (`partesDoEnvio`), nunca por regra
+ * fixa. Procuração e declaração continuam só com quem `partesQueAssinam`
+ * decide, sem testemunha nenhuma.
  */
 export const ACAO_ASSINAR = '1'
 
@@ -212,6 +212,34 @@ export function partesQueAssinam(
   }
 
   return partes
+}
+
+/**
+ * A lista final de quem recebe o e-mail: as partes automáticas de
+ * `partesQueAssinam` mais o que a tela mandou.
+ *
+ *  - **anexo**: só quem a tela mandou, com o papel escolhido lá.
+ *  - **contrato**: cliente e escritório, mais as testemunhas que a tela
+ *    mandou — e SÓ como testemunha, seja qual for o papel que veio no JSON
+ *    (o que chega do navegador não decide o papel de ninguém, regra 2). O
+ *    escritório confirmou em 21/09/2026 que as testemunhas ficam na assinatura
+ *    eletrônica dos documentos avulsos E do contrato de honorários.
+ *  - **procuração e declaração**: só as automáticas; nada da tela entra.
+ */
+export function partesDoEnvio(
+  tipo: TipoDocumento,
+  automaticas: readonly ParteQueAssina[],
+  avulsos: readonly SignatarioAvulso[],
+): ParteQueAssina[] {
+  const daTela: ParteQueAssina[] = avulsos.map((avulso) => ({
+    papel: tipo === TipoDocumento.CONTRATO ? PapelDaParte.TESTEMUNHA : avulso.papel,
+    nome: avulso.nome,
+    email: avulso.email,
+  }))
+
+  if (tipo === TipoDocumento.ANEXO) return daTela
+  if (tipo === TipoDocumento.CONTRATO) return [...automaticas, ...daTela]
+  return [...automaticas]
 }
 
 /** Os papéis que estão sem endereço — a lista que a tela mostra. */
@@ -406,10 +434,10 @@ export async function enviosRecentes(
  * Tudo que a tela de confirmação precisa, sem gastar crédito e sem mandar
  * e-mail nenhum. Ler o saldo é chamada de leitura da D4Sign.
  *
- * `avulsos` só importa para documento do tipo ANEXO: é a lista escolhida na
- * tela (do cadastro de partes, ou digitada na hora) de quem vai assinar. Para
- * os demais tipos, quem assina continua vindo de `partesQueAssinam` — o
- * parâmetro é ignorado.
+ * `avulsos` é a lista escolhida na tela (do cadastro de partes, ou digitada na
+ * hora). No ANEXO é quem assina; no CONTRATO são as testemunhas, somadas a
+ * cliente e escritório; na procuração e na declaração é ignorada. Ver
+ * `partesDoEnvio`.
  */
 export async function prepararEnvio(
   sessao: SessaoServidor,
@@ -467,14 +495,11 @@ export async function prepararEnvio(
   }
 
   const representante = documento.cliente.representantes[0]?.pessoaFisica ?? null
-  const partes: ParteQueAssina[] =
-    documento.tipo === TipoDocumento.ANEXO
-      ? avulsos.map((avulso) => ({
-          papel: avulso.papel,
-          nome: avulso.nome,
-          email: avulso.email,
-        }))
-      : partesQueAssinam(documento.tipo, documento.cliente, representante)
+  const partes = partesDoEnvio(
+    documento.tipo,
+    partesQueAssinam(documento.tipo, documento.cliente, representante),
+    avulsos,
+  )
 
   // Anexo não tem ninguém "automático" — sem escolha na tela, não há para
   // quem mandar. Os demais tipos sempre têm ao menos o cliente.

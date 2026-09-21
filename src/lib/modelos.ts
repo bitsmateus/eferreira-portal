@@ -10,7 +10,12 @@
  * operador do que na hora da assinatura.
  */
 
-import { TipoDocumento, type TipoPessoa } from '@prisma/client'
+import {
+  TipoDocumento,
+  TipoDeObjeto,
+  type NaturezaDoHonorarioPersonalizado,
+  type TipoPessoa,
+} from '@prisma/client'
 
 import { ESCRITORIO } from '@/lib/escritorio'
 import { formatarDataExtenso } from '@/lib/datas'
@@ -69,51 +74,174 @@ export type RepresentanteParaDocumento = {
   qualificacao: string | null
 }
 
+/**
+ * O que o contrato precisa saber do caso.
+ *
+ * Só dado do contrato: assunto e parte contrária do caso não entram mais — a
+ * cláusula de objeto do escritório (21/09/2026) traz a descrição da demanda
+ * num campo próprio, `descricaoDoObjeto`, em que o operador já identifica as
+ * partes e o número do processo.
+ */
 export type CasoParaDocumento = {
-  assunto: string
-  parteContraria: string | null
-  honorariosEmCentavos: number | null
   parcelas: readonly { numero: number; valorEmCentavos: number; vencimento: Date }[]
+  honorariosEmCentavos: number | null
+  percentualExito: number | null
+  percentualProveitoEconomico: number | null
+  referenciaDaEconomia: string | null
+  prazoDePagamentoDaEconomia: number | null
+  tipoDeObjeto: TipoDeObjeto | null
+  descricaoDoObjeto: string | null
+  honorariosPersonalizados: boolean
+  personalizadoServicos: string | null
+  personalizadoValorOuPercentual: string | null
+  personalizadoBaseDeCalculo: string | null
+  personalizadoCondicaoDeExigibilidade: string | null
+  personalizadoPagamento: string | null
+  personalizadoNatureza: NaturezaDoHonorarioPersonalizado | null
+  personalizadoRelacaoComAsDemais: string | null
+  personalizadoCondicoesEspecificas: string | null
 }
 
-/** Escreve a cláusula 2.1 a partir das parcelas cadastradas. */
-export function condicoesDePagamento(
-  caso: Pick<CasoParaDocumento, 'honorariosEmCentavos' | 'parcelas'>,
-): string {
-  const parcelas = [...caso.parcelas].sort((a, b) => a.numero - b.numero)
+// ---------------------------------------------------------------------------
+// Quais partes do contrato valem para o caso
+//
+// O objeto tem cinco variações e os honorários quatro blocos combináveis, mais
+// um bloco comum — tudo em arquivos próprios em `src/modelos/`, com o texto
+// do escritório intacto (regra 10). A escolha do que entra é aqui, e é a MESMA
+// para a geração e para os testes: uma composição só.
+// ---------------------------------------------------------------------------
 
-  if (parcelas.length === 0) return 'à vista.'
+const ARQUIVO_DO_OBJETO: Record<TipoDeObjeto, string> = {
+  [TipoDeObjeto.CONSUMIDOR_PLANO_DE_SAUDE]: 'contrato-objeto-consumidor-plano-de-saude',
+  [TipoDeObjeto.TRABALHISTA]: 'contrato-objeto-trabalhista',
+  [TipoDeObjeto.CIVEL]: 'contrato-objeto-civel',
+  [TipoDeObjeto.REVISIONAL]: 'contrato-objeto-revisional',
+  [TipoDeObjeto.PERSONALIZADO]: 'contrato-objeto-personalizado',
+}
 
-  if (parcelas.length === 1) {
-    const unica = parcelas[0]
-    if (unica === undefined) return 'à vista.'
-    return `parcela única de ${formatarReais(unica.valorEmCentavos)} (${reaisPorExtenso(
-      unica.valorEmCentavos,
-    )}) para o dia ${formatarDataCurta(unica.vencimento)}.`
+/** O arquivo com a cláusula de objeto do caso, ou nulo se o tipo não foi escolhido. */
+export function arquivoDoObjeto(tipo: TipoDeObjeto | null): string | null {
+  return tipo === null ? null : ARQUIVO_DO_OBJETO[tipo]
+}
+
+/**
+ * Os arquivos da cláusula de honorários, na ordem do escritório: fixos, êxito,
+ * proveito econômico, personalizados — e por último o bloco comum, que vale
+ * qualquer que seja a combinação. Vazio quando nenhuma modalidade foi marcada.
+ */
+export function arquivosDosHonorarios(
+  caso: Pick<
+    CasoParaDocumento,
+    | 'honorariosEmCentavos'
+    | 'percentualExito'
+    | 'percentualProveitoEconomico'
+    | 'honorariosPersonalizados'
+  >,
+): string[] {
+  const blocos: string[] = []
+
+  if (caso.honorariosEmCentavos !== null) blocos.push('contrato-honorarios-fixos')
+  if (caso.percentualExito !== null) blocos.push('contrato-honorarios-exito')
+  if (caso.percentualProveitoEconomico !== null) {
+    blocos.push('contrato-honorarios-economia')
+  }
+  if (caso.honorariosPersonalizados) blocos.push('contrato-honorarios-personalizados')
+
+  return blocos.length === 0 ? [] : [...blocos, 'contrato-honorarios-comuns']
+}
+
+/**
+ * O que falta escolher no caso antes de o contrato poder existir — e que não
+ * é marcador de texto: escolher o tipo de objeto e marcar ao menos uma
+ * modalidade de honorários. O que falta DENTRO de uma modalidade escolhida (o
+ * percentual, o prazo, os campos do personalizado) é dito pelos marcadores.
+ */
+export function lacunasDoContrato(
+  caso: Pick<
+    CasoParaDocumento,
+    | 'tipoDeObjeto'
+    | 'honorariosEmCentavos'
+    | 'percentualExito'
+    | 'percentualProveitoEconomico'
+    | 'honorariosPersonalizados'
+  >,
+): string[] {
+  const lacunas: string[] = []
+
+  if (caso.tipoDeObjeto === null) lacunas.push('tipo de objeto do contrato')
+  if (arquivosDosHonorarios(caso).length === 0) {
+    lacunas.push(
+      'ao menos uma modalidade de honorários (fixos, êxito, proveito econômico ou personalizados)',
+    )
   }
 
-  const ordinais = [
-    'primeira',
-    'segunda',
-    'terceira',
-    'quarta',
-    'quinta',
-    'sexta',
-    'sétima',
-    'oitava',
-    'nona',
-    'décima',
-  ]
+  return lacunas
+}
 
-  const trechos = parcelas.map((parcela, indice) => {
-    const ordinal = ordinais[indice] ?? `${parcela.numero}ª`
-    return `a ${ordinal} de ${formatarReais(parcela.valorEmCentavos)} (${reaisPorExtenso(
-      parcela.valorEmCentavos,
-    )}) para o dia ${formatarDataCurta(parcela.vencimento)}`
-  })
+const ORDINAIS = [
+  'primeira',
+  'segunda',
+  'terceira',
+  'quarta',
+  'quinta',
+  'sexta',
+  'sétima',
+  'oitava',
+  'nona',
+  'décima',
+]
 
-  const quantidade = `${parcelas.length}(${porExtensoSimples(parcelas.length)}) parcelas`
-  return `${quantidade} com ${trechos.join(', ')}.`
+function parcelasEmOrdem(parcelas: CasoParaDocumento['parcelas']) {
+  return [...parcelas].sort((a, b) => a.numero - b.numero)
+}
+
+function ordinalDaParcela(indice: number, numero: number): string {
+  return ORDINAIS[indice] ?? `${numero}ª`
+}
+
+/**
+ * O "mediante [FORMA_DE_PAGAMENTO]" do bloco de honorários fixos.
+ *
+ * Nulo sem parcela cadastrada: o modelo do escritório pede também o
+ * vencimento, e "à vista" sem data não diz quando o honorário vence. Quem
+ * cadastra o valor fixo informa ao menos uma parcela — a única, se for à vista.
+ */
+export function formaDePagamentoDosFixos(
+  parcelas: CasoParaDocumento['parcelas'],
+): string | null {
+  const ordenadas = parcelasEmOrdem(parcelas)
+
+  if (ordenadas.length === 0) return null
+  if (ordenadas.length === 1) return 'parcela única'
+
+  const trechos = ordenadas.map(
+    (parcela, indice) =>
+      `a ${ordinalDaParcela(indice, parcela.numero)} de ${formatarReais(
+        parcela.valorEmCentavos,
+      )} (${reaisPorExtenso(parcela.valorEmCentavos)})`,
+  )
+
+  return `${ordenadas.length}(${porExtensoSimples(ordenadas.length)}) parcelas, sendo ${trechos.join(', ')}`
+}
+
+/** O "com vencimento [VENCIMENTOS]" do mesmo bloco. Nulo sem parcela. */
+export function vencimentosDosFixos(
+  parcelas: CasoParaDocumento['parcelas'],
+): string | null {
+  const ordenadas = parcelasEmOrdem(parcelas)
+  const primeira = ordenadas[0]
+
+  if (primeira === undefined) return null
+  if (ordenadas.length === 1) return `em ${formatarDataCurta(primeira.vencimento)}`
+
+  return ordenadas
+    .map(
+      (parcela, indice) =>
+        `a ${ordinalDaParcela(indice, parcela.numero)} em ${formatarDataCurta(
+          parcela.vencimento,
+        )}`,
+    )
+    .join(', ')
 }
 
 function porExtensoSimples(numero: number): string {
@@ -200,14 +328,9 @@ export function valoresDoDocumento(
   }
 
   if (caso !== null) {
-    valores['caso.assunto'] = ouNulo(caso.assunto)
-    // No modelo: "conclusão de AÇÃO DE DIVORCIO CONSENSUAL contra Danila".
-    // Sem parte contrária, a frase tem que fechar sem sobrar "contra".
-    // O espaço vem junto com o valor: sem parte contrária, a frase fecha em
-    // "...conclusão de AÇÃO X, abrangendo", sem espaço solto antes da vírgula.
-    valores['caso.contraParteContraria'] =
-      caso.parteContraria === null ? '' : ` contra ${caso.parteContraria}`
+    valores['caso.descricaoDoObjeto'] = ouNulo(caso.descricaoDoObjeto)
 
+    // Bloco 1 — fixos.
     valores['honorarios.valorFormatado'] =
       caso.honorariosEmCentavos === null
         ? null
@@ -216,10 +339,56 @@ export function valoresDoDocumento(
       caso.honorariosEmCentavos === null
         ? null
         : reaisPorExtenso(caso.honorariosEmCentavos)
-    valores['honorarios.condicoesDePagamento'] = condicoesDePagamento(caso)
+    valores['honorarios.formaDePagamento'] = formaDePagamentoDosFixos(caso.parcelas)
+    valores['honorarios.vencimentos'] = vencimentosDosFixos(caso.parcelas)
+
+    // Bloco 2 — êxito.
+    valores['honorarios.percentualExito'] =
+      caso.percentualExito === null ? null : String(caso.percentualExito)
+
+    // Bloco 3 — proveito econômico.
+    valores['honorarios.percentualEconomia'] =
+      caso.percentualProveitoEconomico === null
+        ? null
+        : String(caso.percentualProveitoEconomico)
+    valores['honorarios.referenciaDaEconomia'] = ouNulo(caso.referenciaDaEconomia)
+    valores['honorarios.prazoDePagamentoDaEconomia'] =
+      caso.prazoDePagamentoDaEconomia === null
+        ? null
+        : String(caso.prazoDePagamentoDaEconomia)
+
+    // Bloco 4 — personalizados.
+    valores['honorarios.personalizado.servicos'] = ouNulo(caso.personalizadoServicos)
+    valores['honorarios.personalizado.valorOuPercentual'] = ouNulo(
+      caso.personalizadoValorOuPercentual,
+    )
+    valores['honorarios.personalizado.baseDeCalculo'] = ouNulo(
+      caso.personalizadoBaseDeCalculo,
+    )
+    valores['honorarios.personalizado.condicaoDeExigibilidade'] = ouNulo(
+      caso.personalizadoCondicaoDeExigibilidade,
+    )
+    valores['honorarios.personalizado.pagamento'] = ouNulo(caso.personalizadoPagamento)
+    valores['honorarios.personalizado.natureza'] =
+      caso.personalizadoNatureza === null
+        ? null
+        : NATUREZA_POR_EXTENSO[caso.personalizadoNatureza]
+    valores['honorarios.personalizado.relacaoComAsDemais'] = ouNulo(
+      caso.personalizadoRelacaoComAsDemais,
+    )
+    valores['honorarios.personalizado.condicoesEspecificas'] = ouNulo(
+      caso.personalizadoCondicoesEspecificas,
+    )
   }
 
   return valores
+}
+
+/** Como a natureza entra na frase "Esta remuneração será ... em relação a". */
+const NATUREZA_POR_EXTENSO: Record<NaturezaDoHonorarioPersonalizado, string> = {
+  CUMULATIVA: 'cumulativa',
+  SUBSTITUTIVA: 'substitutiva',
+  COMPENSAVEL: 'compensável',
 }
 
 // ---------------------------------------------------------------------------
@@ -259,11 +428,39 @@ const ROTULO_DO_MARCADOR: Record<string, string> = {
   'representante.nacionalidade': 'nacionalidade do sócio',
   'representante.rg': 'RG do sócio',
   'representante.qualificacao': 'qualificação do sócio (sócio, presidente)',
-  'caso.assunto': 'assunto do caso',
-  'honorarios.valorFormatado': 'valor dos honorários',
-  'honorarios.valorPorExtenso': 'valor dos honorários',
-  'honorarios.condicoesDePagamento': 'condições de pagamento',
+  'caso.descricaoDoObjeto': 'descrição do objeto do contrato',
+  'honorarios.valorFormatado': 'valor dos honorários fixos',
+  'honorarios.valorPorExtenso': 'valor dos honorários fixos',
+  'honorarios.formaDePagamento': 'ao menos uma parcela dos honorários fixos (com o vencimento)',
+  'honorarios.vencimentos': 'ao menos uma parcela dos honorários fixos (com o vencimento)',
+  'honorarios.percentualExito': 'percentual de êxito',
+  'honorarios.percentualEconomia': 'percentual sobre o proveito econômico',
+  'honorarios.referenciaDaEconomia':
+    'referência da economia (obrigação, valor discutido e data-base)',
+  'honorarios.prazoDePagamentoDaEconomia': 'prazo de pagamento da economia, em dias',
+  'honorarios.personalizado.servicos': 'personalizados: serviços ou etapas',
+  'honorarios.personalizado.valorOuPercentual': 'personalizados: valor ou percentual',
+  'honorarios.personalizado.baseDeCalculo':
+    'personalizados: base de cálculo (ou "não se aplica")',
+  'honorarios.personalizado.condicaoDeExigibilidade':
+    'personalizados: condição de exigibilidade',
+  'honorarios.personalizado.pagamento': 'personalizados: forma de pagamento e vencimentos',
+  'honorarios.personalizado.natureza':
+    'personalizados: se é cumulativa, substitutiva ou compensável',
+  'honorarios.personalizado.relacaoComAsDemais':
+    'personalizados: relação com as demais modalidades',
+  'honorarios.personalizado.condicoesEspecificas': 'personalizados: condições específicas',
 }
+
+/**
+ * Os rótulos que só se resolvem editando o CASO — a mensagem de "falta" leva
+ * para lá, e não para o cadastro do cliente.
+ */
+export const ROTULOS_DO_CASO: ReadonlySet<string> = new Set(
+  Object.entries(ROTULO_DO_MARCADOR)
+    .filter(([marcador]) => marcador.startsWith('caso.') || marcador.startsWith('honorarios.'))
+    .map(([, rotulo]) => rotulo),
+)
 
 export function rotuloDoMarcador(marcador: string): string {
   return ROTULO_DO_MARCADOR[marcador] ?? marcador
@@ -330,7 +527,14 @@ export function aplicarPartes(
   modelo: string,
   partes: Record<string, string>,
 ): string {
-  return modelo.replace(PARTE, (inteiro, nome: string) => partes[nome] ?? inteiro)
+  // Os comentários saem ANTES de encaixar as partes. Um `{{>parte}}` citado
+  // dentro do comentário do modelo seria trocado pelo arquivo da parte — que
+  // tem comentário próprio, cujo `-->` fecharia o comentário de fora e faria o
+  // resto da nota interna aparecer impresso no contrato.
+  return semComentarios(modelo).replace(
+    PARTE,
+    (inteiro, nome: string) => partes[nome] ?? inteiro,
+  )
 }
 
 /** Lista os marcadores que um modelo usa. Serve para conferir cobertura. */

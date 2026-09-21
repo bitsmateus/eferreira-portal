@@ -1,12 +1,17 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { TipoPessoa } from '@prisma/client'
+import {
+  NaturezaDoHonorarioPersonalizado,
+  TipoDeObjeto,
+  TipoPessoa,
+} from '@prisma/client'
 
 import {
   MODELOS,
   aplicarPartes,
-  condicoesDePagamento,
+  arquivoDoObjeto,
+  arquivosDosHonorarios,
   marcadoresDoModelo,
   preencherModelo,
   valoresDoDocumento,
@@ -26,8 +31,20 @@ function lerArquivo(nome: string): string {
 function lerModelo(
   nome: string,
   tipoPessoa: TipoPessoa = TipoPessoa.FISICA,
+  casoDoContrato: CasoParaDocumento = caso,
 ): string {
   const modelo = lerArquivo(nome)
+
+  if (nome === MODELOS.CONTRATO) {
+    const arquivo = arquivoDoObjeto(casoDoContrato.tipoDeObjeto)
+    return aplicarPartes(modelo, {
+      objeto: arquivo === null ? '' : lerArquivo(arquivo),
+      honorarios: arquivosDosHonorarios(casoDoContrato)
+        .map((parte) => lerArquivo(parte))
+        .join('\n'),
+    })
+  }
+
   if (nome !== MODELOS.PROCURACAO) return modelo
 
   const sufixo = tipoPessoa === TipoPessoa.FISICA ? 'pf' : 'pj'
@@ -73,15 +90,53 @@ const socio = {
   qualificacao: 'sócio',
 }
 
+const SEM_MODALIDADES: CasoParaDocumento = {
+  parcelas: [],
+  honorariosEmCentavos: null,
+  percentualExito: null,
+  percentualProveitoEconomico: null,
+  referenciaDaEconomia: null,
+  prazoDePagamentoDaEconomia: null,
+  tipoDeObjeto: TipoDeObjeto.CIVEL,
+  descricaoDoObjeto: 'Ação de cobrança contra Construtora Exemplo Ltda, processo 0000000-00.2026.8.26.0000.',
+  honorariosPersonalizados: false,
+  personalizadoServicos: null,
+  personalizadoValorOuPercentual: null,
+  personalizadoBaseDeCalculo: null,
+  personalizadoCondicaoDeExigibilidade: null,
+  personalizadoPagamento: null,
+  personalizadoNatureza: null,
+  personalizadoRelacaoComAsDemais: null,
+  personalizadoCondicoesEspecificas: null,
+}
+
+/** Só honorários fixos, em três parcelas — o caso comum. */
 const caso: CasoParaDocumento = {
-  assunto: 'Ação de cobrança',
-  parteContraria: 'Construtora Exemplo Ltda',
+  ...SEM_MODALIDADES,
   honorariosEmCentavos: 175000,
   parcelas: [
     { numero: 1, valorEmCentavos: 50000, vencimento: new Date('2026-10-09T12:00:00Z') },
     { numero: 2, valorEmCentavos: 50000, vencimento: new Date('2026-11-09T12:00:00Z') },
     { numero: 3, valorEmCentavos: 75000, vencimento: new Date('2026-12-09T12:00:00Z') },
   ],
+}
+
+/** As quatro modalidades juntas, tudo preenchido. */
+const casoCompleto: CasoParaDocumento = {
+  ...caso,
+  percentualExito: 20,
+  percentualProveitoEconomico: 15,
+  referenciaDaEconomia: 'a dívida de R$ 80.000,00 cobrada pelo Banco Exemplo, na data-base de 01/09/2026',
+  prazoDePagamentoDaEconomia: 30,
+  honorariosPersonalizados: true,
+  personalizadoServicos: 'a elaboração de parecer',
+  personalizadoValorOuPercentual: 'R$ 3.000,00',
+  personalizadoBaseDeCalculo: 'não se aplica',
+  personalizadoCondicaoDeExigibilidade: 'a entrega do parecer',
+  personalizadoPagamento: 'à vista, em 10/10/2026',
+  personalizadoNatureza: NaturezaDoHonorarioPersonalizado.CUMULATIVA,
+  personalizadoRelacaoComAsDemais: 'os honorários fixos e de êxito',
+  personalizadoCondicoesEspecificas: 'sem abatimentos',
 }
 
 const emitidoEm = new Date('2026-09-14T12:00:00Z')
@@ -127,7 +182,8 @@ describe('preencherModelo', () => {
     expect(resultado.html).not.toMatch(/\{\{/)
     expect(resultado.html).toContain('R$ 1.750,00')
     expect(resultado.html).toContain('mil setecentos e cinquenta reais')
-    expect(resultado.html).toContain('contra Construtora Exemplo Ltda')
+    expect(resultado.html).toContain('Ação de cobrança contra Construtora Exemplo Ltda')
+    expect(resultado.html).toContain('mediante 3(três) parcelas')
   })
 
   // O ponto do exercício: documento incompleto NÃO é gerado em branco.
@@ -195,10 +251,27 @@ describe('os modelos e o dicionário estão em dia', () => {
   // Marcador novo no HTML sem valor correspondente quebraria a geração só na
   // hora do uso. Este teste falha antes.
   it('todo marcador dos modelos tem valor, nas duas variantes', () => {
-    const valores = valoresDoDocumento(empresa, socio, caso, emitidoEm)
+    const valores = valoresDoDocumento(empresa, socio, casoCompleto, emitidoEm)
+
+    // O contrato é conferido com as quatro modalidades juntas e com cada uma
+    // das cinco variações de objeto: marcador sem valor em qualquer delas só
+    // apareceria na hora de gerar aquele contrato.
+    const contratos = Object.values(TipoDeObjeto).map(
+      (tipo) =>
+        [
+          `contrato (objeto ${tipo})`,
+          lerModelo(MODELOS.CONTRATO, TipoPessoa.FISICA, {
+            ...casoCompleto,
+            tipoDeObjeto: tipo,
+          }),
+        ] as const,
+    )
 
     const montados = [
-      ...Object.values(MODELOS).map((modelo) => [modelo, lerModelo(modelo)] as const),
+      ...Object.values(MODELOS)
+        .filter((modelo) => modelo !== MODELOS.CONTRATO)
+        .map((modelo) => [modelo, lerModelo(modelo)] as const),
+      ...contratos,
       [
         'procuracao (jurídica)',
         lerModelo(MODELOS.PROCURACAO, TipoPessoa.JURIDICA),
@@ -219,6 +292,14 @@ describe('os modelos e o dicionário estão em dia', () => {
   it('nenhum modelo montado deixa parte por encaixar', () => {
     for (const tipoPessoa of [TipoPessoa.FISICA, TipoPessoa.JURIDICA]) {
       expect(lerModelo(MODELOS.PROCURACAO, tipoPessoa)).not.toContain('{{>')
+    }
+
+    for (const tipo of Object.values(TipoDeObjeto)) {
+      const contrato = lerModelo(MODELOS.CONTRATO, TipoPessoa.FISICA, {
+        ...casoCompleto,
+        tipoDeObjeto: tipo,
+      })
+      expect(contrato, `contrato ${tipo}`).not.toContain('{{>')
     }
   })
 
@@ -244,60 +325,3 @@ describe('os modelos e o dicionário estão em dia', () => {
   })
 })
 
-describe('condicoesDePagamento', () => {
-  it('escreve a cláusula como no modelo do escritório', () => {
-    expect(condicoesDePagamento(caso)).toBe(
-      '3(três) parcelas com a primeira de R$ 500,00 (quinhentos reais) para o dia 09/10/2026, ' +
-        'a segunda de R$ 500,00 (quinhentos reais) para o dia 09/11/2026, ' +
-        'a terceira de R$ 750,00 (setecentos e cinquenta reais) para o dia 09/12/2026.',
-    )
-  })
-
-  it('trata parcela única', () => {
-    expect(
-      condicoesDePagamento({
-        honorariosEmCentavos: 50000,
-        parcelas: [
-          {
-            numero: 1,
-            valorEmCentavos: 50000,
-            vencimento: new Date('2026-10-09T12:00:00Z'),
-          },
-        ],
-      }),
-    ).toBe('parcela única de R$ 500,00 (quinhentos reais) para o dia 09/10/2026.')
-  })
-
-  it('sem parcela cadastrada, diz à vista', () => {
-    expect(
-      condicoesDePagamento({ honorariosEmCentavos: 50000, parcelas: [] }),
-    ).toBe('à vista.')
-  })
-
-  it('ordena pelas parcelas, não pela ordem que chegaram', () => {
-    const foraDeOrdem = condicoesDePagamento({
-      honorariosEmCentavos: 100000,
-      parcelas: [
-        { numero: 2, valorEmCentavos: 50000, vencimento: new Date('2026-11-09T12:00:00Z') },
-        { numero: 1, valorEmCentavos: 50000, vencimento: new Date('2026-10-09T12:00:00Z') },
-      ],
-    })
-
-    expect(foraDeOrdem).toContain('a primeira de R$ 500,00 (quinhentos reais) para o dia 09/10/2026')
-  })
-})
-
-describe('caso sem parte contrária', () => {
-  it('fecha a frase do objeto sem deixar "contra" solto', () => {
-    const resultado = preencherModelo(
-      lerModelo(MODELOS.CONTRATO),
-      valoresDoDocumento(cliente, null, { ...caso, parteContraria: null }, emitidoEm),
-    )
-
-    expect(resultado.ok).toBe(true)
-    if (!resultado.ok) return
-
-    expect(resultado.html).not.toMatch(/contra\s*,/)
-    expect(resultado.html).not.toContain('contra </span>')
-  })
-})

@@ -44,6 +44,22 @@ export default async function PaginaDeEdicaoDeCaso({
       caso.percentualProveitoEconomico === null
         ? ''
         : String(caso.percentualProveitoEconomico),
+    referenciaDaEconomia: caso.referenciaDaEconomia ?? '',
+    prazoDePagamentoDaEconomia:
+      caso.prazoDePagamentoDaEconomia === null
+        ? ''
+        : String(caso.prazoDePagamentoDaEconomia),
+    tipoDeObjeto: caso.tipoDeObjeto ?? '',
+    descricaoDoObjeto: caso.descricaoDoObjeto ?? '',
+    honorariosPersonalizados: caso.honorariosPersonalizados,
+    personalizadoServicos: caso.personalizadoServicos ?? '',
+    personalizadoValorOuPercentual: caso.personalizadoValorOuPercentual ?? '',
+    personalizadoBaseDeCalculo: caso.personalizadoBaseDeCalculo ?? '',
+    personalizadoCondicaoDeExigibilidade: caso.personalizadoCondicaoDeExigibilidade ?? '',
+    personalizadoPagamento: caso.personalizadoPagamento ?? '',
+    personalizadoNatureza: caso.personalizadoNatureza ?? '',
+    personalizadoRelacaoComAsDemais: caso.personalizadoRelacaoComAsDemais ?? '',
+    personalizadoCondicoesEspecificas: caso.personalizadoCondicoesEspecificas ?? '',
     parcelas: caso.parcelas.map((parcela) => ({
       valor: formatarReais(parcela.valorEmCentavos).replace('R$ ', ''),
       vencimento: dataParaDiaCivil(parcela.vencimento),

@@ -11,10 +11,12 @@
 
 import {
   AcaoAuditoria,
+  NaturezaDoHonorarioPersonalizado,
   PerfilUsuario,
   type Prisma,
   SituacaoCaso,
   SituacaoUsuario,
+  TipoDeObjeto,
 } from '@prisma/client'
 import { z } from 'zod'
 
@@ -130,6 +132,47 @@ function percentualDeHonorario(rotulo: string) {
 }
 
 /**
+ * Texto livre e longo — a descrição do objeto e os campos dos honorários
+ * personalizados. É texto que o escritório escreve caso a caso e que entra
+ * tal qual no contrato, por isso o teto é bem maior que o de `opcional`.
+ */
+const textoLongo = z
+  .string()
+  .trim()
+  .max(2000, 'Texto longo demais para este campo (máximo de 2.000 caracteres).')
+  .transform((valor) => (valor === '' ? null : valor))
+
+/** "Vencerão em N dias": inteiro de 1 a 365, em branco = ainda não informado. */
+const prazoEmDias = z
+  .string()
+  .trim()
+  .transform((valor, contexto) => {
+    if (valor === '') return null
+
+    const numero = Number(valor)
+    if (!Number.isInteger(numero) || numero < 1 || numero > 365) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Informe o prazo em dias, de 1 a 365.',
+      })
+      return z.NEVER
+    }
+
+    return numero
+  })
+
+/** Lista fechada vinda de um `<select>`; em branco = ainda não escolhido. */
+function escolhaOpcional<E extends Record<string, string>>(
+  valores: E,
+  mensagem: string,
+) {
+  return z.preprocess(
+    (valor) => (valor === '' || valor === undefined ? null : valor),
+    z.nativeEnum(valores, { errorMap: () => ({ message: mensagem }) }).nullable(),
+  )
+}
+
+/**
  * Quantas linhas de parcela o formulário mostra. Linhas fixas em vez de um
  * botão "adicionar": o contrato do escritório nunca passou de três parcelas, e
  * assim o formulário funciona sem JavaScript.
@@ -193,6 +236,23 @@ export const esquemaDeCaso = z.object({
   percentualProveitoEconomico: percentualDeHonorario(
     'o percentual sobre o proveito econômico',
   ),
+  referenciaDaEconomia: textoLongo,
+  prazoDePagamentoDaEconomia: prazoEmDias,
+  tipoDeObjeto: escolhaOpcional(TipoDeObjeto, 'Tipo de objeto inválido.'),
+  descricaoDoObjeto: textoLongo,
+  // Caixinha do formulário: marcada chega como "on", desmarcada nem chega.
+  honorariosPersonalizados: z.string().transform((valor) => valor === 'on'),
+  personalizadoServicos: textoLongo,
+  personalizadoValorOuPercentual: textoLongo,
+  personalizadoBaseDeCalculo: textoLongo,
+  personalizadoCondicaoDeExigibilidade: textoLongo,
+  personalizadoPagamento: textoLongo,
+  personalizadoNatureza: escolhaOpcional(
+    NaturezaDoHonorarioPersonalizado,
+    'Escolha se a remuneração é cumulativa, substitutiva ou compensável.',
+  ),
+  personalizadoRelacaoComAsDemais: textoLongo,
+  personalizadoCondicoesEspecificas: textoLongo,
   numeroProcesso: numeroDoProcesso,
   assunto: z
     .string()
@@ -219,12 +279,42 @@ export const esquemaDeCaso = z.object({
 export type DadosDeCaso = z.output<typeof esquemaDeCaso>
 export type CamposDeCaso = Record<keyof z.input<typeof esquemaDeCaso>, string>
 
+/**
+ * Modalidade desligada não deixa resto para trás.
+ *
+ * Quem desmarca "honorários personalizados" ou apaga o percentual do proveito
+ * econômico não quer que o texto antigo continue guardado no caso — ele
+ * voltaria a aparecer se alguém religasse a modalidade, e num contrato isso é
+ * cláusula com dado de outra conversa.
+ */
+function semRestoDeModalidadeDesligada(dados: DadosDeCaso): DadosDeCaso {
+  const limpo = { ...dados }
+
+  if (limpo.percentualProveitoEconomico === null) {
+    limpo.referenciaDaEconomia = null
+    limpo.prazoDePagamentoDaEconomia = null
+  }
+
+  if (!limpo.honorariosPersonalizados) {
+    limpo.personalizadoServicos = null
+    limpo.personalizadoValorOuPercentual = null
+    limpo.personalizadoBaseDeCalculo = null
+    limpo.personalizadoCondicaoDeExigibilidade = null
+    limpo.personalizadoPagamento = null
+    limpo.personalizadoNatureza = null
+    limpo.personalizadoRelacaoComAsDemais = null
+    limpo.personalizadoCondicoesEspecificas = null
+  }
+
+  return limpo
+}
+
 export function validarCaso(campos: CamposDeCaso): ResultadoDeFormulario<DadosDeCaso> {
   const conferido = esquemaDeCaso.safeParse(campos)
   if (!conferido.success) {
     return { ok: false, erros: errosPorCampo(conferido.error) }
   }
-  return { ok: true, dados: conferido.data }
+  return { ok: true, dados: semRestoDeModalidadeDesligada(conferido.data) }
 }
 
 // ---------------------------------------------------------------------------

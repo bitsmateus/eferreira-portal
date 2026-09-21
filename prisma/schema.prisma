@@ -51,6 +51,26 @@ enum SituacaoCaso {
   ARQUIVADO
 }
 
+/// Qual das cinco variações da cláusula de OBJETO do contrato vale para o caso —
+/// "Objeto do contrato.docx", enviado pelo escritório em 21/09/2026. O texto de
+/// cada uma vive em `src/modelos/contrato-objeto-*.html`.
+enum TipoDeObjeto {
+  CONSUMIDOR_PLANO_DE_SAUDE
+  TRABALHISTA
+  CIVEL
+  REVISIONAL
+  PERSONALIZADO
+}
+
+/// Como a remuneração personalizada se relaciona com as demais modalidades —
+/// o trecho "[CUMULATIVA, SUBSTITUTIVA OU COMPENSAVEL]" da cláusula de
+/// honorários personalizados.
+enum NaturezaDoHonorarioPersonalizado {
+  CUMULATIVA
+  SUBSTITUTIVA
+  COMPENSAVEL
+}
+
 /// Onde um documento está no caminho da assinatura eletrônica (D4Sign).
 ///
 /// NO_COFRE existe por causa de uma falha possível e feia: o PDF sobe para o
@@ -159,13 +179,13 @@ model Usuario {
   credencialDaApi    CredencialApi?  @relation("UsuarioDaCredencial")
   credenciaisCriadas CredencialApi[] @relation("CredencialCriadaPor")
 
-  clientesCadastrados Cliente[]             @relation("ClienteCriadoPor")
-  casosResponsavel    Caso[]                @relation("CasoResponsavel")
-  andamentosLancados  Andamento[]           @relation("AndamentoAutor")
-  documentosEnviados  Documento[]           @relation("DocumentoEnviadoPor")
-  assinaturasPedidas  EnvioParaAssinatura[] @relation("EnvioPedidoPor")
-  partesCadastradas   Parte[]               @relation("ParteCriadaPor")
-  registrosAuditoria  Auditoria[]
+  clientesCadastrados        Cliente[]                   @relation("ClienteCriadoPor")
+  casosResponsavel           Caso[]                      @relation("CasoResponsavel")
+  andamentosLancados         Andamento[]                 @relation("AndamentoAutor")
+  documentosEnviados         Documento[]                 @relation("DocumentoEnviadoPor")
+  assinaturasPedidas         EnvioParaAssinatura[]       @relation("EnvioPedidoPor")
+  partesCadastradas          Parte[]                     @relation("ParteCriadaPor")
+  registrosAuditoria         Auditoria[]
   tokensDeRedefinicaoDeSenha TokenDeRedefinicaoDeSenha[]
 
   @@index([perfil])
@@ -396,17 +416,42 @@ model Caso {
   honorariosEmCentavos Int?
 
   /// Honorários de êxito: percentual de 10 a 30, devido só ao final da
-  /// demanda, sem entrada nem parcela — pedido do escritório em 17/09/2026.
-  ///
-  /// ATENÇÃO: o modelo do contrato (cláusula 2ª) ainda só descreve o valor
-  /// fixo acima. `montarPrevia`, em src/lib/geracao.ts, recusa gerar CONTRATO
-  /// para um caso com este campo preenchido até o escritório mandar o texto
-  /// da cláusula — regra 10 proíbe inventar cláusula nova. Ver CLAUDE.md.
+  /// demanda, sem entrada nem parcela — pedido do escritório em 17/09/2026. O
+  /// texto da cláusula chegou em 21/09/2026 ("honorarios do contrato.docx").
   percentualExito Int?
 
-  /// Percentual sobre o proveito econômico obtido — de 10 a 30, mesma
-  /// pendência de texto contratual do campo acima.
+  /// Percentual sobre o proveito econômico obtido — de 10 a 30. É o bloco
+  /// "honorários proveito econômico" do escritório, que além do percentual
+  /// pede os dois campos abaixo.
   percentualProveitoEconomico Int?
+
+  /// "[IDENTIFICACAO_DA_OBRIGACAO, VALOR_DISCUTIDO_E_DATA_BASE]" — texto livre
+  /// que o escritório escreve caso a caso: qual obrigação, qual valor
+  /// discutido e a data-base da comparação.
+  referenciaDaEconomia String? @db.Text
+
+  /// "[PRAZO_PAGAMENTO]" — em dias, depois da apuração da economia.
+  prazoDePagamentoDaEconomia Int?
+
+  /// Qual das cinco variações da cláusula de objeto o contrato usa, e a
+  /// descrição da demanda que entra no lugar de "[DESCREVER A DEMANDA...]".
+  /// Nulos em caso antigo: o contrato só sai com os dois preenchidos.
+  tipoDeObjeto      TipoDeObjeto?
+  descricaoDoObjeto String?       @db.Text
+
+  /// Honorários personalizados (bloco 4). Quando verdadeiro, os oito campos
+  /// abaixo preenchem os marcadores da cláusula. Texto livre porque o
+  /// escritório descreve, caso a caso, uma remuneração que não cabe nas outras
+  /// três — o contrato só sai com todos preenchidos.
+  honorariosPersonalizados             Boolean                           @default(false)
+  personalizadoServicos                String?                           @db.Text
+  personalizadoValorOuPercentual       String?                           @db.Text
+  personalizadoBaseDeCalculo           String?                           @db.Text
+  personalizadoCondicaoDeExigibilidade String?                           @db.Text
+  personalizadoPagamento               String?                           @db.Text
+  personalizadoNatureza                NaturezaDoHonorarioPersonalizado?
+  personalizadoRelacaoComAsDemais      String?                           @db.Text
+  personalizadoCondicoesEspecificas    String?                           @db.Text
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -525,7 +570,7 @@ model Documento {
   origem       OrigemDoDocumento @default(ANEXADO)
   nome         String
   /// Chave no object storage. Opaca, gerada pelo servidor.
-  chaveArquivo String        @unique
+  chaveArquivo String            @unique
   tipoConteudo String
   tamanhoBytes Int
 

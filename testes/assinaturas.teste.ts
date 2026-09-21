@@ -79,9 +79,9 @@ describe('quem assina cada documento', () => {
     expect(partesQueAssinam(TipoDocumento.ANEXO, PESSOA_FISICA, null)).toEqual([])
   })
 
-  // As testemunhas do contrato ficam no papel — decisão de 14/09/2026. Se um
-  // dia entrarem, este teste falha e obriga quem mexer a reler a decisão.
-  it('não inclui testemunhas', () => {
+  // As testemunhas NÃO saem de regra fixa: o escritório escolhe na tela do
+  // envio (21/09/2026). Aqui só as duas partes que sempre assinam o contrato.
+  it('a regra fixa do contrato é só cliente e escritório', () => {
     const partes = partesQueAssinam(TipoDocumento.CONTRATO, PESSOA_FISICA, null)
     expect(partes).toHaveLength(2)
   })

@@ -39,6 +39,12 @@ function Botao({
  * partes já cadastradas (parte contrária, testemunha, advogado externo) e/ou
  * gente digitada na hora — antes de qualquer coisa ser mandada.
  *
+ * O CONTRATO usa o mesmo formulário no modo `contrato` (21/09/2026): cliente e
+ * escritório já estão na lista e continuam automáticos; aqui só se escolhem as
+ * TESTEMUNHAS, que o escritório mantém na assinatura eletrônica do contrato de
+ * honorários. Nesse modo o papel é sempre testemunha (o servidor também impõe
+ * isso) e não escolher nenhuma é permitido.
+ *
  * Dois passos, igual ao envio normal: "Revisar" monta a lista final e mostra
  * quantos créditos restam, sem gastar nada; só "Confirmar o envio" manda de
  * verdade. A lista de signatários viaja entre os dois passos como JSON num
@@ -48,13 +54,21 @@ function Botao({
 export function FormularioDeAnexo({
   documentoId,
   partesCadastradas,
+  contrato,
 }: {
   documentoId: string
   partesCadastradas: readonly LinhaDeParte[]
+  /** Presente só no contrato: as partes que assinam sem escolha. */
+  contrato?: { partesFixas: readonly ParteQueAssina[] }
 }) {
+  const soTestemunhas = contrato !== undefined
+  const cadastradas = soTestemunhas
+    ? partesCadastradas.filter((parte) => parte.papel === PapelDaParte.TESTEMUNHA)
+    : partesCadastradas
+  const papelInicial = soTestemunhas ? PapelDaParte.TESTEMUNHA : PapelDaParte.OUTROS
   const [selecionadas, setSelecionadas] = useState<ReadonlySet<string>>(new Set())
   const [extras, setExtras] = useState<Extra[]>([])
-  const [novo, setNovo] = useState<Extra>({ nome: '', email: '', papel: PapelDaParte.OUTROS })
+  const [novo, setNovo] = useState<Extra>({ nome: '', email: '', papel: papelInicial })
 
   const [preparo, revisar] = useActionState(
     prepararEnvioDeAnexo.bind(null, documentoId),
@@ -67,7 +81,7 @@ export function FormularioDeAnexo({
   const [confirmando, setConfirmando] = useState(false)
 
   const escolhidos: SignatarioEscolhido[] = [
-    ...partesCadastradas
+    ...cadastradas
       .filter((parte) => selecionadas.has(parte.id))
       .map((parte) => ({ nome: parte.nome, email: parte.email, papel: parte.papel })),
     ...extras,
@@ -86,7 +100,7 @@ export function FormularioDeAnexo({
   function adicionarExtra(): void {
     if (novo.nome.trim() === '' || novo.email.trim() === '') return
     setExtras((atual) => [...atual, novo])
-    setNovo({ nome: '', email: '', papel: PapelDaParte.OUTROS })
+    setNovo({ nome: '', email: '', papel: papelInicial })
   }
 
   function removerExtra(indice: number): void {
@@ -191,11 +205,39 @@ export function FormularioDeAnexo({
         </div>
       )}
 
-      {partesCadastradas.length > 0 && (
+      {contrato !== undefined && (
         <div className="mb-[15px]">
-          <span className="campo-rotulo">Do cadastro de partes</span>
+          <span className="campo-rotulo">Assinam sempre</span>
+          <ul>
+            {contrato.partesFixas.map((parte) => (
+              <li
+                key={`${parte.papel}-${parte.email ?? ''}`}
+                className="flex flex-wrap items-baseline gap-x-2 border-b border-prata-100 py-2 last:border-b-0"
+              >
+                <span className="text-[13px] font-medium">{parte.nome}</span>
+                <span className="text-[11.5px] text-texto-3">
+                  {ROTULO_DO_PAPEL[parte.papel]}
+                </span>
+                <span className="mono ml-auto text-[12.5px] text-texto-2">
+                  {parte.email ?? '— sem e-mail —'}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="dica">
+            Testemunhas são opcionais. O contrato tem duas linhas de testemunha; quem
+            você escolher abaixo também recebe o e-mail de assinatura.
+          </p>
+        </div>
+      )}
+
+      {cadastradas.length > 0 && (
+        <div className="mb-[15px]">
+          <span className="campo-rotulo">
+            {soTestemunhas ? 'Testemunhas do cadastro de partes' : 'Do cadastro de partes'}
+          </span>
           <div className="rounded-md border border-borda">
-            {partesCadastradas.map((parte) => (
+            {cadastradas.map((parte) => (
               <label
                 key={parte.id}
                 className="flex items-center gap-2.5 border-b border-prata-100 px-3 py-2 text-[13px] last:border-b-0"
@@ -219,7 +261,9 @@ export function FormularioDeAnexo({
       )}
 
       <div className="mb-[15px]">
-        <span className="campo-rotulo">Adicionar alguém na hora</span>
+        <span className="campo-rotulo">
+          {soTestemunhas ? 'Adicionar testemunha na hora' : 'Adicionar alguém na hora'}
+        </span>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
             placeholder="Nome"
@@ -234,19 +278,21 @@ export function FormularioDeAnexo({
             value={novo.email}
             onChange={(evento) => setNovo((atual) => ({ ...atual, email: evento.target.value }))}
           />
-          <select
-            className="campo-entrada sm:w-[160px]"
-            value={novo.papel}
-            onChange={(evento) =>
-              setNovo((atual) => ({ ...atual, papel: evento.target.value as PapelDaParte }))
-            }
-          >
-            {Object.values(PapelDaParte).map((papel) => (
-              <option key={papel} value={papel}>
-                {ROTULO_DO_PAPEL_DA_PARTE[papel]}
-              </option>
-            ))}
-          </select>
+          {!soTestemunhas && (
+            <select
+              className="campo-entrada sm:w-[160px]"
+              value={novo.papel}
+              onChange={(evento) =>
+                setNovo((atual) => ({ ...atual, papel: evento.target.value as PapelDaParte }))
+              }
+            >
+              {Object.values(PapelDaParte).map((papel) => (
+                <option key={papel} value={papel}>
+                  {ROTULO_DO_PAPEL_DA_PARTE[papel]}
+                </option>
+              ))}
+            </select>
+          )}
           <button type="button" onClick={adicionarExtra} className="botao botao-secundario">
             Adicionar
           </button>

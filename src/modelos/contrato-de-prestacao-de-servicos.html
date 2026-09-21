@@ -10,6 +10,21 @@
   como 9ª — "Autorização para recebimento" e "Foro". Corrigir seria reescrever
   texto jurídico por conta própria, o que a regra 10 proíbe. Está registrado
   em docs/modelos-de-documento.md para o escritório resolver.
+
+  OBJETO E HONORÁRIOS VIERAM EM ARQUIVOS NOVOS (21/09/2026). A Cláusula
+  Primeira (objeto) tem cinco variações e a Terceira (honorários) quatro
+  blocos combináveis mais um bloco comum — cada um em seu arquivo
+  `contrato-objeto-*.html` / `contrato-honorarios-*.html`, encaixados abaixo
+  por `{{>objeto}}` e `{{>honorarios}}` (a escolha está em `src/lib/modelos.ts`).
+  Os títulos e a numeração "Primeira" e "Terceira" são os do escritório. A
+  antiga Cláusula 2ª (honorários, com conta bancária e Pix) saiu inteira: o
+  texto novo a substitui.
+
+  PENDENTE COM O ESCRITÓRIO: as demais cláusulas abaixo (3ª Despesas em
+  diante) continuam com o texto e a numeração de 14/09/2026, e por isso o
+  contrato hoje tem dois "3" — "Terceira" (honorários) e "3ª" (Despesas). O
+  escritório vai mandar o contrato completo com a numeração final; até lá NÃO
+  se renumera nada aqui (regra 10).
 -->
 <h1>Contrato de Prestação de Serviços Advocatícios</h1>
 
@@ -38,32 +53,11 @@
   Serviços Advocatícios, regido pelas cláusulas e condições seguintes:
 </p>
 
-<h2>Cláusula 1ª – Objeto</h2>
-<p>
-  O presente contrato tem por objeto a prestação de serviços advocatícios pelo
-  CONTRATADO em favor do CONTRATANTE para propositura, acompanhamento e
-  conclusão de <span class="maiusculas">{{caso.assunto}}</span>{{caso.contraParteContraria}}, abrangendo todas as fases processuais,
-  inclusive recursos, até o trânsito em julgado e cumprimento da decisão
-  judicial.
-</p>
+<h2>Cláusula Primeira – Do Objeto</h2>
+{{>objeto}}
 
-<h2>Cláusula 2ª – Honorários Contratuais</h2>
-<p class="item">
-  2.1. Os honorários advocatícios contratados serão de
-  {{honorarios.valorFormatado}} ({{honorarios.valorPorExtenso}}) que serão
-  pagos pelo CONTRATANTE da seguinte forma: {{honorarios.condicoesDePagamento}}
-</p>
-<p class="item">
-  2.2. O pagamento dos honorários fica condicionado deve ser realizado na conta
-  do escritorio {{escritorio.banco}}, Agencia: {{escritorio.agencia}}, conta:
-  {{escritorio.conta}}, Chave Pix: {{escritorio.chavePix}}, Razão social:
-  {{escritorio.razaoSocialRecebedora}}.
-</p>
-<p class="item">
-  2.3. Caso não haja proveito econômico, não será devido qualquer valor a
-  título de honorários contratuais, sem prejuízo do reembolso das despesas
-  processuais eventualmente adiantadas pelo CONTRATADO.
-</p>
+<h2>Cláusula Terceira — Dos Honorários Contratuais</h2>
+{{>honorarios}}
 
 <h2>Cláusula 3ª – Despesas Processuais</h2>
 <p class="item">

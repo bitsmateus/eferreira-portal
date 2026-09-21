@@ -38,6 +38,22 @@ function lerCampos(dados: FormData): CamposDeCaso {
     honorarios: texto(dados, 'honorarios'),
     percentualExito: texto(dados, 'percentualExito'),
     percentualProveitoEconomico: texto(dados, 'percentualProveitoEconomico'),
+    referenciaDaEconomia: texto(dados, 'referenciaDaEconomia'),
+    prazoDePagamentoDaEconomia: texto(dados, 'prazoDePagamentoDaEconomia'),
+    tipoDeObjeto: texto(dados, 'tipoDeObjeto'),
+    descricaoDoObjeto: texto(dados, 'descricaoDoObjeto'),
+    honorariosPersonalizados: texto(dados, 'honorariosPersonalizados'),
+    personalizadoServicos: texto(dados, 'personalizadoServicos'),
+    personalizadoValorOuPercentual: texto(dados, 'personalizadoValorOuPercentual'),
+    personalizadoBaseDeCalculo: texto(dados, 'personalizadoBaseDeCalculo'),
+    personalizadoCondicaoDeExigibilidade: texto(
+      dados,
+      'personalizadoCondicaoDeExigibilidade',
+    ),
+    personalizadoPagamento: texto(dados, 'personalizadoPagamento'),
+    personalizadoNatureza: texto(dados, 'personalizadoNatureza'),
+    personalizadoRelacaoComAsDemais: texto(dados, 'personalizadoRelacaoComAsDemais'),
+    personalizadoCondicoesEspecificas: texto(dados, 'personalizadoCondicoesEspecificas'),
   }
 }
 

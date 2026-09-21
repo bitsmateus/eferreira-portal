@@ -3,12 +3,21 @@
 import Link from 'next/link'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { SituacaoCaso } from '@prisma/client'
+import {
+  NaturezaDoHonorarioPersonalizado,
+  SituacaoCaso,
+  TipoDeObjeto,
+} from '@prisma/client'
 
 import { ROTULO_DA_SITUACAO } from '@/componentes/situacoes'
 import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { LINHAS_DE_PARCELA } from '@/lib/casos'
+import {
+  DICA_DA_DESCRICAO_DO_OBJETO,
+  ROTULO_DA_NATUREZA_DO_PERSONALIZADO,
+  ROTULO_DO_TIPO_DE_OBJETO,
+} from '@/lib/rotulos-do-contrato'
 import type { EstadoDoCaso } from './acoes'
 
 export type ValoresDoCaso = {
@@ -21,6 +30,19 @@ export type ValoresDoCaso = {
   honorarios: string
   percentualExito: string
   percentualProveitoEconomico: string
+  referenciaDaEconomia: string
+  prazoDePagamentoDaEconomia: string
+  tipoDeObjeto: string
+  descricaoDoObjeto: string
+  honorariosPersonalizados: boolean
+  personalizadoServicos: string
+  personalizadoValorOuPercentual: string
+  personalizadoBaseDeCalculo: string
+  personalizadoCondicaoDeExigibilidade: string
+  personalizadoPagamento: string
+  personalizadoNatureza: string
+  personalizadoRelacaoComAsDemais: string
+  personalizadoCondicoesEspecificas: string
   parcelas: readonly { valor: string; vencimento: string }[]
 }
 
@@ -34,6 +56,19 @@ export const VALORES_VAZIOS: ValoresDoCaso = {
   honorarios: '',
   percentualExito: '',
   percentualProveitoEconomico: '',
+  referenciaDaEconomia: '',
+  prazoDePagamentoDaEconomia: '',
+  tipoDeObjeto: '',
+  descricaoDoObjeto: '',
+  honorariosPersonalizados: false,
+  personalizadoServicos: '',
+  personalizadoValorOuPercentual: '',
+  personalizadoBaseDeCalculo: '',
+  personalizadoCondicaoDeExigibilidade: '',
+  personalizadoPagamento: '',
+  personalizadoNatureza: '',
+  personalizadoRelacaoComAsDemais: '',
+  personalizadoCondicoesEspecificas: '',
   parcelas: [],
 }
 
@@ -137,7 +172,21 @@ export function FormularioDeCaso({
     honorarios: valores.honorarios,
     percentualExito: valores.percentualExito,
     percentualProveitoEconomico: valores.percentualProveitoEconomico,
+    referenciaDaEconomia: valores.referenciaDaEconomia,
+    prazoDePagamentoDaEconomia: valores.prazoDePagamentoDaEconomia,
+    tipoDeObjeto: valores.tipoDeObjeto,
+    descricaoDoObjeto: valores.descricaoDoObjeto,
+    personalizadoServicos: valores.personalizadoServicos,
+    personalizadoValorOuPercentual: valores.personalizadoValorOuPercentual,
+    personalizadoBaseDeCalculo: valores.personalizadoBaseDeCalculo,
+    personalizadoCondicaoDeExigibilidade: valores.personalizadoCondicaoDeExigibilidade,
+    personalizadoPagamento: valores.personalizadoPagamento,
+    personalizadoNatureza: valores.personalizadoNatureza,
+    personalizadoRelacaoComAsDemais: valores.personalizadoRelacaoComAsDemais,
+    personalizadoCondicoesEspecificas: valores.personalizadoCondicoesEspecificas,
   })
+
+  const [personalizado, setPersonalizado] = useState(valores.honorariosPersonalizados)
 
   // Linhas fixas em vez de "adicionar parcela": sem JavaScript extra, e o
   // contrato do escritorio nunca passou de tres parcelas.
@@ -356,18 +405,69 @@ export function FormularioDeCaso({
 
             <div className="my-[22px] border-t border-borda" />
 
+            <h2 className="mb-1 text-[14px] font-semibold">Objeto do contrato</h2>
+            <p className="mb-4 text-[12px] text-texto-2">
+              Escolha a variação da cláusula de objeto que vale para este caso. O
+              texto de cada uma é o do escritório; o que você escreve na descrição
+              entra no contrato no lugar indicado. Sem isso o contrato não é gerado.
+            </p>
+
+            <Campo
+              nome="tipoDeObjeto"
+              rotulo="Tipo de objeto"
+              erro={erros['tipoDeObjeto']}
+            >
+              <select
+                id="tipoDeObjeto"
+                name="tipoDeObjeto"
+                className="campo-entrada"
+                value={campos.tipoDeObjeto}
+                onChange={(evento) => definir('tipoDeObjeto', evento.target.value)}
+              >
+                <option value="">Escolha…</option>
+                {Object.values(TipoDeObjeto).map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {ROTULO_DO_TIPO_DE_OBJETO[tipo]}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+
+            <Campo
+              nome="descricaoDoObjeto"
+              rotulo="Descrição do objeto"
+              erro={erros['descricaoDoObjeto']}
+              dica={
+                campos.tipoDeObjeto === ''
+                  ? 'Escolha o tipo acima para ver o que descrever.'
+                  : DICA_DA_DESCRICAO_DO_OBJETO[campos.tipoDeObjeto as TipoDeObjeto]
+              }
+            >
+              <textarea
+                id="descricaoDoObjeto"
+                name="descricaoDoObjeto"
+                rows={4}
+                className="campo-entrada"
+                value={campos.descricaoDoObjeto}
+                onChange={(evento) => definir('descricaoDoObjeto', evento.target.value)}
+              />
+            </Campo>
+
+            <div className="my-[22px] border-t border-borda" />
+
             <h2 className="mb-1 text-[14px] font-semibold">Honorários</h2>
             <p className="mb-4 text-[12px] text-texto-2">
-              Usados para escrever a cláusula 2ª do contrato. As três modalidades
-              abaixo podem ser combinadas no mesmo caso — pode ter só uma, duas ou as
-              três, conforme o que foi combinado com o cliente.
+              Usados para escrever a cláusula de honorários do contrato. As quatro
+              modalidades abaixo podem ser combinadas no mesmo caso — pode ter só uma,
+              duas ou mais, conforme o que foi combinado com o cliente. Ao menos uma
+              é necessária para gerar o contrato.
             </p>
 
             <Campo
               nome="honorarios"
               rotulo="Honorários fixos — valor total"
               erro={erros['honorarios']}
-              dica="À vista ou parcelado (parcelas abaixo). Como no contrato: 1.750,00"
+              dica="Como no contrato: 1.750,00. Informe as parcelas abaixo — se for à vista, uma parcela única com o vencimento."
             >
               <input
                 id="honorarios"
@@ -421,16 +521,202 @@ export function FormularioDeCaso({
               </div>
             </div>
 
-            {(campos.percentualExito !== '' ||
-              campos.percentualProveitoEconomico !== '') && (
-              <div className="aviso aviso-atencao mb-[15px]">
-                <span aria-hidden="true">▲</span>
-                <div>
-                  <b>O contrato ainda não sai com honorários de êxito ou de proveito
-                  econômico.</b> O modelo que o escritório mandou só descreve valor
-                  fixo — falta o texto dessa cláusula. Os dados ficam salvos no caso,
-                  mas gerar o contrato é bloqueado até o escritório mandar o modelo.
-                </div>
+            {campos.percentualProveitoEconomico !== '' && (
+              <div className="mb-[15px] rounded-md border border-borda p-3.5">
+                <p className="mb-3 text-[12px] text-texto-2">
+                  Proveito econômico: o contrato pede também a referência usada na
+                  apuração e o prazo de pagamento.
+                </p>
+                <Campo
+                  nome="referenciaDaEconomia"
+                  rotulo="Referência da economia"
+                  erro={erros['referenciaDaEconomia']}
+                  dica={'Identifique a obrigação, o valor discutido e a data-base. No contrato: "será considerada a seguinte referência: [este texto], comparando-se os valores…".'}
+                >
+                  <textarea
+                    id="referenciaDaEconomia"
+                    name="referenciaDaEconomia"
+                    rows={3}
+                    className="campo-entrada"
+                    value={campos.referenciaDaEconomia}
+                    onChange={(evento) =>
+                      definir('referenciaDaEconomia', evento.target.value)
+                    }
+                  />
+                </Campo>
+                <Campo
+                  nome="prazoDePagamentoDaEconomia"
+                  rotulo="Prazo de pagamento (dias)"
+                  erro={erros['prazoDePagamentoDaEconomia']}
+                  dica="Dias depois da consolidação e da apuração da economia."
+                >
+                  <input
+                    id="prazoDePagamentoDaEconomia"
+                    name="prazoDePagamentoDaEconomia"
+                    inputMode="numeric"
+                    className="campo-entrada mono"
+                    placeholder="30"
+                    value={campos.prazoDePagamentoDaEconomia}
+                    onChange={(evento) =>
+                      definir('prazoDePagamentoDaEconomia', evento.target.value)
+                    }
+                  />
+                </Campo>
+              </div>
+            )}
+
+            <label className="mb-[15px] flex items-center gap-2.5 text-[13px]">
+              <input
+                type="checkbox"
+                name="honorariosPersonalizados"
+                checked={personalizado}
+                onChange={(evento) => setPersonalizado(evento.target.checked)}
+              />
+              <span>Honorários personalizados</span>
+            </label>
+
+            {personalizado && (
+              <div className="mb-[15px] rounded-md border border-borda p-3.5">
+                <p className="mb-3 text-[12px] text-texto-2">
+                  Cada campo entra no contrato no lugar indicado pelo modelo do
+                  escritório. Todos são necessários para gerar o contrato.
+                </p>
+                <Campo
+                  nome="personalizadoServicos"
+                  rotulo="Serviços ou etapas"
+                  erro={erros['personalizadoServicos']}
+                  dica={'No contrato: "Pela prestação de [este texto], o CONTRATANTE pagará…". Escreva já no jeito que a frase pede, por exemplo "serviços de elaboração de parecer".'}
+                >
+                  <textarea
+                    id="personalizadoServicos"
+                    name="personalizadoServicos"
+                    rows={2}
+                    className="campo-entrada"
+                    value={campos.personalizadoServicos}
+                    onChange={(evento) =>
+                      definir('personalizadoServicos', evento.target.value)
+                    }
+                  />
+                </Campo>
+                <Campo
+                  nome="personalizadoValorOuPercentual"
+                  rotulo="Valor ou percentual"
+                  erro={erros['personalizadoValorOuPercentual']}
+                  dica={'No contrato: "honorários correspondentes a [este texto]".'}
+                >
+                  <input
+                    id="personalizadoValorOuPercentual"
+                    name="personalizadoValorOuPercentual"
+                    className="campo-entrada"
+                    value={campos.personalizadoValorOuPercentual}
+                    onChange={(evento) =>
+                      definir('personalizadoValorOuPercentual', evento.target.value)
+                    }
+                  />
+                </Campo>
+                <Campo
+                  nome="personalizadoBaseDeCalculo"
+                  rotulo="Base de cálculo"
+                  erro={erros['personalizadoBaseDeCalculo']}
+                  dica={'No contrato: "calculados sobre [este texto]". Se não houver base, escreva "não se aplica".'}
+                >
+                  <input
+                    id="personalizadoBaseDeCalculo"
+                    name="personalizadoBaseDeCalculo"
+                    className="campo-entrada"
+                    value={campos.personalizadoBaseDeCalculo}
+                    onChange={(evento) =>
+                      definir('personalizadoBaseDeCalculo', evento.target.value)
+                    }
+                  />
+                </Campo>
+                <Campo
+                  nome="personalizadoCondicaoDeExigibilidade"
+                  rotulo="Condição de exigibilidade"
+                  erro={erros['personalizadoCondicaoDeExigibilidade']}
+                  dica={'No contrato: "exigíveis mediante [este texto]".'}
+                >
+                  <input
+                    id="personalizadoCondicaoDeExigibilidade"
+                    name="personalizadoCondicaoDeExigibilidade"
+                    className="campo-entrada"
+                    value={campos.personalizadoCondicaoDeExigibilidade}
+                    onChange={(evento) =>
+                      definir('personalizadoCondicaoDeExigibilidade', evento.target.value)
+                    }
+                  />
+                </Campo>
+                <Campo
+                  nome="personalizadoPagamento"
+                  rotulo="Forma de pagamento e vencimentos"
+                  erro={erros['personalizadoPagamento']}
+                  dica={'No contrato: "com pagamento [este texto]".'}
+                >
+                  <input
+                    id="personalizadoPagamento"
+                    name="personalizadoPagamento"
+                    className="campo-entrada"
+                    value={campos.personalizadoPagamento}
+                    onChange={(evento) =>
+                      definir('personalizadoPagamento', evento.target.value)
+                    }
+                  />
+                </Campo>
+                <Campo
+                  nome="personalizadoNatureza"
+                  rotulo="Natureza da remuneração"
+                  erro={erros['personalizadoNatureza']}
+                >
+                  <select
+                    id="personalizadoNatureza"
+                    name="personalizadoNatureza"
+                    className="campo-entrada"
+                    value={campos.personalizadoNatureza}
+                    onChange={(evento) =>
+                      definir('personalizadoNatureza', evento.target.value)
+                    }
+                  >
+                    <option value="">Escolha…</option>
+                    {Object.values(NaturezaDoHonorarioPersonalizado).map((natureza) => (
+                      <option key={natureza} value={natureza}>
+                        {ROTULO_DA_NATUREZA_DO_PERSONALIZADO[natureza]}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+                <Campo
+                  nome="personalizadoRelacaoComAsDemais"
+                  rotulo="Em relação a"
+                  erro={erros['personalizadoRelacaoComAsDemais']}
+                  dica={'No contrato: "Esta remuneração será [natureza] em relação a [este texto]". Identifique as demais modalidades, ou indique contratação isolada.'}
+                >
+                  <input
+                    id="personalizadoRelacaoComAsDemais"
+                    name="personalizadoRelacaoComAsDemais"
+                    className="campo-entrada"
+                    value={campos.personalizadoRelacaoComAsDemais}
+                    onChange={(evento) =>
+                      definir('personalizadoRelacaoComAsDemais', evento.target.value)
+                    }
+                  />
+                </Campo>
+                <Campo
+                  nome="personalizadoCondicoesEspecificas"
+                  rotulo="Condições específicas"
+                  erro={erros['personalizadoCondicoesEspecificas']}
+                  dica={'No contrato: "observadas as seguintes condições específicas: [este texto]." Inclua eventuais abatimentos.'}
+                >
+                  <textarea
+                    id="personalizadoCondicoesEspecificas"
+                    name="personalizadoCondicoesEspecificas"
+                    rows={2}
+                    className="campo-entrada"
+                    value={campos.personalizadoCondicoesEspecificas}
+                    onChange={(evento) =>
+                      definir('personalizadoCondicoesEspecificas', evento.target.value)
+                    }
+                  />
+                </Campo>
               </div>
             )}
 
