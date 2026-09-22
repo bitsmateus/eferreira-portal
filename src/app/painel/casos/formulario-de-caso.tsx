@@ -154,9 +154,6 @@ export function FormularioDeCaso({
   const [estado, enviar] = useActionState(acao, undefined)
   const erros = estado?.erros ?? {}
 
-  /** Só existe quando o caso nasce fora da ficha de um cliente. */
-  const [clienteId, setClienteId] = useState('')
-
   /**
    * TODO CAMPO É CONTROLADO, PELO MESMO MOTIVO DO CADASTRO DE CLIENTE.
    *
@@ -292,13 +289,7 @@ export function FormularioDeCaso({
                 dica="Todo caso pertence a um cliente. Sem isso não há de quem seja o processo, nem para quem mostrar o andamento."
                 obrigatorio
               >
-                <SeletorDeCliente
-                  id="clienteId"
-                  clientes={clientes}
-                  valor={clienteId}
-                  onEscolher={setClienteId}
-                  obrigatorio
-                />
+                <SeletorDeCliente id="clienteId" clientes={clientes} obrigatorio />
               </Campo>
             )}
 

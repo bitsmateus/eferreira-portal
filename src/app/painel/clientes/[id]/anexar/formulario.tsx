@@ -5,8 +5,8 @@ import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import { TipoDocumento } from '@prisma/client'
 
+import { SeletorDeCaso } from '@/componentes/seletor-de-caso'
 import { EXTENSOES_ACEITAS, ROTULO_DO_TIPO, TIPOS_ACEITOS } from '@/lib/arquivos'
-import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { anexarNaPasta } from './acoes'
 
 type Caso = { id: string; numeroProcesso: string | null; assunto: string }
@@ -36,7 +36,6 @@ export function FormularioDeAnexo({
   // depois de uma recusa ele precisa ser escolhido de novo. Por isso o aviso
   // abaixo do campo diz o limite ANTES de a pessoa tentar.
   const [tipo, setTipo] = useState<string>(TipoDocumento.ANEXO)
-  const [casoId, setCasoId] = useState('')
 
   return (
     <form action={enviar} noValidate>
@@ -109,22 +108,12 @@ export function FormularioDeAnexo({
               <label className="campo-rotulo" htmlFor="casoId">
                 Vincular a um caso
               </label>
-              <select
+              <SeletorDeCaso
                 id="casoId"
                 name="casoId"
-                className="campo-entrada"
-                value={casoId}
-                onChange={(evento) => setCasoId(evento.target.value)}
-              >
-                <option value="">Documento do cliente — nenhum caso específico</option>
-                {casos.map((caso) => (
-                  <option key={caso.id} value={caso.id}>
-                    {caso.numeroProcesso === null
-                      ? `${caso.assunto} — sem número`
-                      : `${formatarNumeroDeProcesso(caso.numeroProcesso)} — ${caso.assunto}`}
-                  </option>
-                ))}
-              </select>
+                casos={casos}
+                opcaoEmBranco="Documento do cliente — nenhum caso específico"
+              />
               {erros['casoId'] !== undefined ? (
                 <p className="dica dica-erro" role="alert">
                   {erros['casoId']}

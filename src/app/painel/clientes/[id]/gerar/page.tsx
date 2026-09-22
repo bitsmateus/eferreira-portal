@@ -2,11 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
+import { SeletorDeCaso } from '@/componentes/seletor-de-caso'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import { obterCliente } from '@/lib/clientes'
 import { formatarDocumento } from '@/lib/documento'
-import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import {
   TIPOS_GERAVEIS,
   ehTipoGeravel,
@@ -112,21 +112,13 @@ export default async function PaginaDeGeracao({
                     <label className="campo-rotulo" htmlFor="casoId">
                       Caso
                     </label>
-                    <select
+                    <SeletorDeCaso
                       id="casoId"
                       name="casoId"
-                      className="campo-entrada"
-                      defaultValue={casoId ?? ''}
-                    >
-                      <option value="">Nenhum — documento do cliente</option>
-                      {cliente.casos.map((caso) => (
-                        <option key={caso.id} value={caso.id}>
-                          {caso.numeroProcesso === null
-                            ? `${caso.assunto} — sem número`
-                            : `${formatarNumeroDeProcesso(caso.numeroProcesso)} — ${caso.assunto}`}
-                        </option>
-                      ))}
-                    </select>
+                      casos={cliente.casos}
+                      opcaoEmBranco="Nenhum — documento do cliente"
+                      valorInicial={casoId ?? ''}
+                    />
                     <p className="dica">
                       O contrato cita o processo e os honorários, então precisa de um
                       caso. Procuração e declaração são do cliente.

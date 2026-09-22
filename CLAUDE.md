@@ -313,6 +313,33 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Busca por texto virou padrão em todo "vincular a um caso" do painel**
+(22/09/2026), continuando o pedido do seletor de cliente: o mesmo problema
+existia em "Vincular a um caso" (Anexar documento) e em "Caso" (Gerar
+documento) — listas suspensas comuns com todo caso do cliente.
+
+O componente do seletor de cliente foi partido em dois: `SeletorComBusca`
+(`src/componentes/seletor-com-busca.tsx`), genérico — quem usa decide o que
+cada item mostra e como o texto digitado casa com ele —, e por cima dele
+`SeletorDeCliente` e o novo `SeletorDeCaso` (`seletor-de-caso.tsx`), cada um
+só com a formatação e a busca do seu tipo de registro. No caso, a opção
+"nenhum caso específico" é um ITEM de verdade da lista (id vazio), não um
+placeholder — continua aparecendo mesmo sem nada digitado, exatamente como
+a lista suspensa antiga sempre mostrava ela primeiro.
+
+De brinde, o componente passou a guardar o próprio estado (antes o
+`clienteId` vivia no formulário pai) — o que permitiu usá-lo direto dentro de
+`/painel/clientes/[id]/gerar`, que é um Server Component com formulário GET
+simples, sem nenhum JavaScript de estado no componente pai. Testado no
+navegador de verdade nos dois lugares: buscar "cobrança" encontra o caso
+certo em "Anexar documento", buscar "revisão" encontra o outro em "Gerar
+documento", e a URL depois de "Ver prévia" leva o `casoId` certo.
+
+Filtros de lista (situação, responsável, tipo) e listas curtas e fixas
+(situação do andamento, tipo de objeto, forma de pagamento, papel da parte)
+**não** viraram busca — são enums pequenos e não crescem com o uso;
+transformar viraria complicação sem ganho.
+
 **Mais três mudanças pedidas em 22/09/2026, decididas sozinho enquanto o
 escritório estava fora — CONFIRMAR na volta:**
 
