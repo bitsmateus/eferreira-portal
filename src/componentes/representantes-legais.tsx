@@ -169,3 +169,62 @@ export function RepresentantesLegais({
     </div>
   )
 }
+
+export type EmpresaRepresentada = {
+  pessoaJuridicaId: string
+  nome: string
+  documento: string
+  qualificacao: string | null
+}
+
+/**
+ * A outra ponta do mesmo vínculo — pedido do escritório em 22/09/2026: quem
+ * abre a ficha do SÓCIO (pessoa física) vê aqui quais empresas ele representa,
+ * em vez de só descobrir isso abrindo a ficha de cada empresa uma por uma. O
+ * dado (`empresasQueRepresenta`) já vinha sendo buscado em `obterCliente`
+ * desde a Sprint 1, mas nunca tinha tela — só faltava isto.
+ *
+ * Só leitura: vincular e desvincular continuam feitos do lado da empresa
+ * (`RepresentantesLegais`, acima), que é onde "quem assina por quem" é
+ * decidido.
+ */
+export function EmpresasQueRepresenta({
+  empresas,
+}: {
+  empresas: readonly EmpresaRepresentada[]
+}) {
+  if (empresas.length === 0) return null
+
+  return (
+    <div className="cartao">
+      <div className="cartao-cabecalho">
+        <h2>Representa</h2>
+        <span className="ml-auto text-[12px] text-texto-2">
+          {empresas.length === 1 ? '1 empresa' : `${empresas.length} empresas`}
+        </span>
+      </div>
+
+      <div className="cartao-corpo">
+        {empresas.map((empresa) => (
+          <div
+            key={empresa.pessoaJuridicaId}
+            className="flex flex-wrap items-center gap-3 border-b border-prata-100 py-2.5 last:border-b-0"
+          >
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/painel/clientes/${empresa.pessoaJuridicaId}`}
+                className="text-[13px] font-medium underline decoration-borda underline-offset-2 hover:decoration-texto-2"
+              >
+                {empresa.nome}
+              </Link>
+              <div className="mono mt-0.5 text-[11.5px] text-texto-3">
+                {formatarDocumento(empresa.documento)}
+                {empresa.qualificacao !== null && ` · ${empresa.qualificacao}`}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

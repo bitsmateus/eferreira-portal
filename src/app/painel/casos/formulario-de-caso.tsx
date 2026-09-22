@@ -10,8 +10,8 @@ import {
   TipoDeObjeto,
 } from '@prisma/client'
 
+import { SeletorDeCliente } from '@/componentes/seletor-de-cliente'
 import { ROTULO_DA_SITUACAO } from '@/componentes/situacoes'
-import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { LINHAS_DE_PARCELA } from '@/lib/casos'
 import {
@@ -292,21 +292,13 @@ export function FormularioDeCaso({
                 dica="Todo caso pertence a um cliente. Sem isso não há de quem seja o processo, nem para quem mostrar o andamento."
                 obrigatorio
               >
-                <select
+                <SeletorDeCliente
                   id="clienteId"
-                  name="clienteId"
-                  required
-                  className="campo-entrada"
-                  value={clienteId}
-                  onChange={(evento) => setClienteId(evento.target.value)}
-                >
-                  <option value="">Escolha o cliente…</option>
-                  {clientes.map((cliente) => (
-                    <option key={cliente.id} value={cliente.id}>
-                      {cliente.nome} — {formatarDocumento(cliente.documento)}
-                    </option>
-                  ))}
-                </select>
+                  clientes={clientes}
+                  valor={clienteId}
+                  onEscolher={setClienteId}
+                  obrigatorio
+                />
               </Campo>
             )}
 

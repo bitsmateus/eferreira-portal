@@ -1,3 +1,4 @@
+import { MENSAGEM_DE_SUPORTE_NO_WHATSAPP } from '@/lib/escritorio'
 import { linkDoWhatsapp } from '@/lib/formatos'
 
 /**
@@ -14,7 +15,7 @@ import { linkDoWhatsapp } from '@/lib/formatos'
 export function BotaoFlutuanteDoWhatsapp({ numero }: { numero: string }) {
   return (
     <a
-      href={linkDoWhatsapp(numero)}
+      href={linkDoWhatsapp(numero, MENSAGEM_DE_SUPORTE_NO_WHATSAPP)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco pelo WhatsApp"

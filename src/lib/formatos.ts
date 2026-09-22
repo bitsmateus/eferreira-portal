@@ -65,9 +65,13 @@ export function formatarNumeroDeProcesso(valor: string): string {
  * O `wa.me` exige o número completo com código do país — sem ele, o link abre
  * o WhatsApp sem conversa nenhuma selecionada, em vez de já abrir a conversa
  * com o escritório. `55` é fixo porque o sistema é só para o Brasil.
+ *
+ * `mensagem`, quando informada, chega já escrita no campo de texto da
+ * conversa — a pessoa ainda decide se manda, não é enviada sozinha.
  */
-export function linkDoWhatsapp(numeroComDdd: string): string {
-  return `https://wa.me/55${somenteDigitos(numeroComDdd)}`
+export function linkDoWhatsapp(numeroComDdd: string, mensagem?: string): string {
+  const base = `https://wa.me/55${somenteDigitos(numeroComDdd)}`
+  return mensagem === undefined ? base : `${base}?text=${encodeURIComponent(mensagem)}`
 }
 
 /** Guarda só os dígitos quando o telefone tem 10 ou 11; senão, o que foi digitado. */

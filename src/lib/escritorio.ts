@@ -82,3 +82,12 @@ export const ESCRITORIO = {
 } as const
 
 export type DadosDoEscritorio = typeof ESCRITORIO
+
+/**
+ * A mensagem que já chega escrita na conversa do botão "Fale conosco pelo
+ * WhatsApp" (`whatsappDeSuporte`, acima) — pedido do escritório em
+ * 22/09/2026, para quem atende já saber de onde a pessoa veio e o que
+ * precisa, sem repetir pergunta. A pessoa ainda decide se manda como está.
+ */
+export const MENSAGEM_DE_SUPORTE_NO_WHATSAPP =
+  'Olá! Vim pelo site do Portal do Cliente e preciso de ajuda para acessar.'

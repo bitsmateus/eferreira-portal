@@ -313,6 +313,41 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Mais três mudanças pedidas em 22/09/2026, decididas sozinho enquanto o
+escritório estava fora — CONFIRMAR na volta:**
+
+3. **A mensagem do WhatsApp já chega escrita.** O botão flutuante (e o link
+   de texto do `/consultar`) agora abrem a conversa com "Olá! Vim pelo site
+   do Portal do Cliente e preciso de ajuda para acessar." já no campo — a
+   pessoa que atende sabe de onde veio e o que precisa, sem perguntar de
+   novo; quem manda a mensagem ainda decide se manda como está ou edita
+   antes. Mensagem única em `MENSAGEM_DE_SUPORTE_NO_WHATSAPP`
+   (`src/lib/escritorio.ts`), usada nos dois lugares.
+
+4. **"Escolha o cliente" (Novo caso) virou busca por nome ou CPF/CNPJ.** Era
+   uma lista suspensa comum com todo cliente cadastrado — inviável assim que
+   a base cresce. Componente novo, `SeletorDeCliente`
+   (`src/componentes/seletor-de-cliente.tsx`): um campo de texto que filtra a
+   lista (já carregada na página, sem ida ao servidor a cada letra) por nome
+   ou documento, com navegação por teclado. Continua submetendo `clienteId`
+   por um campo escondido — o servidor confere de novo quem pode usar aquele
+   cliente (regra 2), a busca não decide nada.
+
+5. **Empresa e representante legal agora se enxergam nos dois sentidos.**
+   Já dava para ver, na ficha da EMPRESA, o sócio que assina por ela (cartão
+   "Representantes legais", com link para a ficha dele). Faltava o
+   contrário: abrir a ficha do SÓCIO e ver quais empresas ele representa —
+   o dado (`empresasQueRepresenta`) já era buscado no banco desde a Sprint
+   1, mas não tinha tela nenhuma. Cartão novo, "Representa"
+   (`EmpresasQueRepresenta`, no mesmo arquivo de `RepresentantesLegais`),
+   só leitura — vincular e desvincular sócio continuam feitos do lado da
+   empresa, que é onde isso já fazia sentido.
+
+   Testado no navegador de verdade: cadastrada uma empresa com sócio,
+   buscar "aurora" no seletor de cliente encontra os dois (o sócio e a
+   empresa) pelo nome, e a ficha do sócio mostra a empresa com a
+   qualificação, linkada.
+
 **Duas mudanças pedidas em 22/09/2026, decididas sozinho enquanto o
 escritório estava fora — CONFIRMAR na volta:**
 

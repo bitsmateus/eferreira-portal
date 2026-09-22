@@ -6,7 +6,10 @@ import { TipoPessoa } from '@prisma/client'
 import { AcessoDoCliente } from '@/componentes/acesso-do-cliente'
 import { AlternarSituacaoDoClienteBotao } from '@/componentes/alternar-situacao-do-cliente-botao'
 import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
-import { RepresentantesLegais } from '@/componentes/representantes-legais'
+import {
+  EmpresasQueRepresenta,
+  RepresentantesLegais,
+} from '@/componentes/representantes-legais'
 import {
   EtiquetaDeAcesso,
   EtiquetaDeSituacaoDoCaso,
@@ -200,6 +203,19 @@ export default async function PaginaDaFichaDoCliente({
                     qualificacaoCompleta:
                       vinculo.pessoaFisica.rg !== null &&
                       vinculo.pessoaFisica.nomeMae !== null,
+                  }))}
+                />
+              </div>
+            )}
+
+            {cliente.empresasQueRepresenta.length > 0 && (
+              <div className="mt-4">
+                <EmpresasQueRepresenta
+                  empresas={cliente.empresasQueRepresenta.map((vinculo) => ({
+                    pessoaJuridicaId: vinculo.pessoaJuridica.id,
+                    nome: vinculo.pessoaJuridica.nome,
+                    documento: vinculo.pessoaJuridica.documento,
+                    qualificacao: vinculo.qualificacao,
                   }))}
                 />
               </div>

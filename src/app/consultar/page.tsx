@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 import { BotaoFlutuanteDoWhatsapp } from '@/componentes/botao-flutuante-whatsapp'
 import { Marca } from '@/componentes/marca'
-import { ESCRITORIO } from '@/lib/escritorio'
+import { ESCRITORIO, MENSAGEM_DE_SUPORTE_NO_WHATSAPP } from '@/lib/escritorio'
 import { linkDoWhatsapp } from '@/lib/formatos'
 import { FormularioDeConsulta } from './formulario'
 
@@ -65,7 +65,7 @@ export default function PaginaDeConsulta() {
         <p className="mt-4 text-center text-[11.5px] text-texto-3">
           Não conseguiu acessar ou não recebeu o código?{' '}
           <a
-            href={linkDoWhatsapp(ESCRITORIO.whatsappDeSuporte)}
+            href={linkDoWhatsapp(ESCRITORIO.whatsappDeSuporte, MENSAGEM_DE_SUPORTE_NO_WHATSAPP)}
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2"
