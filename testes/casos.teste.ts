@@ -18,6 +18,7 @@ function campos(troca: Partial<Record<string, string>> = {}) {
     situacao: SituacaoCaso.EM_ANDAMENTO,
     responsavelId: '',
     honorarios: '',
+    canalDePagamentoFixo: '',
     percentualExito: '',
     percentualProveitoEconomico: '',
     referenciaDaEconomia: '',
@@ -143,6 +144,46 @@ describe('objeto e honorários do contrato (21/09/2026)', () => {
     if (!resultado.ok) return
     expect(resultado.dados.referenciaDaEconomia).toBe('a dívida X')
     expect(resultado.dados.prazoDePagamentoDaEconomia).toBe(30)
+  })
+
+  // Pedido do escritório em 22/09/2026: forma de pagamento dos honorários
+  // fixos, selecionável na tela. Em branco ("À vista") não cita canal
+  // nenhum no contrato — ver `formaDePagamentoDosFixos`, em modelos.ts.
+  it('canal de pagamento é opcional e aceita os três valores', () => {
+    const semCanal = validarCaso(campos({ honorarios: '1.750,00' }))
+    expect(semCanal.ok).toBe(true)
+    if (!semCanal.ok) return
+    expect(semCanal.dados.canalDePagamentoFixo).toBeNull()
+
+    for (const canal of ['PIX', 'TRANSFERENCIA', 'BOLETO']) {
+      const resultado = validarCaso(
+        campos({ honorarios: '1.750,00', canalDePagamentoFixo: canal }),
+      )
+      expect(resultado.ok, canal).toBe(true)
+      if (!resultado.ok) return
+      expect(resultado.dados.canalDePagamentoFixo).toBe(canal)
+    }
+  })
+
+  it('recusa canal de pagamento fora da lista', () => {
+    const resultado = validarCaso(
+      campos({ honorarios: '1.750,00', canalDePagamentoFixo: 'DINHEIRO' }),
+    )
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+    expect(resultado.erros['canalDePagamentoFixo']).toBe('Canal de pagamento inválido.')
+  })
+
+  // Sem honorários fixos não há "mediante [canal]" nenhum no contrato: um
+  // canal escolhido antes e depois desmarcado não pode sobrar guardado.
+  it('apagar os honorários fixos apaga o canal de pagamento', () => {
+    const resultado = validarCaso(
+      campos({ honorarios: '', canalDePagamentoFixo: 'PIX' }),
+    )
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.canalDePagamentoFixo).toBeNull()
   })
 })
 

@@ -36,6 +36,7 @@ function lerCampos(dados: FormData): CamposDeCaso {
     situacao: texto(dados, 'situacao'),
     responsavelId: texto(dados, 'responsavelId'),
     honorarios: texto(dados, 'honorarios'),
+    canalDePagamentoFixo: texto(dados, 'canalDePagamentoFixo'),
     percentualExito: texto(dados, 'percentualExito'),
     percentualProveitoEconomico: texto(dados, 'percentualProveitoEconomico'),
     referenciaDaEconomia: texto(dados, 'referenciaDaEconomia'),

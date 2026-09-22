@@ -71,6 +71,17 @@ enum NaturezaDoHonorarioPersonalizado {
   COMPENSAVEL
 }
 
+/// O canal de pagamento dos honorários FIXOS, citado no texto do contrato
+/// junto com "parcela única"/"N parcelas..." — pedido do escritório em
+/// 22/09/2026. NULO é "à vista": nenhum canal é citado, e o texto sai
+/// exatamente como antes ("mediante parcela única..."). Um valor aqui muda o
+/// texto para "mediante Pix, em parcela única...".
+enum CanalDePagamentoDosHonorariosFixos {
+  PIX
+  TRANSFERENCIA
+  BOLETO
+}
+
 /// Onde um documento está no caminho da assinatura eletrônica (D4Sign).
 ///
 /// NO_COFRE existe por causa de uma falha possível e feia: o PDF sobe para o
@@ -414,6 +425,10 @@ model Caso {
   /// (sem `parcelas`) ou parcelado (com `parcelas`). Convive com as duas de
   /// baixo: um caso pode ter fixo, êxito, proveito econômico, ou as três.
   honorariosEmCentavos Int?
+
+  /// Canal de pagamento dos honorários fixos acima. Nulo = "à vista", sem
+  /// canal citado no contrato — ver o comentário do enum.
+  canalDePagamentoFixo CanalDePagamentoDosHonorariosFixos?
 
   /// Honorários de êxito: percentual de 10 a 30, devido só ao final da
   /// demanda, sem entrada nem parcela — pedido do escritório em 17/09/2026. O

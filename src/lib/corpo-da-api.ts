@@ -47,6 +47,7 @@ export function camposDeClienteDoCorpo(
 export function camposDeCasoDoCorpo(corpo: Record<string, unknown>): CamposDeCaso {
   return {
     honorarios: '',
+    canalDePagamentoFixo: '',
     percentualExito: '',
     percentualProveitoEconomico: '',
     referenciaDaEconomia: '',

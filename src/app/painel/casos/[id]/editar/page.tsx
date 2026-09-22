@@ -38,6 +38,7 @@ export default async function PaginaDeEdicaoDeCaso({
       caso.honorariosEmCentavos === null
         ? ''
         : formatarReais(caso.honorariosEmCentavos).replace('R$ ', ''),
+    canalDePagamentoFixo: caso.canalDePagamentoFixo ?? '',
     percentualExito:
       caso.percentualExito === null ? '' : String(caso.percentualExito),
     percentualProveitoEconomico:

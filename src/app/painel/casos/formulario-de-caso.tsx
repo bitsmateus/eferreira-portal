@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import {
+  CanalDePagamentoDosHonorariosFixos,
   NaturezaDoHonorarioPersonalizado,
   SituacaoCaso,
   TipoDeObjeto,
@@ -16,6 +17,7 @@ import { LINHAS_DE_PARCELA } from '@/lib/casos'
 import {
   DICA_DA_DESCRICAO_DO_OBJETO,
   ROTULO_DA_NATUREZA_DO_PERSONALIZADO,
+  ROTULO_DO_CANAL_DE_PAGAMENTO,
   ROTULO_DO_TIPO_DE_OBJETO,
 } from '@/lib/rotulos-do-contrato'
 import type { EstadoDoCaso } from './acoes'
@@ -28,6 +30,7 @@ export type ValoresDoCaso = {
   situacao: string
   responsavelId: string
   honorarios: string
+  canalDePagamentoFixo: string
   percentualExito: string
   percentualProveitoEconomico: string
   referenciaDaEconomia: string
@@ -54,6 +57,7 @@ export const VALORES_VAZIOS: ValoresDoCaso = {
   situacao: SituacaoCaso.EM_ANDAMENTO,
   responsavelId: '',
   honorarios: '',
+  canalDePagamentoFixo: '',
   percentualExito: '',
   percentualProveitoEconomico: '',
   referenciaDaEconomia: '',
@@ -170,6 +174,7 @@ export function FormularioDeCaso({
     situacao: valores.situacao,
     responsavelId: valores.responsavelId,
     honorarios: valores.honorarios,
+    canalDePagamentoFixo: valores.canalDePagamentoFixo,
     percentualExito: valores.percentualExito,
     percentualProveitoEconomico: valores.percentualProveitoEconomico,
     referenciaDaEconomia: valores.referenciaDaEconomia,
@@ -188,13 +193,17 @@ export function FormularioDeCaso({
 
   const [personalizado, setPersonalizado] = useState(valores.honorariosPersonalizados)
 
-  // Linhas fixas em vez de "adicionar parcela": sem JavaScript extra, e o
-  // contrato do escritorio nunca passou de tres parcelas.
+  // As 12 linhas continuam existindo por baixo (é o que o servidor lê), mas a
+  // tela só mostra as `quantidadeDeParcelas` primeiras — pedido do escritório
+  // em 22/09/2026, no lugar das 12 linhas sempre visíveis.
   const [parcelas, setParcelas] = useState<Parcela[]>(
     Array.from({ length: LINHAS_DE_PARCELA }, (_, i) => ({
       valor: valores.parcelas[i]?.valor ?? '',
       vencimento: valores.parcelas[i]?.vencimento ?? '',
     })),
+  )
+  const [quantidadeDeParcelas, setQuantidadeDeParcelas] = useState(
+    Math.min(LINHAS_DE_PARCELA, Math.max(1, valores.parcelas.length)),
   )
 
   function definir<C extends keyof typeof campos>(nome: C, valor: string): void {
@@ -204,6 +213,15 @@ export function FormularioDeCaso({
   function definirParcela(indice: number, chave: keyof Parcela, valor: string): void {
     setParcelas((atual) =>
       atual.map((linha, i) => (i === indice ? { ...linha, [chave]: valor } : linha)),
+    )
+  }
+
+  /** Diminuir a quantidade apaga o que estava nas linhas que somem — elas não
+   * ficam escondidas com dado dentro, esperando ser mandadas sem querer. */
+  function definirQuantidadeDeParcelas(quantidade: number): void {
+    setQuantidadeDeParcelas(quantidade)
+    setParcelas((atual) =>
+      atual.map((linha, i) => (i < quantidade ? linha : { valor: '', vencimento: '' })),
     )
   }
 
@@ -467,7 +485,7 @@ export function FormularioDeCaso({
               nome="honorarios"
               rotulo="Honorários fixos — valor total"
               erro={erros['honorarios']}
-              dica="Como no contrato: 1.750,00. Informe as parcelas abaixo — se for à vista, uma parcela única com o vencimento."
+              dica="Como no contrato: 1.750,00. Escolha a forma de pagamento e a quantidade de parcelas logo abaixo."
             >
               <input
                 id="honorarios"
@@ -479,6 +497,56 @@ export function FormularioDeCaso({
                 onChange={(evento) => definir('honorarios', evento.target.value)}
               />
             </Campo>
+
+            <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
+              <div className="flex-1">
+                <Campo
+                  nome="canalDePagamentoFixo"
+                  rotulo="Forma de pagamento"
+                  erro={erros['canalDePagamentoFixo']}
+                  dica='No contrato: "mediante [este canal], em ...". "À vista" não cita canal nenhum.'
+                >
+                  <select
+                    id="canalDePagamentoFixo"
+                    name="canalDePagamentoFixo"
+                    className="campo-entrada"
+                    value={campos.canalDePagamentoFixo}
+                    onChange={(evento) => definir('canalDePagamentoFixo', evento.target.value)}
+                  >
+                    <option value="">À vista</option>
+                    {Object.values(CanalDePagamentoDosHonorariosFixos).map((canal) => (
+                      <option key={canal} value={canal}>
+                        {ROTULO_DO_CANAL_DE_PAGAMENTO[canal]}
+                      </option>
+                    ))}
+                  </select>
+                </Campo>
+              </div>
+              <div className="flex-1">
+                <Campo
+                  nome="quantidadeDeParcelas"
+                  rotulo="Quantidade de parcelas"
+                  dica="Escolha e preencha só as linhas que aparecerem, logo abaixo."
+                >
+                  <select
+                    id="quantidadeDeParcelas"
+                    className="campo-entrada mono"
+                    value={quantidadeDeParcelas}
+                    onChange={(evento) =>
+                      definirQuantidadeDeParcelas(Number(evento.target.value))
+                    }
+                  >
+                    {Array.from({ length: LINHAS_DE_PARCELA }, (_, i) => i + 1).map(
+                      (quantidade) => (
+                        <option key={quantidade} value={quantidade}>
+                          {quantidade === 1 ? '1 (à vista)' : quantidade}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </Campo>
+              </div>
+            </div>
 
             <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
               <div className="flex-1">
@@ -732,7 +800,7 @@ export function FormularioDeCaso({
                     </tr>
                   </thead>
                   <tbody>
-                    {parcelas.map((linha, indice) => (
+                    {parcelas.slice(0, quantidadeDeParcelas).map((linha, indice) => (
                       <tr key={indice}>
                         <td className="mono text-texto-3">{indice + 1}</td>
                         <td>
@@ -775,10 +843,7 @@ export function FormularioDeCaso({
                   </tbody>
                 </table>
               </div>
-              <p className="dica">
-                Deixe em branco as que não usar. A soma precisa bater com o valor
-                total.
-              </p>
+              <p className="dica">A soma precisa bater com o valor total dos honorários fixos.</p>
             </div>
 
             <div className="flex items-center gap-2.5">

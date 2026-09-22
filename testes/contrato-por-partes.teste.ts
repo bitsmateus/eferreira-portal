@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
+  CanalDePagamentoDosHonorariosFixos,
   NaturezaDoHonorarioPersonalizado,
   TipoDeObjeto,
   TipoPessoa,
@@ -69,6 +70,7 @@ const PARCELAS = [
 const SEM_MODALIDADES: CasoParaDocumento = {
   parcelas: [],
   honorariosEmCentavos: null,
+  canalDePagamentoFixo: null,
   percentualExito: null,
   percentualProveitoEconomico: null,
   referenciaDaEconomia: null,
@@ -343,6 +345,44 @@ describe('parcelas dos honorários fixos', () => {
     ])
 
     expect(foraDeOrdem).toBe('a primeira em 09/10/2026, a segunda em 09/11/2026')
+  })
+})
+
+describe('canal de pagamento dos honorários fixos (22/09/2026)', () => {
+  it('sem canal (À vista na tela), o texto não muda', () => {
+    expect(formaDePagamentoDosFixos(PARCELAS, null)).toBe(
+      formaDePagamentoDosFixos(PARCELAS),
+    )
+  })
+
+  it('com canal, entra como prefixo antes de "parcela única"/"N parcelas"', () => {
+    const unica = [
+      { numero: 1, valorEmCentavos: 50000, vencimento: new Date('2026-10-09T12:00:00Z') },
+    ]
+
+    expect(formaDePagamentoDosFixos(unica, CanalDePagamentoDosHonorariosFixos.PIX)).toBe(
+      'Pix, em parcela única',
+    )
+    expect(
+      formaDePagamentoDosFixos(unica, CanalDePagamentoDosHonorariosFixos.TRANSFERENCIA),
+    ).toBe('transferência bancária/TED, em parcela única')
+    expect(
+      formaDePagamentoDosFixos(unica, CanalDePagamentoDosHonorariosFixos.BOLETO),
+    ).toBe('boleto bancário, em parcela única')
+  })
+
+  it('sem parcela, continua recusando mesmo com canal escolhido', () => {
+    expect(formaDePagamentoDosFixos([], CanalDePagamentoDosHonorariosFixos.PIX)).toBeNull()
+  })
+
+  it('o canal aparece no contrato de verdade', () => {
+    const html = contratoPreenchido({
+      ...SO_FIXOS,
+      canalDePagamentoFixo: CanalDePagamentoDosHonorariosFixos.PIX,
+    })
+
+    expect(html).toContain('honorários fixos no valor de R$ 1.750,00')
+    expect(html).toContain('mediante Pix, em 3(três) parcelas')
   })
 })
 

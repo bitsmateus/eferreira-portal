@@ -4,7 +4,11 @@
  * do navegador (mesma separação de `rotulos-de-assinatura.ts`).
  */
 
-import { NaturezaDoHonorarioPersonalizado, TipoDeObjeto } from '@prisma/client'
+import {
+  CanalDePagamentoDosHonorariosFixos,
+  NaturezaDoHonorarioPersonalizado,
+  TipoDeObjeto,
+} from '@prisma/client'
 
 /** Os títulos são os das variações de "Objeto do contrato.docx" (21/09/2026). */
 export const ROTULO_DO_TIPO_DE_OBJETO: Record<TipoDeObjeto, string> = {
@@ -36,4 +40,16 @@ export const ROTULO_DA_NATUREZA_DO_PERSONALIZADO: Record<
   CUMULATIVA: 'Cumulativa',
   SUBSTITUTIVA: 'Substitutiva',
   COMPENSAVEL: 'Compensável',
+}
+
+/**
+ * O canal de pagamento dos honorários fixos — pedido do escritório em
+ * 22/09/2026. Não tem entrada para "À vista": na tela isso é a opção em
+ * branco do `<select>`, que não cita canal nenhum no contrato (ver
+ * `formaDePagamentoDosFixos`, em `src/lib/modelos.ts`).
+ */
+export const ROTULO_DO_CANAL_DE_PAGAMENTO: Record<CanalDePagamentoDosHonorariosFixos, string> = {
+  PIX: 'Pix',
+  TRANSFERENCIA: 'Transferência bancária / TED',
+  BOLETO: 'Boleto bancário',
 }

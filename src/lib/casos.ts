@@ -11,6 +11,7 @@
 
 import {
   AcaoAuditoria,
+  CanalDePagamentoDosHonorariosFixos,
   NaturezaDoHonorarioPersonalizado,
   PerfilUsuario,
   type Prisma,
@@ -232,6 +233,10 @@ export function somaDasParcelasConfere(
 
 export const esquemaDeCaso = z.object({
   honorarios,
+  canalDePagamentoFixo: escolhaOpcional(
+    CanalDePagamentoDosHonorariosFixos,
+    'Canal de pagamento inválido.',
+  ),
   percentualExito: percentualDeHonorario('o percentual de honorários de êxito'),
   percentualProveitoEconomico: percentualDeHonorario(
     'o percentual sobre o proveito econômico',
@@ -289,6 +294,10 @@ export type CamposDeCaso = Record<keyof z.input<typeof esquemaDeCaso>, string>
  */
 function semRestoDeModalidadeDesligada(dados: DadosDeCaso): DadosDeCaso {
   const limpo = { ...dados }
+
+  if (limpo.honorarios === null) {
+    limpo.canalDePagamentoFixo = null
+  }
 
   if (limpo.percentualProveitoEconomico === null) {
     limpo.referenciaDaEconomia = null

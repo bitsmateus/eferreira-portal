@@ -8,6 +8,7 @@
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
+  CanalDePagamentoDosHonorariosFixos,
   NaturezaDoHonorarioPersonalizado,
   PerfilUsuario,
   TipoDeObjeto,
@@ -120,6 +121,20 @@ describe('montarPrevia — CONTRATO gerado a partir do caso', () => {
     expect(resultado.html).toContain('Ação de cobrança contra Construtora Exemplo Ltda.')
     expect(resultado.html).toContain('R$ 1.750,00')
     expect(resultado.html).toContain('parcela única')
+  })
+
+  it('canal de pagamento escolhido entra no texto do contrato', async () => {
+    const caso = await criarCaso({
+      honorariosEmCentavos: 175000,
+      parcelas: UMA_PARCELA,
+      canalDePagamentoFixo: CanalDePagamentoDosHonorariosFixos.PIX,
+    })
+
+    const resultado = await previa(caso.id)
+
+    expect(resultado.situacao).toBe('pronto')
+    if (resultado.situacao !== 'pronto') return
+    expect(resultado.html).toContain('mediante Pix, em parcela única')
     expect(resultado.html).toContain('em 09/10/2026')
   })
 

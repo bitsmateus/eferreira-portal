@@ -93,6 +93,7 @@ const socio = {
 const SEM_MODALIDADES: CasoParaDocumento = {
   parcelas: [],
   honorariosEmCentavos: null,
+  canalDePagamentoFixo: null,
   percentualExito: null,
   percentualProveitoEconomico: null,
   referenciaDaEconomia: null,

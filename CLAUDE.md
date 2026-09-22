@@ -313,6 +313,59 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Duas mudanças pedidas em 22/09/2026, decididas sozinho enquanto o
+escritório estava fora — CONFIRMAR na volta:**
+
+1. **Honorários fixos viraram seleção, com forma de pagamento.** Antes: um
+   campo de valor e uma tabela com 12 linhas de parcela sempre visíveis, a
+   maioria vazia. Agora: um seletor "Forma de pagamento" (À vista / Pix /
+   Transferência bancária / TED / Boleto bancário) e um seletor "Quantidade
+   de parcelas" (1 a 12) — escolhida a quantidade, só aquelas linhas
+   aparecem para preencher; diminuir a quantidade apaga o que estava nas
+   linhas que somem, para não sobrar dado escondido sendo salvo à toa.
+
+   **A forma de pagamento entra no texto do contrato**, não é só
+   organização de tela — decisão tomada em conversa nesta mesma sessão.
+   Campo novo, `Caso.canalDePagamentoFixo` (migração
+   `20260922125151_canal_de_pagamento_dos_honorarios_fixos`), nulo por
+   padrão. Nulo
+   é a opção "À vista" da tela — não cita canal nenhum, e o texto sai
+   exatamente como antes: "mediante parcela única..." / "mediante 3(três)
+   parcelas, sendo...". Um canal escolhido entra como prefixo: "mediante
+   Pix, em parcela única, com vencimento em 09/10/2026" ou "mediante boleto
+   bancário, em 3(três) parcelas, sendo...". Este prefixo **não é texto do
+   escritório** — é nosso, dentro do espaço em branco "[FORMA_DE_PAGAMENTO]"
+   que o modelo já deixava livre — então não fere a regra 10, mas vale o
+   escritório conferir se a frase ficou como eles queriam.
+
+   Testado no navegador de verdade: escolher 3 parcelas mostra 3 linhas,
+   reduzir para 1 esconde as outras duas, salvar grava certinho no banco
+   (conferido direto na tabela). Testado também contra o banco que o texto
+   "mediante Pix, em parcela única" sai no contrato gerado.
+
+2. **Botão do WhatsApp virou flutuante**, nas duas telas do cliente
+   (`/consultar` e `/meus-processos`) — pedido junto com um print mostrando
+   o link de texto perdido no canto superior direito, difícil de notar.
+   Agora é um círculo verde (`#25D366`, a cor de marca do WhatsApp — única
+   exceção à paleta grafite/prata do produto, de propósito, porque é
+   exatamente o que faz esse botão ser reconhecido como "abre uma
+   conversa") com ícone de telefone branco, fixo no canto inferior direito
+   da tela, sempre visível. Componente novo,
+   `src/componentes/botao-flutuante-whatsapp.tsx`.
+
+   **Decisão tomada sozinho, sem perguntar**: no `/consultar`, o texto
+   "Não conseguiu acessar ou não recebeu o código? Fale conosco pelo
+   WhatsApp" foi MANTIDO do jeito que estava (ele responde a uma dúvida
+   específica, no lugar certo da tela) — o botão flutuante foi só
+   ACRESCENTADO, como um segundo caminho para o mesmo link. Já no
+   `/meus-processos`, o link de texto que ficava sozinho no topo (o do
+   print) foi REMOVIDO e substituído pelo botão flutuante — lá não havia
+   texto de contexto para preservar, só o link solto.
+
+   Testado no navegador de verdade (captura de tela do `/consultar`): o
+   círculo aparece no canto certo, por cima do conteúdo, sem atrapalhar o
+   formulário.
+
 **Contrato por partes: objeto, honorários e testemunhas** (21/09/2026), a
 partir de três respostas do escritório e dois arquivos `.docx` que chegaram
 no WhatsApp. É a maior mudança no contrato desde a Sprint 3, e tem UMA

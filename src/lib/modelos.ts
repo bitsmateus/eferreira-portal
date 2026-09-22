@@ -13,6 +13,7 @@
 import {
   TipoDocumento,
   TipoDeObjeto,
+  type CanalDePagamentoDosHonorariosFixos,
   type NaturezaDoHonorarioPersonalizado,
   type TipoPessoa,
 } from '@prisma/client'
@@ -85,6 +86,7 @@ export type RepresentanteParaDocumento = {
 export type CasoParaDocumento = {
   parcelas: readonly { numero: number; valorEmCentavos: number; vencimento: Date }[]
   honorariosEmCentavos: number | null
+  canalDePagamentoFixo: CanalDePagamentoDosHonorariosFixos | null
   percentualExito: number | null
   percentualProveitoEconomico: number | null
   referenciaDaEconomia: string | null
@@ -199,29 +201,47 @@ function ordinalDaParcela(indice: number, numero: number): string {
   return ORDINAIS[indice] ?? `${numero}ª`
 }
 
+/** O prefixo de canal citado antes de "parcela única"/"N parcelas...", quando há um. */
+const PREFIXO_DO_CANAL: Record<CanalDePagamentoDosHonorariosFixos, string> = {
+  PIX: 'Pix',
+  TRANSFERENCIA: 'transferência bancária/TED',
+  BOLETO: 'boleto bancário',
+}
+
 /**
  * O "mediante [FORMA_DE_PAGAMENTO]" do bloco de honorários fixos.
  *
  * Nulo sem parcela cadastrada: o modelo do escritório pede também o
  * vencimento, e "à vista" sem data não diz quando o honorário vence. Quem
  * cadastra o valor fixo informa ao menos uma parcela — a única, se for à vista.
+ *
+ * `canal` é opcional e não vem do escritório — é campo nosso, pedido em
+ * 22/09/2026. Nulo (a opção "À vista" na tela) mantém o texto exatamente como
+ * sempre foi; um canal escolhido (Pix, transferência, boleto) entra antes:
+ * "mediante Pix, em parcela única" / "mediante boleto bancário, em 3(três)
+ * parcelas, sendo...".
  */
 export function formaDePagamentoDosFixos(
   parcelas: CasoParaDocumento['parcelas'],
+  canal: CanalDePagamentoDosHonorariosFixos | null = null,
 ): string | null {
   const ordenadas = parcelasEmOrdem(parcelas)
 
   if (ordenadas.length === 0) return null
-  if (ordenadas.length === 1) return 'parcela única'
 
-  const trechos = ordenadas.map(
-    (parcela, indice) =>
-      `a ${ordinalDaParcela(indice, parcela.numero)} de ${formatarReais(
-        parcela.valorEmCentavos,
-      )} (${reaisPorExtenso(parcela.valorEmCentavos)})`,
-  )
+  const base =
+    ordenadas.length === 1
+      ? 'parcela única'
+      : `${ordenadas.length}(${porExtensoSimples(ordenadas.length)}) parcelas, sendo ${ordenadas
+          .map(
+            (parcela, indice) =>
+              `a ${ordinalDaParcela(indice, parcela.numero)} de ${formatarReais(
+                parcela.valorEmCentavos,
+              )} (${reaisPorExtenso(parcela.valorEmCentavos)})`,
+          )
+          .join(', ')}`
 
-  return `${ordenadas.length}(${porExtensoSimples(ordenadas.length)}) parcelas, sendo ${trechos.join(', ')}`
+  return canal === null ? base : `${PREFIXO_DO_CANAL[canal]}, em ${base}`
 }
 
 /** O "com vencimento [VENCIMENTOS]" do mesmo bloco. Nulo sem parcela. */
@@ -341,7 +361,10 @@ export function valoresDoDocumento(
       caso.honorariosEmCentavos === null
         ? null
         : reaisPorExtenso(caso.honorariosEmCentavos)
-    valores['honorarios.formaDePagamento'] = formaDePagamentoDosFixos(caso.parcelas)
+    valores['honorarios.formaDePagamento'] = formaDePagamentoDosFixos(
+      caso.parcelas,
+      caso.canalDePagamentoFixo,
+    )
     valores['honorarios.vencimentos'] = vencimentosDosFixos(caso.parcelas)
 
     // Bloco 2 — êxito.

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 
+import { BotaoFlutuanteDoWhatsapp } from '@/componentes/botao-flutuante-whatsapp'
 import { Marca } from '@/componentes/marca'
 import { ESCRITORIO } from '@/lib/escritorio'
 import { linkDoWhatsapp } from '@/lib/formatos'
@@ -80,6 +81,8 @@ export default function PaginaDeConsulta() {
           </a>
         </p>
       </section>
+
+      <BotaoFlutuanteDoWhatsapp numero={ESCRITORIO.whatsappDeSuporte} />
     </main>
   )
 }
