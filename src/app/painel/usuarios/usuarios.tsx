@@ -129,6 +129,13 @@ export function NovoUsuario() {
           </div>
         )}
 
+        {estado?.sucesso !== undefined && (
+          <div className="aviso aviso-info mb-3" role="status">
+            <span aria-hidden="true">▲</span>
+            <div>{estado.sucesso}</div>
+          </div>
+        )}
+
         <form action={criar} onSubmit={() => setSenhaVisivel(true)}>
           <div className="mb-[15px]">
             <label className="campo-rotulo" htmlFor="nome">
@@ -192,10 +199,28 @@ export function NovoUsuario() {
             )}
           </div>
 
+          <div className="mb-[15px]">
+            <label className="campo-rotulo" htmlFor="senha">
+              Senha (opcional)
+            </label>
+            <input
+              id="senha"
+              name="senha"
+              type="text"
+              autoComplete="off"
+              maxLength={128}
+              className="campo-entrada"
+              placeholder="Deixe em branco para o sistema sortear"
+            />
+            {estado?.erros?.['senha'] !== undefined && (
+              <p className="dica dica-erro">{estado.erros['senha']}</p>
+            )}
+          </div>
+
           <Botao>Cadastrar</Botao>
           <p className="dica">
-            A senha é gerada pelo sistema e aparece na tela em seguida — repasse por
-            um canal seguro.
+            Em branco, a senha é gerada pelo sistema e aparece na tela em seguida —
+            repasse por um canal seguro. Digitada, mínimo de 8 caracteres.
           </p>
         </form>
       </div>
@@ -350,8 +375,17 @@ function LinhaDeUsuarioNaLista({
             Redefinir senha
           </button>
         ) : (
-          <form action={gerarNovaSenha} className="flex items-center gap-1.5">
+          <form action={gerarNovaSenha} className="flex flex-wrap items-center gap-1.5">
             <input type="hidden" name="confirmacao" value="redefinir" />
+            <input
+              name="senha"
+              type="text"
+              autoComplete="off"
+              maxLength={128}
+              className="campo-entrada w-[210px]"
+              placeholder="Nova senha (vazio = sortear)"
+              aria-label="Nova senha, ou vazio para o sistema sortear"
+            />
             <Botao variante="fantasma">Confirmar</Botao>
             <button
               type="button"
@@ -392,6 +426,12 @@ function LinhaDeUsuarioNaLista({
         )}
       </div>
 
+      {estadoSenha?.mensagem !== undefined && (
+        <p className="dica dica-erro w-full text-right">{estadoSenha.mensagem}</p>
+      )}
+      {estadoSenha?.sucesso !== undefined && (
+        <p className="dica w-full text-right">{estadoSenha.sucesso}</p>
+      )}
       {estadoSituacao?.erro !== undefined && (
         <p className="dica dica-erro w-full text-right">{estadoSituacao.erro}</p>
       )}

@@ -8,6 +8,7 @@ import {
   atualizarUsuario,
   criarUsuario,
   redefinirSenha,
+  TAMANHO_MINIMO_DA_SENHA,
   validarUsuario,
   type CamposDeUsuario,
 } from '@/lib/usuarios'
@@ -24,6 +25,7 @@ export type EstadoDoUsuario =
   | {
       erros?: ErrosDeCampo
       mensagem?: string
+      sucesso?: string
       senha?: string
     }
   | undefined
@@ -34,6 +36,20 @@ function lerCampos(dados: FormData): CamposDeUsuario {
     email: texto(dados, 'email'),
     perfil: texto(dados, 'perfil'),
   }
+}
+
+/**
+ * Campo `senha` opcional: em branco, o sistema sorteia; preenchido, vale a que
+ * o administrador digitou (mínimo igual ao do "Esqueci minha senha").
+ */
+function lerSenhaDigitada(dados: FormData): { senha?: string; erro?: string } {
+  const senha = String(dados.get('senha') ?? '')
+  if (senha === '') return {}
+  if (senha.length < TAMANHO_MINIMO_DA_SENHA) {
+    return { erro: `A senha precisa de pelo menos ${TAMANHO_MINIMO_DA_SENHA} caracteres.` }
+  }
+  if (senha.length > 128) return { erro: 'Senha longa demais.' }
+  return { senha }
 }
 
 export async function cadastrarUsuario(
@@ -47,14 +63,25 @@ export async function cadastrarUsuario(
   const conferido = validarUsuario(lerCampos(dados))
   if (!conferido.ok) return { erros: conferido.erros }
 
-  const resultado = await criarUsuario(sessao, conferido.dados, await emailDaSessao(sessao))
+  const digitada = lerSenhaDigitada(dados)
+  if (digitada.erro !== undefined) return { erros: { senha: digitada.erro } }
+
+  const resultado = await criarUsuario(
+    sessao,
+    conferido.dados,
+    await emailDaSessao(sessao),
+    digitada.senha,
+  )
 
   if (resultado.situacao === 'email_em_uso') {
     return { erros: { email: 'Este e-mail já tem cadastro na equipe.' } }
   }
 
   revalidatePath('/painel/usuarios')
-  return { senha: resultado.senha }
+  // Digitada pelo administrador, ele já a conhece: não há o que mostrar.
+  return digitada.senha === undefined
+    ? { senha: resultado.senha }
+    : { sucesso: 'Usuário cadastrado com a senha digitada.' }
 }
 
 export async function salvarEdicaoDeUsuario(
@@ -99,13 +126,23 @@ export async function redefinirSenhaDoUsuario(
     return { mensagem: 'Redefinição não confirmada.' }
   }
 
-  const resultado = await redefinirSenha(sessao, id, await emailDaSessao(sessao))
+  const digitada = lerSenhaDigitada(dados)
+  if (digitada.erro !== undefined) return { mensagem: digitada.erro }
+
+  const resultado = await redefinirSenha(
+    sessao,
+    id,
+    await emailDaSessao(sessao),
+    digitada.senha,
+  )
   if (resultado.situacao === 'nao_encontrado') {
     return { mensagem: 'Usuário não encontrado.' }
   }
 
   revalidatePath('/painel/usuarios')
-  return { senha: resultado.senha }
+  return digitada.senha === undefined
+    ? { senha: resultado.senha }
+    : { sucesso: 'Senha redefinida para a que você digitou.' }
 }
 
 export type EstadoDaSituacao = { erro?: string } | undefined

@@ -15,6 +15,7 @@ import { prisma } from '@/lib/prisma'
 import { senhaConfere } from '@/lib/senha'
 import {
   alterarSituacaoDoUsuario,
+  atualizarMinhaConta,
   atualizarUsuario,
   criarUsuario,
   listarUsuarios,
@@ -27,6 +28,7 @@ const EMAILS = [
   'novo.usuario.teste@exemplo.invalido',
   'outro.usuario.teste@exemplo.invalido',
   'cliente.usuario.teste@exemplo.invalido',
+  'senha.digitada.teste@exemplo.invalido',
 ]
 const DOCUMENTO_DO_CLIENTE = '39053344705'
 
@@ -276,5 +278,65 @@ describe('redefinirSenha', () => {
     expect(atualizado?.bloqueadoAte).toBeNull()
     expect(await senhaConfere(criado.senha, atualizado?.senhaHash ?? '')).toBe(false)
     expect(await senhaConfere(resultado.senha, atualizado?.senhaHash ?? '')).toBe(true)
+  })
+})
+
+describe('senha digitada pelo administrador (23/09/2026)', () => {
+  it('redefinir com senha digitada grava exatamente ela', async () => {
+    const criado = await criarUsuario(
+      sessaoDoAdmin,
+      { nome: 'Senha Digitada', email: EMAILS[5] ?? '', perfil: PerfilUsuario.OPERADOR },
+      null,
+      'senha-escolhida-1',
+    )
+    if (criado.situacao !== 'criado') throw new Error('falha ao preparar o teste')
+    expect(criado.senha).toBe('senha-escolhida-1')
+
+    const resultado = await redefinirSenha(sessaoDoAdmin, criado.usuarioId, null, 'outra-senha-22')
+    expect(resultado.situacao).toBe('redefinida')
+
+    const atualizado = await prisma.usuario.findUnique({ where: { id: criado.usuarioId } })
+    expect(await senhaConfere('outra-senha-22', atualizado?.senhaHash ?? '')).toBe(true)
+    expect(await senhaConfere('senha-escolhida-1', atualizado?.senhaHash ?? '')).toBe(false)
+  })
+
+  it('operador não redefine senha de ninguém', async () => {
+    await expect(
+      redefinirSenha(sessaoDeOperador, administradorId, null, 'qualquer-senha-1'),
+    ).rejects.toBeInstanceOf(SemAutorizacao)
+  })
+})
+
+describe('atualizarMinhaConta (23/09/2026)', () => {
+  it('operador edita só a própria conta; e-mail e senha exigem a senha atual', async () => {
+    const criado = await criarUsuario(
+      sessaoDoAdmin,
+      { nome: 'Operador da Conta', email: EMAILS[4] ?? '', perfil: PerfilUsuario.OPERADOR },
+      null,
+      'senha-atual-123',
+    )
+    if (criado.situacao !== 'criado') throw new Error('falha ao preparar o teste')
+    const sessao: SessaoServidor = { ...sessaoDoAdmin, usuarioId: criado.usuarioId, perfil: PerfilUsuario.OPERADOR }
+
+    // Só o nome: não pede senha.
+    expect(
+      (await atualizarMinhaConta(sessao, { nome: 'Novo Nome', email: EMAILS[4] ?? '', senhaAtual: '', senhaNova: '' }, null)).situacao,
+    ).toBe('atualizada')
+
+    // Trocar a senha com a atual errada: recusa e nada muda.
+    expect(
+      (await atualizarMinhaConta(sessao, { nome: 'Novo Nome', email: EMAILS[4] ?? '', senhaAtual: 'errada', senhaNova: 'nova-senha-456' }, null)).situacao,
+    ).toBe('senha_atual_errada')
+
+    expect(
+      (await atualizarMinhaConta(sessao, { nome: 'Novo Nome', email: EMAILS[4] ?? '', senhaAtual: 'senha-atual-123', senhaNova: 'nova-senha-456' }, null)).situacao,
+    ).toBe('atualizada')
+
+    const depois = await prisma.usuario.findUnique({ where: { id: criado.usuarioId } })
+    expect(depois?.nome).toBe('Novo Nome')
+    expect(await senhaConfere('nova-senha-456', depois?.senhaHash ?? '')).toBe(true)
+
+    // Perfil nunca muda por aqui.
+    expect(depois?.perfil).toBe(PerfilUsuario.OPERADOR)
   })
 })

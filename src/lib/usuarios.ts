@@ -27,7 +27,7 @@ import { z } from 'zod'
 import { exigirAdministrador, type SessaoServidor } from '@/lib/autorizacao'
 import { ehViolacaoDeUnicidade, prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
-import { gerarHashDeSenha, gerarSenhaAleatoria } from '@/lib/senha'
+import { gerarHashDeSenha, gerarSenhaAleatoria, senhaConfere } from '@/lib/senha'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 
 // ---------------------------------------------------------------------------
@@ -152,6 +152,7 @@ export async function criarUsuario(
   sessao: SessaoServidor,
   dados: DadosDeUsuario,
   emailDoAutor: string | null,
+  senhaEscolhida?: string,
 ): Promise<ResultadoDeCriacaoDeUsuario> {
   exigirAdministrador(sessao)
 
@@ -161,7 +162,7 @@ export async function criarUsuario(
   })
   if (existente !== null) return { situacao: 'email_em_uso' }
 
-  const senha = gerarSenhaAleatoria()
+  const senha = senhaEscolhida ?? gerarSenhaAleatoria()
 
   try {
     const usuarioId = await prisma.$transaction(async (transacao) => {
@@ -315,10 +316,19 @@ export type ResultadoDeRedefinicao =
   | { situacao: 'redefinida'; senha: string }
   | { situacao: 'nao_encontrado' }
 
+/** Tamanho mínimo da senha digitada — o mesmo do "Esqueci minha senha". */
+export const TAMANHO_MINIMO_DA_SENHA = 8
+
+/**
+ * `senhaEscolhida` é a senha que o administrador digitou; sem ela, o sistema
+ * sorteia uma. Nos dois casos a senha só existe em claro nesta chamada — no
+ * banco vai só o hash, e a auditoria nunca a recebe.
+ */
 export async function redefinirSenha(
   sessao: SessaoServidor,
   id: string,
   emailDoAutor: string | null,
+  senhaEscolhida?: string,
 ): Promise<ResultadoDeRedefinicao> {
   exigirAdministrador(sessao)
 
@@ -328,7 +338,7 @@ export async function redefinirSenha(
   })
   if (alvo === null) return { situacao: 'nao_encontrado' }
 
-  const senha = gerarSenhaAleatoria()
+  const senha = senhaEscolhida ?? gerarSenhaAleatoria()
 
   await prisma.$transaction(async (transacao) => {
     await transacao.usuario.update({
@@ -349,11 +359,92 @@ export async function redefinirSenha(
         acao: AcaoAuditoria.ATUALIZACAO,
         entidade: 'usuario',
         entidadeId: id,
-        detalhes: { motivo: 'redefinicao_de_senha' },
+        detalhes: {
+          motivo: 'redefinicao_de_senha',
+          origem: senhaEscolhida === undefined ? 'sorteada' : 'digitada',
+        },
       },
       transacao,
     )
   })
 
   return { situacao: 'redefinida', senha }
+}
+
+// ---------------------------------------------------------------------------
+// A própria conta — todo usuário da equipe edita a SUA, e só a sua. O id vem
+// da sessão do servidor, nunca do navegador (regra 2): não existe caminho por
+// onde um operador aponte esta função para outra pessoa. Perfil e situação
+// ficam de fora, de propósito.
+// ---------------------------------------------------------------------------
+
+export type DadosDaMinhaConta = {
+  nome: string
+  email: string
+  senhaAtual: string
+  senhaNova: string
+}
+
+export type ResultadoDaMinhaConta =
+  | { situacao: 'atualizada' }
+  | { situacao: 'nao_encontrado' }
+  | { situacao: 'email_em_uso' }
+  | { situacao: 'senha_atual_errada' }
+
+export async function atualizarMinhaConta(
+  sessao: SessaoServidor,
+  dados: DadosDaMinhaConta,
+  emailDoAutor: string | null,
+): Promise<ResultadoDaMinhaConta> {
+  const eu = await prisma.usuario.findFirst({
+    where: { id: sessao.usuarioId, ...FILTRO_DA_EQUIPE },
+    select: { id: true, email: true, senhaHash: true },
+  })
+  if (eu === null) return { situacao: 'nao_encontrado' }
+
+  const trocaEmail = dados.email !== eu.email
+  const trocaSenha = dados.senhaNova !== ''
+
+  // Trocar e-mail ou senha muda quem consegue entrar na conta; uma sessão
+  // esquecida aberta num computador não basta para isso.
+  if (trocaEmail || trocaSenha) {
+    if (!(await senhaConfere(dados.senhaAtual, eu.senhaHash ?? ''))) {
+      return { situacao: 'senha_atual_errada' }
+    }
+  }
+
+  try {
+    await prisma.$transaction(async (transacao) => {
+      await transacao.usuario.update({
+        where: { id: eu.id },
+        data: {
+          nome: dados.nome,
+          email: dados.email,
+          ...(trocaSenha ? { senhaHash: await gerarHashDeSenha(dados.senhaNova) } : {}),
+        },
+      })
+
+      await registrarAuditoria(
+        {
+          usuarioId: sessao.usuarioId,
+          usuarioEmail: emailDoAutor,
+          acao: AcaoAuditoria.ATUALIZACAO,
+          entidade: 'usuario',
+          entidadeId: eu.id,
+          detalhes: {
+            motivo: 'edicao_da_propria_conta',
+            nome: dados.nome,
+            email: dados.email,
+            senhaTrocada: trocaSenha,
+          },
+        },
+        transacao,
+      )
+    })
+  } catch (erro) {
+    if (ehViolacaoDeUnicidade(erro)) return { situacao: 'email_em_uso' }
+    throw erro
+  }
+
+  return { situacao: 'atualizada' }
 }

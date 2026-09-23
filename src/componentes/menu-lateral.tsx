@@ -36,6 +36,10 @@ const MENU = [
       { icone: '⌁', rotulo: 'API', href: '/painel/api' },
     ],
   },
+  {
+    grupo: 'Conta',
+    itens: [{ icone: '☺', rotulo: 'Minha conta', href: '/painel/conta' }],
+  },
 ] as const
 
 function estaAtivo(caminho: string, href: string): boolean {

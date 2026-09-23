@@ -313,6 +313,18 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Senha digitada pelo administrador e "Minha conta"** (23/09/2026). O
+administrador agora pode DIGITAR a senha de qualquer usuário — ao cadastrar e
+ao redefinir (campo opcional; em branco, o sistema sorteia como antes; mínimo
+de 8 caracteres, igual ao "Esqueci minha senha"). A senha digitada não é
+mostrada de volta, e a auditoria registra só se foi "digitada" ou "sorteada",
+nunca a senha. Novo `/painel/conta` ("Minha conta", no menu): todo usuário da
+equipe edita a PRÓPRIA conta — nome, e-mail e senha —, e só ela:
+`atualizarMinhaConta` (`src/lib/usuarios.ts`) não recebe id, usa o da sessão
+(regra 2), e perfil e situação ficam fora. Trocar e-mail ou senha exige a
+senha atual. Operador segue sem acesso à tela de Usuários nem a redefinir
+senha alheia. 441 unitários, 143 contra o banco.
+
 **Busca por texto virou padrão em todo "vincular a um caso" do painel**
 (22/09/2026), continuando o pedido do seletor de cliente: o mesmo problema
 existia em "Vincular a um caso" (Anexar documento) e em "Caso" (Gerar
