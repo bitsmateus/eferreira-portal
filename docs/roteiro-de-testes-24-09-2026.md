@@ -17,9 +17,14 @@ precisa recarregar a página.
       (`empresa_vinculada_ao_caso`, `posicao_das_assinaturas`). Depois, abrir
       `/painel` e conferir que carrega.
 - [ ] Quem estiver com tela aberta na hora precisa **recarregar a página**.
-- [ ] **Posição da assinatura:** ligar "Ativar posição da assinatura" no
-      cofre da D4Sign e depois `D4SIGN_POSICIONAR_ASSINATURA=1` — só quando
-      for testar (seção 7).
+- [ ] **Posição da assinatura:** no cofre "Escritorio" (Opções do cofre →
+      Configurações) NÃO existe a opção "Ativar posição da assinatura" — só
+      Autenticações, Definir limite, Assinatura guiada, Lembretes,
+      Permissões, Webhook, Callback e D4Sign.AI (conferido em 24/09). Não
+      ligar "Assinatura guiada" (é outra coisa). Escrever ao Suporte da
+      D4Sign perguntando como habilitar o `addpins` (posição por API) nesse
+      cofre — ou testar direto, que pode funcionar sem a opção. Só então
+      `D4SIGN_POSICIONAR_ASSINATURA=1` (seção 7).
 
 **Testar** — as seções 1 a 7 abaixo. O que só você consegue:
 - [ ] Gerar de verdade os documentos (seção 1) e comparar com os do escritório.
@@ -126,7 +131,10 @@ Em **Clientes → ficha → Gerar documento**.
 Só depois de todo o resto. Nada disto muda enquanto
 `D4SIGN_POSICIONAR_ASSINATURA` estiver vazia.
 
-1. [ ] No painel da D4Sign, no cofre, ligar **"Ativar posição da assinatura"**.
+1. [ ] Perguntar ao Suporte da D4Sign (botão "Suporte", no topo do painel):
+       "Como habilito o posicionamento de assinatura via API (`addpins`) no
+       cofre Escritorio? Não encontro 'Ativar posição da assinatura' em
+       Configurações." Se disserem que funciona sem opção nenhuma, seguir.
 2. [ ] `npm run d4sign:posicoes -- arquivo.pdf` num PDF gerado: confere as
        posições e os pins que seriam enviados (não fala com a D4Sign).
 3. [ ] Ligar `D4SIGN_POSICIONAR_ASSINATURA=1` (produção, ou só localmente com o
