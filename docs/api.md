@@ -205,20 +205,21 @@ Permissão: `ESCREVER`.
 |---|---|---|
 | `documento` | sim | CPF (11 dígitos) ou CNPJ (14). Define o tipo de pessoa |
 | `nome` | sim | nome completo ou razão social |
-| `email` | sim | é por ele que o cliente recebe o código de acesso ao portal |
-| `telefone` | sim | |
+| `email` | pessoa física | é por ele que o cliente recebe o código de acesso ao portal (sem e-mail o acesso não é liberado) |
+| `telefone` | pessoa física | |
 | `endereco` | sim | logradouro, número, complemento e bairro — **sem a cidade** |
 | `cidade` | sim | é dela que sai a cidade da assinatura dos documentos |
 | `uf` | sim | sigla de dois caracteres, como `SP` |
 | `cep` | sim | |
-| `rg` | sim | RG com órgão emissor, ou inscrição estadual |
+| `rg` | pessoa física | RG com órgão emissor |
 | `estadoCivil` | pessoa física | |
 | `profissao` | pessoa física | |
 | `nacionalidade` | pessoa física | |
-| `nomeMae` | pessoa física | exigido pela procuração, pela declaração e pelo contrato |
+| `nomeMae` | não | nenhum documento pede mais |
 | `dataNascimento` | não | `AAAA-MM-DD` |
 
-A lista de obrigatórios é a que o escritório definiu, e ela **bloqueia a
+Desde 24/09/2026 a lista é a do cabeçalho das procurações do escritório: para
+pessoa jurídica só endereço, cidade, UF e CEP. A lista é a que o escritório definiu, e ela **bloqueia a
 gravação** — foi pedido assim, "para não criar futuras pendências". Os campos de
 pessoa física não se aplicam a CNPJ; a qualificação pessoal da empresa vem do
 representante legal, cadastrado pelo painel.
@@ -298,6 +299,7 @@ O cliente vai por `clienteId` **ou** por `documento` — o que você tiver em m�
 | `parteContraria` | não | |
 | `situacao` | não | `EM_ANDAMENTO` (padrão) ou `ARQUIVADO` |
 | `responsavelId` | não | id de um operador ou administrador ativo |
+| `empresaVinculadaId` | não | id de um cliente PESSOA JURÍDICA a que o caso fica ligado (ex.: a empresa que enviou o cliente) |
 
 ```bash
 curl -s -X POST https://HOMOLOGACAO/api/v1/casos \

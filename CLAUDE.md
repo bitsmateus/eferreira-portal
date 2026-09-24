@@ -313,6 +313,72 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Modelos novos do escritório, cadastro e empresa vinculada** (24/09/2026),
+a partir da pasta "EFERREIRA" (contrato, procuração PF / representada
+assistida / PJ, declaração PF / representada assistida — .docx e .pdf) e das
+respostas do escritório. Os sete pontos do cliente:
+
+1. **Timbre errado — achado e corrigido.** Dois defeitos: a imagem era o
+   arquivo velho (agora é o dos .docx novos, sem enfraquecer a marca d'água)
+   e a marca d'água saía 4,14cm mais baixa que no Word (`top: 4.14cm` numa
+   origem que já é a margem). `estilo.css` agora tem `top: 0`; conferido
+   gerando os PDFs e comparando com os do escritório. Fonte 11pt (era 12) e
+   procuração em entrelinha simples (`.documento-compacto`), como no Word —
+   a procuração cabe numa página, como a deles.
+2. **Obrigatórios do cadastro = cabeçalho da procuração.** Pessoa física:
+   nome, nacionalidade, estado civil, profissão, RG, CPF, e-mail, telefone,
+   endereço, CEP, cidade/UF (a lista de sempre). Pessoa jurídica: só
+   endereço, cidade, UF e CEP (e-mail e telefone da empresa saíram); o
+   representante legal continua com e-mail e telefone, e a profissão dele
+   ficou opcional (o modelo de PJ não a cita). Nome da mãe não aparece em
+   nenhum documento novo.
+3. **Honorários em até três opções**: já era assim (fixos / êxito / proveito
+   econômico, mais personalizados). O contrato novo os encaixa no item 3.1 e
+   traz o resto (3.2 a 3.5) no próprio texto: o "bloco comum" antigo saiu, e
+   as modalidades perderam a numeração 3.1–3.4 (o item 3.1 agora é do
+   contrato). **CONFERIR**: o escritório pode querer versões novas dos
+   "formatos específicos" (objeto e modalidades) sem numeração; e o item 3.5
+   ([DADOS_DE_PAGAMENTO]) usa a conta do contrato antigo (C6, Pix da
+   Eferreira Assessoria e Cobrança) — confirmar.
+4. **Contrato completo novo** (11 cláusulas, numeração final — acabou o
+   problema dos dois "3" e das duas "9ª"). Foro agora é Mogi das Cruzes/SP.
+   Sem bloco de testemunhas impresso (testemunhas seguem possíveis na D4Sign).
+   O arquivo só traz o contratante PF: as variantes PJ e "representada
+   assistida" do contrato foram derivadas dos modelos de procuração — **o
+   escritório precisa conferir**.
+5. **Três variantes em todos os documentos**: pessoa física, pessoa física
+   representada/assistida (cliente PF COM assistente vinculado; substitui a
+   versão "menor" feita a partir do exemplo do Miguel) e pessoa jurídica.
+   Declaração só para PF (para empresa a tela diz que não há modelo). Quem
+   assina na D4Sign é o assistente / o representante legal. A concordância
+   usa "(a)" onde o original está no masculino — única adaptação de texto.
+   Procuração: outorgado escolhido na hora de gerar, com e-mail/telefone do
+   escritório (não os pessoais do advogado).
+6. **Empresa vinculada ao caso** (`Caso.empresaVinculadaId`, migração
+   `20260924184053`). Resposta do escritório: "só preciso ligar o caso à
+   empresa pelo processo, e não pelo cliente PF" e "o mesmo acesso do cliente
+   normal, vinculada a vários processos". Feito: campo no caso (seletor
+   pesquisável), filtro "Empresa vinculada" na lista de casos, busca pelo
+   CNPJ/nome da empresa, coluna na lista, ficha do caso e ficha da empresa
+   ("Casos ligados a esta empresa"). **Regra 3**: a empresa que entra no
+   portal (CNPJ + código) vê os casos ligados a ela e seus andamentos — e só
+   isso: NÃO vê os documentos do cliente final (contrato e procuração são
+   dele). Testes de banco dedicados (`empresa-vinculada.teste.ts`) e os de
+   autorização atualizados. **CONFIRMAR** com o escritório que a empresa não
+   deve ver os documentos.
+7. **Pasta de documentos**: já existe — a pasta do CLIENTE (ficha) e a do
+   CASO ("Documentos deste caso", na ficha do caso), com anexo vinculado a um
+   caso ou não.
+
+**NÃO feitos (aguardam o escritório):** (a) posição da assinatura na D4Sign:
+a API tem `addpins` (posição em milímetros, com página e tamanho da página),
+mas a origem das coordenadas não é documentada e não há como testar sem gastar
+crédito — precisa de um exemplo do que está "fora do local" (print do
+documento assinado) e de um envio de teste. Também exige ligar "Ativar
+posição da assinatura" no cofre, no painel da D4Sign. (b) Onde assina o
+documento personalizado (anexo): proposta em conversa — o operador escolhe
+página e ponto numa prévia, ou o padrão é o fim do documento.
+
 **Procuração de menor representado** (24/09/2026), a partir do modelo
 "Procuracao_Miguel.pdf" que o escritório mandou. Cliente pessoa física COM
 responsável vinculado = menor representado: a procuração sai com a

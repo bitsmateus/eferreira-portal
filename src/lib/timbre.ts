@@ -21,6 +21,19 @@
  * ─────────────────────────────────────────────────────────────────────────
  *
  * ─────────────────────────────────────────────────────────────────────────
+ * TIMBRE TROCADO EM 24/09/2026
+ *
+ * O escritório disse que "o papel timbrado estava errado" e mandou os
+ * modelos novos. `timbre.png` agora é a imagem de fundo desses .docx, sem
+ * retoque — a marca d'água NÃO é mais enfraquecida (a redução a 25% de
+ * 16/09, descrita mais abaixo, foi abandonada). Achado junto: a marca d'água
+ * saía 4,14cm mais baixa que no Word, porque `.marca-dagua` (estilo.css) usava
+ * `top: 4.14cm` numa origem que JÁ é a margem do `page.pdf()` — agora é
+ * `top: 0`, conferido contra o PDF do próprio escritório: a marca cobre a
+ * mesma região da folha.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * ─────────────────────────────────────────────────────────────────────────
  * O TIMBRE VIRA TRÊS IMAGENS, NÃO UMA (16/09/2026)
  *
  * Era uma imagem só, do tamanho da página inteira (29,7cm), presa com
