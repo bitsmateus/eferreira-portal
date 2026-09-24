@@ -39,6 +39,10 @@ export async function gerarEArquivar(
     return { mensagem: 'Cliente ou caso não encontrado.' }
   }
 
+  if (resultado.situacao === 'nao_se_aplica') {
+    return { mensagem: resultado.motivo }
+  }
+
   if (resultado.situacao === 'caso_obrigatorio') {
     return {
       mensagem: 'O contrato é de um caso específico. Escolha o caso.',

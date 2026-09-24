@@ -1,19 +1,18 @@
 <!--
   Qualificação do OUTORGANTE pessoa física.
 
-  ATENÇÃO: este bloco NÃO veio no arquivo de 14/09/2026, que é de um cliente
-  pessoa jurídica. Ele foi mantido do modelo anterior do escritório, que era
-  de pessoa física, e encaixado no texto novo — o escritório confirmou que a
-  procuração "pode ser PJ ou PF dependendo do tipo de cliente do contrato".
-
-  É texto do escritório, mas de outra versão. Precisa de conferência deles.
+  Modelo "Procuração Pessoa Fisica PF", enviado pelo escritório em 24/09/2026
+  (substitui o bloco de 14/09, que era do modelo antigo). Regra 10: texto do
+  escritório. Única adaptação: o original está no masculino ("portador",
+  "inscrito", "domiciliado"); como o sistema atende clientes dos dois gêneros,
+  a concordância vai com "(a)", como já era antes.
 -->
 <p class="qualificacao">
   <span class="rotulo-parte">Outorgante:</span>
   <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
-  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
-  número: {{cliente.rg}}, inscrito(a) no CPF sob o número:
-  {{cliente.documentoFormatado}}, residente e domiciliado à
-  {{cliente.endereco}}, {{cliente.cidade}}/{{cliente.uf}}, CEP:
-  {{cliente.cepFormatado}}.
+  {{cliente.estadoCivil}}, {{cliente.profissao}}, portador(a) do RG nº
+  {{cliente.rg}}, inscrito(a) no CPF sob o nº {{cliente.documentoFormatado}},
+  e-mail: {{cliente.email}}, telefone: {{cliente.telefoneFormatado}}, residente
+  e domiciliado(a) {{cliente.endereco}}, CEP: {{cliente.cepFormatado}},
+  {{cliente.cidade}}/{{cliente.uf}}.
 </p>

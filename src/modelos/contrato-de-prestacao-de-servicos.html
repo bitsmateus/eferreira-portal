@@ -1,51 +1,52 @@
 <!--
   CONTRATO DE PRESTAÇÃO DE SERVIÇOS ADVOCATÍCIOS — modelo oficial da
-  E. Ferreira Advogados (cível / empresarial).
+  E. Ferreira Advogados.
 
-  Transcrito do .docx enviado em 14/09/2026, com os dados de exemplo
-  substituídos por marcadores. Regra 10: o texto jurídico é do escritório e
-  não se altera.
+  Substituído por inteiro em 24/09/2026 pelo arquivo "Contrato de prestação
+  de serviços advocaticios.docx" (onze cláusulas, numeração final: acabou o
+  problema dos dois "3" e das duas "9ª" do texto de 14/09). Regra 10: o texto
+  jurídico é do escritório e não se altera.
 
-  DEFEITO NO ORIGINAL, transcrito como está: existem DUAS cláusulas numeradas
-  como 9ª — "Autorização para recebimento" e "Foro". Corrigir seria reescrever
-  texto jurídico por conta própria, o que a regra 10 proíbe. Está registrado
-  em docs/modelos-de-documento.md para o escritório resolver.
+  O arquivo tem três pontos "vide formato específico", que o sistema resolve
+  assim:
 
-  OBJETO E HONORÁRIOS VIERAM EM ARQUIVOS NOVOS (21/09/2026). A Cláusula
-  Primeira (objeto) tem cinco variações e a Terceira (honorários) quatro
-  blocos combináveis mais um bloco comum — cada um em seu arquivo
-  `contrato-objeto-*.html` / `contrato-honorarios-*.html`, encaixados abaixo
-  por `{{>objeto}}` e `{{>honorarios}}` (a escolha está em `src/lib/modelos.ts`).
-  Os títulos e a numeração "Primeira" e "Terceira" são os do escritório. A
-  antiga Cláusula 2ª (honorários, com conta bancária e Pix) saiu inteira: o
-  texto novo a substitui.
+    [OBJETO_CONTRATADO] e [ALCANCE_DA_ATUACAO]  →  o encaixe de objeto: os itens 1.1 e
+        1.2 de contrato-objeto-*.html (cinco variações, 21/09/2026);
+    [MODALIDADES_DE_HONORARIOS]  →  o encaixe de honorários: os blocos combináveis
+        contrato-honorarios-*.html (fixos, êxito, proveito econômico e
+        personalizados), SEM a numeração "3.1 a 3.4" que tinham — o item 3.1
+        agora é do contrato e as modalidades vêm logo abaixo dele;
+    [DADOS_DE_PAGAMENTO]  →  a conta do escritório, em `escritorio.ts`.
 
-  PENDENTE COM O ESCRITÓRIO: as demais cláusulas abaixo (3ª Despesas em
-  diante) continuam com o texto e a numeração de 14/09/2026, e por isso o
-  contrato hoje tem dois "3" — "Terceira" (honorários) e "3ª" (Despesas). O
-  escritório vai mandar o contrato completo com a numeração final; até lá NÃO
-  se renumera nada aqui (regra 10).
+  Os blocos de objeto e de honorários vieram em 21/09/2026, antes deste
+  contrato; o bloco comum de honorários (3.5 a 3.9) saiu — o contrato novo o
+  substitui (itens 3.2 a 3.5). CONFERIR com o escritório se querem novas
+  versões dos "formatos específicos" sem a numeração.
+
+  O CONTRATANTE tem três variantes (pessoa física, pessoa física
+  representada/assistida e pessoa jurídica), encaixadas pelos encaixes de contratante
+  e de assinatura. O arquivo do escritório só traz a de pessoa física; as
+  outras duas seguem a redação dos modelos de procuração dele, trocando
+  OUTORGANTE por CONTRATANTE. CONFERIR.
+
+  NÃO escreva a sintaxe de parte nem a de marcador dentro de um comentário:
+  as partes são encaixadas antes de os comentários serem removidos.
 -->
 <h1>Contrato de Prestação de Serviços Advocatícios</h1>
 
 <p>Pelo presente instrumento particular, de um lado:</p>
 
-<p class="qualificacao">
-  <span class="rotulo-parte">Contratante:</span>
-  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
-  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
-  {{cliente.rg}}, inscrito(a) no CPF sob o número:
-  {{cliente.documentoFormatado}}, e-mail: {{cliente.email}}, residente e
-  domiciliado á {{cliente.endereco}}, CEP {{cliente.cepFormatado}}.
-</p>
+{{>contratante}}
 
 <p class="qualificacao">
-  <span class="rotulo-parte">Contratado:</span> {{escritorio.razaoSocial}}, sob
-  registro de Sociedades de Advocacia nº {{escritorio.registroOab}}, neste ato
-  representado, pelo advogado {{escritorio.advogado}}, inscrito na OAB/SP sob
-  nº {{escritorio.oab}}, com endereço profissional à {{escritorio.endereco}},
-  {{escritorio.cidade}} - {{escritorio.uf}}, CEP: {{escritorio.cep}},
-  doravante denominado ADVOGADO.
+  <span class="rotulo-parte">Contratado:</span>
+  <span class="maiusculas">{{escritorio.razaoSocial}}</span>, inscrita no CNPJ
+  sob o nº {{escritorio.cnpj}},
+  sob registro de Sociedades de Advocacia nº {{escritorio.registroOab}}, com
+  endereço à rua: {{escritorio.endereco}}, {{escritorio.cidade}} -
+  {{escritorio.uf}}, CEP: {{escritorio.cep}}, neste ato representada, pelo
+  advogado Dr. {{escritorio.advogadoNoContrato}}, inscrito na OAB/SP sob nº
+  {{escritorio.oab}}, doravante denominado CONTRATADO.
 </p>
 
 <p>
@@ -53,122 +54,221 @@
   Serviços Advocatícios, regido pelas cláusulas e condições seguintes:
 </p>
 
-<h2>Cláusula Primeira – Do Objeto</h2>
+<h2>Cláusula Primeira — Do Objeto</h2>
 {{>objeto}}
 
+<h2>Cláusula Segunda — Da Atuação Profissional</h2>
+<p class="item">
+  2.1. O CONTRATADO prestará os serviços com zelo, diligência e independência
+  técnica, adotando as medidas juridicamente adequadas ao objeto contratado. A
+  obrigação é de meio, sem garantia de resultado, de prazo de decisão ou de
+  recebimento de valores.
+</p>
+<p class="item">
+  2.2. O CONTRATADO manterá o CONTRATANTE informado sobre os riscos relevantes,
+  as decisões e as providências que exijam sua participação, prestando
+  esclarecimentos quando solicitados. A definição da estratégia observará os
+  interesses do CONTRATANTE, a legislação e os deveres éticos da advocacia.
+</p>
+
 <h2>Cláusula Terceira — Dos Honorários Contratuais</h2>
+<p class="item">
+  3.1. Pelos serviços contratados, serão devidos os honorários nas modalidades
+  e condições abaixo:
+</p>
 {{>honorarios}}
+<p class="item">
+  3.2. As modalidades previstas no item 3.1 serão cumulativas, salvo ajuste
+  expresso em contrário. Os honorários fixos não constituem antecipação dos
+  variáveis, exceto se houver abatimento pactuado. O mesmo benefício não será
+  computado simultaneamente como ganho financeiro e economia, nem submetido a
+  dupla cobrança de honorários percentuais sob denominações distintas.
+</p>
+<p class="item">
+  3.3. Os honorários vinculam-se ao objeto contratado. O valor da causa, as
+  prestações futuras e o valor estimado de obrigações de fazer somente
+  integrarão a base de cálculo mediante previsão expressa do critério de
+  avaliação e, quando aplicável, do período considerado.
+</p>
+<p class="item">
+  3.4. Liminar, tutela provisória ou decisão sujeita a recurso não antecipará,
+  por si só, honorários sobre benefício ainda não realizado ou consolidado.
+  Remuneração específica por esse marco dependerá de previsão no item 3.1, com
+  definição de valor, vencimento e efeitos de eventual revogação.
+</p>
+<p class="item">
+  3.5. Os pagamentos serão realizados pelos meios previstos no item 3.1, nos
+  seguintes dados: {{escritorio.dadosDePagamento}}. Alterações serão
+  comunicadas pelo CONTRATADO por canal oficial e deverão ser confirmadas pelo
+  CONTRATANTE antes do pagamento.
+</p>
 
-<h2>Cláusula 3ª – Despesas Processuais</h2>
+<h2>Cláusula Quarta — Das Custas e Despesas</h2>
 <p class="item">
-  3.1. Custas, despesas processuais e honorários periciais não estão incluídos
-  nos honorários contratuais, devendo ser suportados pelo CONTRATANTE.
+  4.1. Custas, taxas, emolumentos, honorários periciais e despesas necessárias
+  com diligências, deslocamentos e serviços auxiliares não estão incluídos nos
+  honorários contratuais. Serão suportados pelo CONTRATANTE, mediante prévia
+  informação sobre sua finalidade, valor e prazo de pagamento, observados os
+  benefícios legais eventualmente concedidos.
 </p>
 <p class="item">
-  3.2. Caso o CONTRATADO antecipe valores para custas e despesas, fica desde já
-  autorizado a reter esses montantes no ato do repasse de valores recebidos.
-</p>
-
-<h2>Cláusula 4ª – Obrigações do Contratado</h2>
-<p class="item">
-  a) Representar o CONTRATANTE perante órgãos administrativos e judiciais no
-  processo objeto deste contrato;
+  4.2. O CONTRATADO não é obrigado a antecipar despesas. Os valores que
+  antecipar serão reembolsados mediante comprovação. Despesas extraordinárias
+  ou não previstas dependerão de prévia autorização do CONTRATANTE.
 </p>
 <p class="item">
-  b) Adotar todas as medidas jurídicas adequadas à defesa dos interesses do
-  CONTRATANTE;
-</p>
-<p class="item">c) Manter sigilo profissional nos termos da lei;</p>
-<p class="item">
-  d) Prestar informações sobre o andamento do processo em suas decisões
-  terminativas ou em caso de duvidas através do Telefone:
-  {{escritorio.telefone}} e e-mail: {{escritorio.email}}.
+  4.3. A falta de provisão de valores será comunicada ao CONTRATANTE, com
+  indicação das consequências e das alternativas cabíveis. Permanecem os
+  deveres de diligência do CONTRATADO, que não responderá por prejuízo
+  comprovadamente decorrente da omissão do CONTRATANTE após informação
+  adequada e tempestiva, sem culpa profissional.
 </p>
 
-<h2>Cláusula 5ª – Natureza da Obrigação</h2>
+<h2>Cláusula Quinta — Dos Honorários Sucumbenciais</h2>
+<p class="item">
+  5.1. Os honorários sucumbenciais atribuídos à atuação do CONTRATADO pertencem
+  aos seus titulares legais e serão recebidos na forma da lei, cumulativamente
+  com os honorários contratuais, sem compensação. Serão observados a moderação
+  e os limites éticos aplicáveis, inclusive à modalidade quota litis.
+</p>
+<p class="item">
+  5.2. Eventuais honorários devidos aos advogados da parte contrária e demais
+  encargos impostos ao CONTRATANTE são de sua responsabilidade, conforme
+  decisão judicial ou acordo, observadas as regras legais de exigibilidade.
+</p>
+
+<h2>Cláusula Sexta — Da Cooperação e das Comunicações</h2>
+<p class="item">
+  6.1. O CONTRATANTE fornecerá informações verdadeiras e documentos completos e
+  legíveis, preservará os originais e atenderá às solicitações e aos prazos
+  informados pelo CONTRATADO. Deverá comunicar imediatamente citações,
+  intimações, propostas de acordo, pagamentos e fatos relevantes, além de
+  comparecer aos atos para os quais sua presença seja necessária.
+</p>
+<p class="item">
+  6.2. As comunicações poderão ocorrer pelos e-mails, telefones e plataformas
+  informados pelas partes, que deverão manter seus contatos atualizados. A
+  ciência será apurada pelos registros de entrega, recebimento ou resposta,
+  conforme a natureza da comunicação. O simples envio não substitui
+  formalidade legal nem comprovação de ciência quando exigidas.
+</p>
+<p class="item">
+  6.3. Os documentos encaminhados por meio digital poderão ser utilizados na
+  atuação profissional. O CONTRATANTE responderá pela veracidade e integridade
+  do material fornecido, sem afastar o dever do CONTRATADO de examiná-lo e
+  solicitar esclarecimentos ou complementação quando necessários.
+</p>
+<p class="item">
+  6.4. A celebração de acordo pelo CONTRATADO dependerá de autorização expressa
+  do CONTRATANTE. Acordos ou recebimentos diretos relacionados ao objeto,
+  ainda que sem participação do CONTRATADO, preservarão os honorários nas
+  bases e nos vencimentos da cláusula terceira. O CONTRATANTE deverá
+  comunicá-los e fornecer os documentos necessários à apuração.
+</p>
+
+<h2>Cláusula Sétima — Do Recebimento e da Prestação de Contas</h2>
+<p class="item">
+  7.1. Quando munido dos poderes necessários, o CONTRATADO poderá receber
+  valores em nome do CONTRATANTE. Fica expressamente autorizada a dedução dos
+  honorários contratuais vencidos e exigíveis e das despesas comprovadamente
+  antecipadas, com apresentação de demonstrativo e repasse do saldo sem demora
+  injustificada. A autorização não alcança honorários estimados, ainda não
+  exigíveis ou estranhos a este contrato.
+</p>
+
+<h2>Cláusula Oitava — Da Vigência e do Encerramento</h2>
+<p class="item">
+  8.1. O contrato vigorará desde a assinatura até a conclusão dos serviços
+  descritos na cláusula primeira, sem prejuízo das obrigações que subsistam ao
+  encerramento. Qualquer das partes poderá encerrá-lo mediante comunicação
+  escrita, observadas as formalidades relativas ao mandato.
+</p>
+<p class="item">
+  8.2. No encerramento antecipado, os honorários serão apurados
+  proporcionalmente aos serviços efetivamente prestados, considerando-se as
+  etapas cumpridas e os valores pagos, com acerto de eventual saldo, inclusive
+  restituição quando cabível. A revogação ou a renúncia não implica, por si só,
+  vencimento integral dos honorários nem penalidade pela substituição do
+  profissional.
+</p>
+<p class="item">
+  8.3. Os honorários condicionados ao êxito ou ao proveito econômico
+  continuarão sujeitos às condições da cláusula terceira. Se o resultado
+  ocorrer após o encerramento, será preservada a remuneração proporcional à
+  atuação do CONTRATADO, sem antecipação fundada em benefício meramente
+  provável.
+</p>
+<p class="item">
+  8.4. Honorários vencidos poderão ser cobrados pelos meios legais. Atraso
+  superior a 10 (dez) dias ou omissão relevante no fornecimento de documentos
+  ou recursos poderá, após notificação para regularização, motivar o
+  encerramento e a renúncia. Não haverá suspensão automática da atuação
+  processual nem presunção de revogação do mandato.
+</p>
+<p class="item">
+  8.5. Em caso de renúncia, o CONTRATADO observará a comunicação comprovada e a
+  continuidade da representação pelo prazo legal, salvo substituição anterior.
+  No encerramento, prestará contas e disponibilizará os documentos e as
+  informações necessários à continuidade da defesa, sem condicionar sua
+  entrega ao pagamento de honorários.
+</p>
+
+<h2>Cláusula Nona — Do Sigilo e dos Dados Pessoais</h2>
+<p class="item">
+  9.1. O CONTRATADO preservará o sigilo profissional e tratará os dados
+  necessários à execução dos serviços, ao cumprimento de obrigações legais e
+  ao exercício regular de direitos. Dados sensíveis serão tratados apenas
+  quando indispensáveis e com fundamento nas hipóteses legais aplicáveis.
+</p>
+<p class="item">
+  9.2. O compartilhamento ficará limitado ao necessário à atuação, inclusive
+  com órgãos competentes, profissionais envolvidos e prestadores de serviços
+  tecnológicos, observados o sigilo e a proteção dos dados. Serão adotadas
+  medidas de segurança adequadas, com conservação pelo período necessário às
+  finalidades e obrigações legais. Solicitações relativas aos dados poderão ser
+  encaminhadas ao e-mail do CONTRATADO.
+</p>
+
+<h2>Cláusula Décima — Da Formalização e da Exigibilidade</h2>
+<p class="item">
+  10.1. O contrato poderá ser assinado física ou eletronicamente, por meio que
+  permita comprovar autoria e integridade, inclusive plataforma aceita pelas
+  partes, nos termos do art. 10 da MP nº 2.200-2/2001. Os registros da
+  assinatura integrarão a prova da contratação, dispensado o reconhecimento de
+  firma.
+</p>
+<p class="item">
+  10.2. Este contrato escrito de honorários constitui título executivo
+  extrajudicial, nos termos do art. 24 da Lei nº 8.906/1994 e do art. 784,
+  XII, do CPC, observados os requisitos de certeza, liquidez e exigibilidade
+  da obrigação. Para a assinatura eletrônica, aplica-se também o art. 784, §
+  4º, do CPC, quando presentes seus requisitos.
+</p>
+
+<h2>Cláusula Décima Primeira — Do Foro</h2>
+<p class="item">
+  11.1. Para as controvérsias decorrentes deste contrato, fica eleito o foro da
+  Comarca de Mogi das Cruzes/SP, domicílio profissional do CONTRATADO,
+  ressalvadas as hipóteses de competência legal inderrogável e o controle
+  judicial da validade da eleição.
+</p>
+
 <p>
-  O CONTRATADO obriga-se a prestar serviços advocatícios ao CONTRATANTE,
-  consistentes na atuação profissional necessária à defesa de seus interesses
-  no(s) processo(s) especificado(s) neste instrumento, empregando todo o zelo,
-  diligência, conhecimento técnico e meios jurídicos adequados, dentro dos
-  limites éticos e legais, sem que tal obrigação implique em garantia de
-  resultado favorável, tratando-se, portanto, de obrigação de meio, nos termos
-  da legislação e do Código de Ética e Disciplina da OAB.
-</p>
-
-<h2>Cláusula 6ª – Obrigações do Contratante</h2>
-<p class="item">a) Fornecer todos os documentos e informações necessárias;</p>
-<p class="item">
-  b) Comparecer a audiências e demais atos quando intimado;
-</p>
-<p class="item">
-  c) Ressarcir eventuais despesas processuais suportadas pelo CONTRATADO.
-</p>
-
-<h2>Cláusula 7ª – Honorários Sucumbenciais</h2>
-<p>
-  Os honorários de sucumbência fixados em sentença ou arbitrados em acordo
-  pertencem exclusivamente ao CONTRATADO, cumulativamente com os honorários
-  contratuais ora pactuados.
-</p>
-
-<h2>Cláusula 8ª – Rescisão</h2>
-<p class="item">
-  8.1. O presente contrato poderá ser rescindido por qualquer das partes,
-  mediante aviso escrito.
-</p>
-<p class="item">
-  8.2. Se a rescisão ocorrer por iniciativa do CONTRATANTE sem justa causa, ou
-  se este constituir outro advogado para o mesmo processo, será devido ao
-  CONTRATADO o pagamento dos honorários proporcionais ao trabalho realizado,
-  calculados sobre o provável proveito econômico da demanda.
-</p>
-
-<h2>Cláusula 9ª – Autorização para Recebimento</h2>
-<p>
-  O CONTRATANTE autoriza o CONTRATADO a receber, em seu nome, quaisquer valores
-  decorrentes da ação, podendo reter diretamente o montante correspondente aos
-  honorários contratuais e às despesas adiantadas.
-</p>
-
-<h2>Cláusula 9ª – Foro</h2>
-<p>
-  Fica eleito o foro da Comarca de {{escritorio.comarca}}, com renúncia de
-  qualquer outro, para dirimir questões oriundas deste contrato.
-</p>
-
-<p>
-  E, por estarem justos e contratados, firmam o presente instrumento por meio
-  eletrônico, utilizando assinatura digital com certificação ICP-Brasil ou
-  outro meio de comprovação de autoria e integridade aceito em direito, em
-  conformidade com a Medida Provisória nº 2.200-2/2001 e o Código Civil
-  Brasileiro.
-</p>
-
-<p>
-  As partes reconhecem que o documento assinado digitalmente possui a mesma
-  validade jurídica que o instrumento físico assinado de próprio punho,
-  dispensando-se a presença física das testemunhas quando a assinatura
-  eletrônica permitir a identificação inequívoca dos signatários.
+  As partes declaram ter lido e compreendido o objeto, as modalidades de
+  honorários e as demais condições deste instrumento e o assinam em
+  concordância.
 </p>
 
 <p class="local-e-data">{{localDaAssinatura}}, {{dataPorExtenso}}.</p>
 
-<div class="assinatura">
-  <div class="linha"></div>
-  <div class="nome">{{cliente.nome}}</div>
-  <div class="documento">CPF nº {{cliente.documentoFormatado}}</div>
-</div>
+<p class="rotulo-parte rotulo-de-assinatura">Contratante:</p>
+{{>assinatura}}
 
+<p class="rotulo-parte rotulo-de-assinatura">Contratado:</p>
 <div class="assinatura">
   <div class="linha"></div>
-  <div class="nome">{{escritorio.advogado}}</div>
+  <div class="nome maiusculas">{{escritorio.razaoSocial}}</div>
+  <div class="documento">CNPJ nº {{escritorio.cnpj}}</div>
+  <div class="documento">Representada por {{escritorio.advogadoNoContrato}}</div>
   <div class="documento">OAB/SP {{escritorio.oab}}</div>
 </div>
-
-<div class="testemunhas">
-  <p class="rotulo-parte">Testemunhas:</p>
-  <p>Nome: ___________________ CPF: ___________________</p>
-  <p>Nome: ___________________ CPF: ___________________</p>
-</div>
-

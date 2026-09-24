@@ -1,0 +1,21 @@
+<!--
+  Qualificação do CONTRATANTE pessoa física representada/assistida.
+
+  O arquivo do escritório (24/09/2026) só traz a de pessoa física adulta; esta
+  segue a redação do modelo "Procuração Pessoa Fisica Representada Assitida",
+  trocando OUTORGANTE por CONTRATANTE. CONFERIR com o escritório.
+-->
+<p class="qualificacao">
+  <span class="rotulo-parte">Contratante:</span>
+  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
+  portador(a) do RG nº {{cliente.rg}}, inscrito(a) no CPF sob o nº
+  {{cliente.documentoFormatado}}, neste ato assistido(a) por:
+  <span class="maiusculas">{{representante.nome}}</span>,
+  {{representante.nacionalidade}}, {{representante.estadoCivil}},
+  {{representante.profissao}}, portador(a) do RG nº {{representante.rg}},
+  inscrito(a) no CPF sob o nº {{representante.documentoFormatado}}, e-mail:
+  {{representante.email}}, telefone: {{representante.telefoneFormatado}},
+  residente e domiciliado(a) {{representante.endereco}}, CEP:
+  {{representante.cepFormatado}}, {{representante.cidade}}/{{representante.uf}},
+  doravante denominado(a) CONTRATANTE.
+</p>

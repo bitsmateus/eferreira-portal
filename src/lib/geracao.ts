@@ -27,16 +27,13 @@ import { registrarAuditoria } from '@/lib/auditoria'
 import { enviarArquivo, gerarChaveDeArquivo, removerArquivo } from '@/lib/armazenamento'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import {
-  MODELO_DO_TIPO,
   ROTULOS_DO_CASO,
   ROTULOS_DO_REPRESENTANTE,
-  aplicarPartes,
-  arquivoDoObjeto,
-  arquivosDosHonorarios,
+  montarModelo,
+  varianteDoDocumento,
   lacunasDoContrato,
   preencherModelo,
   valoresDoDocumento,
-  type CasoParaDocumento,
   type ClienteParaDocumento,
 } from '@/lib/modelos'
 import { gerarPdf, lerModelo, montarPaginaTimbrada } from '@/lib/pdf'
@@ -66,49 +63,8 @@ export type ResultadoDaPrevia =
   | { situacao: 'caso_obrigatorio' }
   /** O cadastro está incompleto: a lista diz exatamente o que falta. */
   | { situacao: 'faltam_dados'; faltando: string[]; ondePreencher: string }
-
-/**
- * Lê o modelo e encaixa as partes que mudam.
- *
- * A procuração muda com o tipo de pessoa: o escritório confirmou em 14/09/2026
- * que "ela pode ser PJ ou PF dependendo do tipo de cliente do contrato".
- *
- * O contrato muda com o caso, desde 21/09/2026: a cláusula de objeto tem cinco
- * variações e a de honorários quatro blocos combináveis mais um comum. Quais
- * entram é decisão de `arquivoDoObjeto` e `arquivosDosHonorarios`, as mesmas
- * funções que os testes usam — uma composição só. A declaração tem texto único.
- */
-async function montarModelo(
-  tipo: TipoGeravel,
-  tipoPessoa: TipoPessoa,
-  caso: CasoParaDocumento | null,
-  comResponsavel: boolean,
-): Promise<string> {
-  const modelo = await lerModelo(MODELO_DO_TIPO[tipo] ?? '')
-
-  if (tipo === TipoDocumento.CONTRATO && caso !== null) {
-    const arquivoDoTipoDeObjeto = arquivoDoObjeto(caso.tipoDeObjeto)
-    const [objeto, honorarios] = await Promise.all([
-      arquivoDoTipoDeObjeto === null ? '' : lerModelo(arquivoDoTipoDeObjeto),
-      Promise.all(arquivosDosHonorarios(caso).map((nome) => lerModelo(nome))),
-    ])
-
-    return aplicarPartes(modelo, { objeto, honorarios: honorarios.join('\n') })
-  }
-
-  if (tipo !== TipoDocumento.PROCURACAO) return modelo
-
-  // Pessoa física COM responsável vinculado é cliente menor de idade,
-  // representado (modelo enviado em 24/09/2026).
-  const sufixo =
-    tipoPessoa === TipoPessoa.JURIDICA ? 'pj' : comResponsavel ? 'menor' : 'pf'
-  const [outorgante, assinatura] = await Promise.all([
-    lerModelo(`procuracao-outorgante-${sufixo}`),
-    lerModelo(`procuracao-assinatura-${sufixo}`),
-  ])
-
-  return aplicarPartes(modelo, { outorgante, assinatura })
-}
+  /** O escritório não tem modelo para este documento neste tipo de cliente. */
+  | { situacao: 'nao_se_aplica'; motivo: string }
 
 /**
  * Monta o documento preenchido, sem gravar nada. É o que a tela de prévia usa
@@ -168,14 +124,22 @@ export async function montarPrevia(
   }
 
   // Empresa não assina sozinha: quem assina é o representante legal. Numa
-  // pessoa física, o mesmo vínculo é o do RESPONSÁVEL pelo menor — e só a
-  // procuração o usa; contrato e declaração seguem em nome do cliente.
+  // pessoa física, o mesmo vínculo é o do ASSISTENTE (responsável por menor ou
+  // incapaz) — os três documentos têm modelo "representada/assistida".
   const vinculo = cliente.representantes[0] ?? null
   const representante = vinculo?.pessoaFisica ?? null
   const ehEmpresa = cliente.tipoPessoa === TipoPessoa.JURIDICA
-  const comResponsavel =
-    !ehEmpresa && representante !== null && tipo === TipoDocumento.PROCURACAO
-  const quemRepresenta = ehEmpresa || comResponsavel ? representante : null
+  const comResponsavel = !ehEmpresa && representante !== null
+  const quemRepresenta = representante
+
+  // Só existe modelo de declaração de hipossuficiência para pessoa física.
+  if (tipo === TipoDocumento.DECLARACAO && ehEmpresa) {
+    return {
+      situacao: 'nao_se_aplica',
+      motivo:
+        'A declaração de hipossuficiência só tem modelo para pessoa física. Empresa não gera esta declaração.',
+    }
+  }
 
   if (cliente.tipoPessoa === TipoPessoa.JURIDICA && representante === null) {
     return {
@@ -185,23 +149,12 @@ export async function montarPrevia(
     }
   }
 
-  // O contrato e a declaração ainda usam os modelos antigos, em que a
-  // qualificação pessoal do sócio ocupa o lugar da da empresa. A procuração
-  // nova não funde mais os dois — ver `procuracao-outorgante-pj.html`.
-  const paraDocumento: ClienteParaDocumento =
-    !ehEmpresa || representante === null
-      ? cliente
-      : {
-          ...cliente,
-          // Da empresa: nome e CNPJ. Do sócio: a qualificação pessoal.
-          nacionalidade: representante.nacionalidade,
-          estadoCivil: representante.estadoCivil,
-          nomeMae: representante.nomeMae,
-          rg: representante.rg,
-        }
+  // Desde 24/09/2026 os três documentos separam a empresa (ou o assistido) do
+  // representante: cada um entra com os seus dados, sem fundir um no outro.
+  const paraDocumento: ClienteParaDocumento = cliente
 
   const preenchido = preencherModelo(
-    await montarModelo(tipo, cliente.tipoPessoa, caso, comResponsavel),
+    await montarModelo(lerModelo, tipo, varianteDoDocumento(cliente.tipoPessoa, comResponsavel), caso),
     valoresDoDocumento(
       paraDocumento,
       quemRepresenta === null
@@ -214,6 +167,8 @@ export async function montarPrevia(
             qualificacao: vinculo?.qualificacao ?? null,
             estadoCivil: quemRepresenta.estadoCivil,
             profissao: quemRepresenta.profissao,
+            email: quemRepresenta.email,
+            telefone: quemRepresenta.telefone,
             nomeMae: quemRepresenta.nomeMae,
             endereco: quemRepresenta.endereco,
             cidade: quemRepresenta.cidade,
@@ -256,6 +211,7 @@ export type ResultadoDaGeracao =
   | { situacao: 'nao_encontrado' }
   | { situacao: 'caso_obrigatorio' }
   | { situacao: 'faltam_dados'; faltando: string[]; ondePreencher: string }
+  | { situacao: 'nao_se_aplica'; motivo: string }
 
 export async function gerarDocumento(
   sessao: SessaoServidor,

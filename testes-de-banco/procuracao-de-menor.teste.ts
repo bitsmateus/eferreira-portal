@@ -67,6 +67,7 @@ beforeAll(async () => {
         nomeMae: 'Cintia Cristina da Silva Soares',
         rg: '69.945.690-3',
         email: 'menor.teste@exemplo.invalido',
+        telefone: '11987654321',
         ...ENDERECO,
       },
       select: { id: true },
@@ -85,6 +86,7 @@ beforeAll(async () => {
       nomeMae: 'Maria Inez da Silva',
       rg: '45.311.733-8 SSP/SP',
       email: 'mae.teste@exemplo.invalido',
+      telefone: '11955554444',
       ...ENDERECO,
     },
   })
@@ -100,12 +102,12 @@ async function procuracao() {
 }
 
 describe('procuração de pessoa física', () => {
-  it('sem responsável vinculado, sai a de pessoa física de sempre', async () => {
+  it('sem responsável vinculado, sai a de pessoa física', async () => {
     const resultado = await procuracao()
     expect(resultado.situacao).toBe('pronto')
     if (resultado.situacao !== 'pronto') return
-    expect(resultado.html).toContain('nome da mãe: Cintia')
-    expect(resultado.html).not.toContain('representado(a) por')
+    expect(resultado.html).toContain('estudante')
+    expect(resultado.html).not.toContain('assistido(a) por')
   })
 
   it('ninguém é responsável por si mesmo', async () => {
@@ -134,12 +136,13 @@ describe('procuração de pessoa física', () => {
     if (resultado.situacao !== 'pronto') return
 
     const texto = resultado.html.replace(/\s+/g, ' ')
-    expect(texto).toContain('representado(a) por seu(sua) genitora:')
+    expect(texto).toContain('neste ato assistido(a) por:')
     expect(texto).toContain('brasileira, casada, auxiliar de embalagem')
-    expect(texto).toContain('filho(a) de Maria Inez da Silva')
+    // O assistido entra só com nome, nacionalidade, RG e CPF.
+    expect(texto).not.toContain('estudante')
   })
 
-  it('a declaração do mesmo cliente segue em nome dele, sem o responsável', async () => {
+  it('a declaração do mesmo cliente também sai no modelo assistido', async () => {
     const resultado = await montarPrevia(
       sessaoDaEquipe(),
       menorId,
@@ -148,7 +151,7 @@ describe('procuração de pessoa física', () => {
     )
     expect(resultado.situacao).toBe('pronto')
     if (resultado.situacao !== 'pronto') return
-    expect(resultado.html).not.toContain('representado(a) por')
+    expect(resultado.html).toContain('assistido(a) por')
   })
 
   it('responsável com cadastro incompleto: diz o que falta e leva ao cadastro DELE', async () => {

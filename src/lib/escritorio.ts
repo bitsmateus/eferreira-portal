@@ -41,8 +41,12 @@ export const ESCRITORIO = {
   /** Razão social que assina o contrato. */
   razaoSocial: 'Sergio E. Ferreira Sociedade Individual de Advocacia',
   registroOab: '69.212',
+  /** CNPJ da sociedade, como no contrato de 24/09/2026. */
+  cnpj: '67.706.981/0001-68',
 
   advogado: 'Dr. Sergio Evangelista Ferreira',
+  /** Como o contrato de 24/09/2026 cita o advogado: no cabeçalho e na assinatura. */
+  advogadoNoContrato: 'Sérgio E. Ferreira',
   /** Qualificação pessoal do advogado, como consta na procuração. */
   advogadoQualificacao: 'brasileiro, solteiro, advogado',
   oab: '378.532',
@@ -79,6 +83,14 @@ export const ESCRITORIO = {
   conta: '31387773-4',
   chavePix: 'Cnpj 53.909.599/0001-47',
   razaoSocialRecebedora: 'EFERREIRA ASSESSORIA E COBRANCA LTDA',
+
+  /**
+   * O que entra no item 3.5 do contrato ("nos seguintes dados: ..."). O
+   * contrato novo (24/09/2026) manda preencher [DADOS_DE_PAGAMENTO] e não diz
+   * quais; usa-se a conta que já constava no contrato antigo. CONFIRMAR.
+   */
+  dadosDePagamento:
+    'Banco 336 - C6 S.A., agência 0001, conta 31387773-4, chave Pix CNPJ 53.909.599/0001-47, em nome de EFERREIRA ASSESSORIA E COBRANCA LTDA',
 } as const
 
 export type DadosDoEscritorio = typeof ESCRITORIO
@@ -106,8 +118,8 @@ export const MENSAGEM_DE_SUPORTE_NO_WHATSAPP =
  * outro advogado, acrescente uma linha aqui. (Quando a tela de administração
  * do escritório existir, isto vai para lá.)
  *
- * `whatsapp` nulo: o modelo do escritório cita "endereço eletrônico: X e
- * whatsapp: Y" — sem número, a frase termina no e-mail.
+ * O e-mail e o telefone que a procuração cita são os do ESCRITÓRIO
+ * (`ESCRITORIO.email`/`telefone`), iguais para qualquer advogado.
  */
 export type AdvogadoOutorgado = {
   id: string

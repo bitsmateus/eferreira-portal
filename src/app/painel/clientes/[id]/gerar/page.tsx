@@ -192,6 +192,13 @@ export default async function PaginaDeGeracao({
               </div>
             )}
 
+            {previa?.situacao === 'nao_se_aplica' && (
+              <div className="aviso aviso-atencao">
+                <span aria-hidden="true">▲</span>
+                <div>{previa.motivo}</div>
+              </div>
+            )}
+
             {previa?.situacao === 'caso_obrigatorio' && (
               <div className="aviso aviso-atencao">
                 <span aria-hidden="true">▲</span>

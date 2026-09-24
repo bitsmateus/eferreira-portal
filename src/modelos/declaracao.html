@@ -1,36 +1,35 @@
 <!--
-  DECLARAÇÃO DE HIPOSSUFICIÊNCIA — modelo oficial da E. Ferreira Advogados.
+  DECLARAÇÃO DE HIPOSSUFICIÊNCIA ECONÔMICA — modelo oficial da E. Ferreira
+  Advogados.
 
-  Transcrito do .docx enviado em 14/09/2026, com os dados de exemplo
-  substituídos por marcadores. Regra 10: o texto é do escritório e cita lei e
-  artigos — não se altera nem uma vírgula. O trecho em maiúsculas está assim
-  no original.
+  Substituído em 24/09/2026 pelos modelos "Declaração de Hipossuficiência
+  Econômica Pessoa Fisica PF" e "...Representada Assistida" (o texto de
+  14/09, com a lei nº 1.060/1950, saiu). Regra 10: o texto é do escritório e
+  cita lei e artigos — não se altera. Só existe para PESSOA FÍSICA, e o
+  sistema não gera para empresa: não há modelo do escritório para isso.
 
-  É o documento mais simples: além da qualificação, não tem campo variável.
+  A qualificação de quem declara muda com o tipo de cliente e vem de
+  declaracao-declarante-pf.html ou declaracao-declarante-assistida.html; a
+  assinatura reaproveita procuracao-assinatura-*.html. Única adaptação: a
+  concordância com "(a)" ("portador(a)", "inscrito(a)"), porque o sistema
+  atende clientes dos dois gêneros.
+
+  NÃO escreva a sintaxe de parte nem a de marcador dentro de um comentário.
 -->
-<h1>Declaração de Hipossuficiência</h1>
+<h1>Declaração de Hipossuficiência Econômica</h1>
 
 <p class="qualificacao">
-  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
-  {{cliente.estadoCivil}}, nome da mãe: {{cliente.nomeMae}}, portador(a) do RG
-  número: {{cliente.rg}}, inscrito(a) no CPF sob o número:
-  {{cliente.documentoFormatado}}, Residente e domiciliado à
-  {{cliente.endereco}}, CEP: {{cliente.cepFormatado}}.
+  Eu, {{>declarante}}, declaro, sob as penas da lei, que, em minha atual
+  condição econômica, não disponho de recursos suficientes para arcar com as
+  custas e despesas processuais sem prejuízo do meu sustento e das
+  necessidades essenciais de minha família.
 </p>
 
-<p class="maiusculas">
-  Desejando obter os benefícios da “justiça gratuita”, declara, sob as penas da
-  lei, que não possui recursos suficientes para custear qualquer demanda, sem
-  prejuízo do sustento próprio e da família, pelo que, nos termos da lei nº
-  1.060 de 05 de fevereiro de 1950, artigo 98 do novo CPC e nos termos do art.
-  5º, LXXIV da Constituição Federal de 1988, faz jus aos benefícios da
-  gratuidade da justiça.
+<p>
+  Por essa razão, requeiro a concessão dos benefícios da gratuidade da justiça,
+  nos termos dos arts. 98 e 99 do Código de Processo Civil.
 </p>
 
 <p class="local-e-data">{{localDaAssinatura}}, {{dataPorExtenso}}.</p>
 
-<div class="assinatura">
-  <div class="linha"></div>
-  <div class="nome">{{cliente.nome}}</div>
-</div>
-
+{{>assinatura}}

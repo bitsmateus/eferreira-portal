@@ -1,10 +1,11 @@
 <!--
   PROCURAÇÃO AD JUDICIA ET EXTRA — modelo oficial da E. Ferreira Advogados.
 
-  Transcrito do arquivo "1.Procuração ad judicia et extra CREDIT.docx", enviado
-  pelo escritório em 14/09/2026 com o pedido de "utiliza esta procuração como
-  base". Substitui o modelo anterior por inteiro: o texto dos poderes é outro,
-  mais longo, e cita o artigo 105 do Código de Processo Civil.
+  Transcrito do arquivo "1.Procuração ad judicia et extra CREDIT.docx" (14/09)
+  e conferido em 24/09/2026 contra os três modelos novos do escritório
+  ("Procuração Pessoa Fisica PF", "...Representada Assitida" e "...Pessoa
+  Juridica PJ"): o texto dos poderes é o mesmo nos três. Cita o artigo 105
+  do Código de Processo Civil.
 
   Regra 10: o texto jurídico é do escritório e NÃO se altera — nem para
   "melhorar" a redação, nem para corrigir concordância. Se algo precisar mudar,
@@ -17,12 +18,10 @@
 
     outorgante  →  procuracao-outorgante-pf.html
                    procuracao-outorgante-pj.html
+                   procuracao-outorgante-assistida.html
     assinatura  →  procuracao-assinatura-pf.html
                    procuracao-assinatura-pj.html
-
-  ATENÇÃO — o bloco de pessoa física NÃO veio neste arquivo. Ele foi mantido
-  do modelo anterior do escritório, que era de pessoa física. É texto deles,
-  mas de outra versão: precisa de conferência.
+                   procuracao-assinatura-assistida.html
 
   NÃO escreva a sintaxe de parte nem a de marcador dentro de um comentário:
   as partes são encaixadas antes de os comentários serem removidos, e um
@@ -36,6 +35,7 @@
 
   Ver src/lib/modelos.ts para a lista de campos.
 -->
+<div class="documento-compacto">
 <h1>Procuração Ad Judicia Et Extra</h1>
 
 {{>outorgante}}
@@ -46,31 +46,33 @@
   {{outorgado.qualificacao}}, {{outorgado.inscrito}} na OAB/{{escritorio.uf}} sob o
   nº {{outorgado.oab}}, com escritório profissional na
   {{escritorio.endereco}}, {{escritorio.cidade}} – {{escritorio.uf}}, CEP
-  {{escritorio.cep}}, {{outorgado.contato}}
+  {{escritorio.cep}}, {{outorgado.contato}}.
 </p>
 
 <p>
-  <span class="rotulo-parte">Poderes:</span> A OUTORGANTE nomeia e constitui {{outorgado.o}}
-  {{outorgado.ROTULO}} {{outorgado.procurador}}, conferindo-lhe os poderes da
-  cláusula AD JUDICIA ET EXTRA, para representá-la ativa ou passivamente, em
-  qualquer juízo, tribunal, instância ou grau de jurisdição, podendo propor
-  ações, apresentar defesas, contestações, reconvenções, impugnações,
-  manifestações e recursos, acompanhar processos e procedimentos, requerer
-  tutelas provisórias e medidas incidentais, produzir provas, participar de
-  audiências, praticar atos de cumprimento e execução de decisões judiciais e,
-  de modo geral, praticar todos os atos necessários à defesa dos direitos e
-  interesses da OUTORGANTE. Confere, ainda, poderes especiais, nos termos do
-  artigo 105 do Código de Processo Civil, para confessar, reconhecer a
-  procedência do pedido, transigir, desistir, renunciar ao direito sobre o qual
-  se funda a ação, receber, dar quitação, firmar compromisso e assinar
-  declaração de hipossuficiência econômica, quando cabível. {{outorgado.O}} {{outorgado.ROTULO}} poderá,
-  ainda, representar a OUTORGANTE perante órgãos e entidades públicas ou
-  privadas quando necessário à atuação jurídica decorrente deste mandato, bem
-  como substabelecer, no todo ou em parte, com ou sem reserva de poderes. O
-  presente mandato permanecerá válido até sua expressa revogação pela
-  OUTORGANTE.
+  <span class="rotulo-parte">Poderes:</span> A OUTORGANTE nomeia e constitui
+  {{outorgado.o}} {{outorgado.ROTULO}} {{outorgado.procurador}}, conferindo-lhe
+  os poderes da cláusula <strong>AD JUDICIA ET EXTRA</strong>, para
+  representá-la ativa ou passivamente, em qualquer juízo, tribunal, instância
+  ou grau de jurisdição, podendo propor ações, apresentar defesas,
+  contestações, reconvenções, impugnações, manifestações e recursos, acompanhar
+  processos e procedimentos, requerer tutelas provisórias e medidas
+  incidentais, produzir provas, participar de audiências, praticar atos de
+  cumprimento e execução de decisões judiciais e, de modo geral, praticar todos
+  os atos necessários à defesa dos direitos e interesses da OUTORGANTE.
+  Confere, ainda, <strong>poderes especiais</strong>, nos termos do artigo 105
+  do Código de Processo Civil, para <strong>confessar, reconhecer a procedência
+  do pedido, transigir, desistir, renunciar ao direito sobre o qual se funda a
+  ação, receber, dar quitação, firmar compromisso e assinar declaração de
+  hipossuficiência econômica</strong>, quando cabível. {{outorgado.O}}
+  {{outorgado.ROTULO}} poderá, ainda, representar a OUTORGANTE perante órgãos e
+  entidades públicas ou privadas quando necessário à atuação jurídica
+  decorrente deste mandato, bem como <strong>substabelecer, no todo ou em
+  parte, com ou sem reserva de poderes</strong>. O presente mandato
+  permanecerá válido até sua expressa revogação pela OUTORGANTE.
 </p>
 
 <p class="local-e-data">{{localDaAssinatura}}, {{dataPorExtenso}}.</p>
 
 {{>assinatura}}
+</div>

@@ -5,18 +5,18 @@ import { advogadoPorId } from '@/lib/escritorio'
 import {
   NaturezaDoHonorarioPersonalizado,
   TipoDeObjeto,
+  TipoDocumento,
   TipoPessoa,
 } from '@prisma/client'
 
 import {
   MODELOS,
-  aplicarPartes,
-  arquivoDoObjeto,
-  arquivosDosHonorarios,
   marcadoresDoModelo,
+  montarModeloComArquivos,
   preencherModelo,
   valoresDoDocumento,
   type CasoParaDocumento,
+  type VarianteDoDocumento,
   type ClienteParaDocumento,
 } from '@/lib/modelos'
 
@@ -24,35 +24,27 @@ function lerArquivo(nome: string): string {
   return readFileSync(join(process.cwd(), 'src', 'modelos', `${nome}.html`), 'utf8')
 }
 
+const TIPO_DO_MODELO: Record<string, TipoDocumento> = {
+  [MODELOS.PROCURACAO]: TipoDocumento.PROCURACAO,
+  [MODELOS.DECLARACAO]: TipoDocumento.DECLARACAO,
+  [MODELOS.CONTRATO]: TipoDocumento.CONTRATO,
+}
+
 /**
- * Monta o modelo como `geracao.ts` monta: o arquivo principal mais as partes
- * que mudam com o tipo de pessoa. Se os dois caminhos divergirem, o teste
- * deixa de valer — por isso a lógica é a mesma, e não uma cópia simplificada.
+ * Monta o modelo com a MESMA função que a geração usa
+ * (`montarModeloComArquivos`) — não há cópia simplificada que possa divergir.
  */
 function lerModelo(
   nome: string,
-  tipoPessoa: TipoPessoa = TipoPessoa.FISICA,
+  variante: VarianteDoDocumento = 'pf',
   casoDoContrato: CasoParaDocumento = caso,
 ): string {
-  const modelo = lerArquivo(nome)
-
-  if (nome === MODELOS.CONTRATO) {
-    const arquivo = arquivoDoObjeto(casoDoContrato.tipoDeObjeto)
-    return aplicarPartes(modelo, {
-      objeto: arquivo === null ? '' : lerArquivo(arquivo),
-      honorarios: arquivosDosHonorarios(casoDoContrato)
-        .map((parte) => lerArquivo(parte))
-        .join('\n'),
-    })
-  }
-
-  if (nome !== MODELOS.PROCURACAO) return modelo
-
-  const sufixo = tipoPessoa === TipoPessoa.FISICA ? 'pf' : 'pj'
-  return aplicarPartes(modelo, {
-    outorgante: lerArquivo(`procuracao-outorgante-${sufixo}`),
-    assinatura: lerArquivo(`procuracao-assinatura-${sufixo}`),
-  })
+  return montarModeloComArquivos(
+    lerArquivo,
+    TIPO_DO_MODELO[nome] ?? TipoDocumento.ANEXO,
+    variante,
+    casoDoContrato,
+  )
 }
 
 const cliente: ClienteParaDocumento = {
@@ -61,9 +53,11 @@ const cliente: ClienteParaDocumento = {
   documento: '52998224725',
   nacionalidade: 'brasileiro',
   estadoCivil: 'casado',
+  profissao: 'engenheiro',
   nomeMae: 'Beltrana de Tal',
   rg: '12.345.678 SSP-SP',
   email: 'fulano@exemplo.com.br',
+  telefone: '11987654321',
   endereco: 'Rua das Flores, 100, Centro',
   cidade: 'Mogi das Cruzes',
   uf: 'SP',
@@ -89,6 +83,14 @@ const socio = {
   nacionalidade: 'brasileiro',
   rg: '22.588.089-1 SSP-SP',
   qualificacao: 'sócio',
+  estadoCivil: 'Casado',
+  profissao: 'empresário',
+  email: 'sicrano@exemplo.com.br',
+  telefone: '11912345678',
+  endereco: 'Rua dos Sócios, 50',
+  cidade: 'São Paulo',
+  uf: 'SP',
+  cep: '01310100',
 }
 
 const SEM_MODALIDADES: CasoParaDocumento = {
@@ -155,7 +157,9 @@ describe('preencherModelo', () => {
 
     expect(resultado.html).not.toMatch(/\{\{/)
     expect(resultado.html).toContain('Fulano de Tal da Silva')
-    expect(resultado.html).toContain('Beltrana de Tal')
+    expect(resultado.html).toContain('engenheiro')
+    expect(resultado.html).toContain('(11) 98765-4321')
+    expect(resultado.html).toContain('fulano@exemplo.com.br')
     expect(resultado.html).toContain('529.982.247-25')
     expect(resultado.html).toContain('08780-040')
     expect(resultado.html).toContain('14 de setembro de 2026')
@@ -189,16 +193,26 @@ describe('preencherModelo', () => {
   })
 
   // O ponto do exercício: documento incompleto NÃO é gerado em branco.
-  it('recusa gerar quando falta o nome da mãe, e diz o que falta', () => {
+  it('recusa gerar quando falta a profissão, e diz o que falta', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.PROCURACAO),
-      valoresDoDocumento({ ...cliente, nomeMae: null }, null, null, emitidoEm),
+      valoresDoDocumento({ ...cliente, profissao: null }, null, null, emitidoEm),
     )
 
     expect(resultado.ok).toBe(false)
     if (resultado.ok) return
 
-    expect(resultado.faltando).toContain('nome da mãe')
+    expect(resultado.faltando).toContain('profissão')
+  })
+
+  it('o nome da mãe não é mais pedido por nenhum documento (modelos de 24/09/2026)', () => {
+    for (const modelo of Object.values(MODELOS)) {
+      const resultado = preencherModelo(
+        lerModelo(modelo),
+        valoresDoDocumento({ ...cliente, nomeMae: null }, null, caso, emitidoEm),
+      )
+      expect(resultado.ok, modelo).toBe(true)
+    }
   })
 
   it('trata campo só de espaços como ausente', () => {
@@ -216,7 +230,7 @@ describe('preencherModelo', () => {
     const resultado = preencherModelo(
       lerModelo(MODELOS.PROCURACAO),
       valoresDoDocumento(
-        { ...cliente, nomeMae: null, rg: null, nacionalidade: null },
+        { ...cliente, rg: null, nacionalidade: null },
         null,
         null,
         emitidoEm,
@@ -226,7 +240,7 @@ describe('preencherModelo', () => {
     expect(resultado.ok).toBe(false)
     if (resultado.ok) return
 
-    expect(resultado.faltando.sort()).toEqual(['RG', 'nacionalidade', 'nome da mãe'])
+    expect(resultado.faltando.sort()).toEqual(['RG', 'nacionalidade'])
   })
 
   // O nome vem de quem digitou no formulário e vai para dentro de HTML.
@@ -262,7 +276,7 @@ describe('os modelos e o dicionário estão em dia', () => {
       (tipo) =>
         [
           `contrato (objeto ${tipo})`,
-          lerModelo(MODELOS.CONTRATO, TipoPessoa.FISICA, {
+          lerModelo(MODELOS.CONTRATO, 'pf', {
             ...casoCompleto,
             tipoDeObjeto: tipo,
           }),
@@ -274,10 +288,11 @@ describe('os modelos e o dicionário estão em dia', () => {
         .filter((modelo) => modelo !== MODELOS.CONTRATO)
         .map((modelo) => [modelo, lerModelo(modelo)] as const),
       ...contratos,
-      [
-        'procuracao (jurídica)',
-        lerModelo(MODELOS.PROCURACAO, TipoPessoa.JURIDICA),
-      ] as const,
+      ...(['pj', 'assistida'] as const).flatMap((variante) => [
+        [`procuracao (${variante})`, lerModelo(MODELOS.PROCURACAO, variante)] as const,
+        [`contrato (${variante})`, lerModelo(MODELOS.CONTRATO, variante, casoCompleto)] as const,
+      ]),
+      ['declaracao (assistida)', lerModelo(MODELOS.DECLARACAO, 'assistida')] as const,
     ]
 
     for (const [nome, modelo] of montados) {
@@ -292,12 +307,17 @@ describe('os modelos e o dicionário estão em dia', () => {
 
   // Parte não encaixada sairia impressa no documento assinado.
   it('nenhum modelo montado deixa parte por encaixar', () => {
-    for (const tipoPessoa of [TipoPessoa.FISICA, TipoPessoa.JURIDICA]) {
-      expect(lerModelo(MODELOS.PROCURACAO, tipoPessoa)).not.toContain('{{>')
+    for (const variante of ['pf', 'pj', 'assistida'] as const) {
+      expect(lerModelo(MODELOS.PROCURACAO, variante)).not.toContain('{{>')
+      expect(lerModelo(MODELOS.CONTRATO, variante)).not.toContain('{{>')
+      // Não há declaração de hipossuficiência para empresa.
+      if (variante !== 'pj') {
+        expect(lerModelo(MODELOS.DECLARACAO, variante)).not.toContain('{{>')
+      }
     }
 
     for (const tipo of Object.values(TipoDeObjeto)) {
-      const contrato = lerModelo(MODELOS.CONTRATO, TipoPessoa.FISICA, {
+      const contrato = lerModelo(MODELOS.CONTRATO, 'pf', {
         ...casoCompleto,
         tipoDeObjeto: tipo,
       })
@@ -344,7 +364,7 @@ describe('outorgado da procuração (24/09/2026)', () => {
     const html = procuracaoCom(null)
     expect(html).toContain('Dr. Sergio Evangelista Ferreira')
     expect(html).toContain('brasileiro, solteiro, advogado, inscrito na OAB/SP sob o nº 378.532')
-    expect(html).toContain('endereço eletrônico: sergioferreira@eferreira.adv.br e whatsapp: 11 93806.3696')
+    expect(html).toContain('e-mail: contato@eferreira.adv.br, telefone: (11) 4580-3696.')
     expect(html).toContain('constitui o OUTORGADO seu bastante procurador e advogado, conferindo-lhe')
     expect(html).toContain('O OUTORGADO poderá')
   })
@@ -354,8 +374,9 @@ describe('outorgado da procuração (24/09/2026)', () => {
     expect(html).toContain('Dra. Cristina Moura Santos Lopes')
     expect(html).toContain('brasileira, divorciada, advogada, inscrita na OAB/SP sob o nº 453.976')
     expect(html).toContain('Rua Olegário Paiva, nº 180, 4º andar, Sala 411, Centro')
-    expect(html).toContain('endereço eletrônico: cristina.msl.adv@gmail.com </p>')
-    expect(html).not.toContain('whatsapp: 11 93806')
+    // O contato citado é o do ESCRITÓRIO, para qualquer advogado.
+    expect(html).toContain('e-mail: contato@eferreira.adv.br, telefone: (11) 4580-3696.')
+    expect(html).not.toContain('cristina.msl.adv@gmail.com')
     expect(html).toContain('constitui a OUTORGADA sua bastante procuradora e advogada, conferindo-lhe')
     expect(html).toContain('A OUTORGADA poderá')
     expect(html).not.toContain('Sergio')
@@ -366,77 +387,87 @@ describe('outorgado da procuração (24/09/2026)', () => {
   })
 })
 
-describe('procuração de menor representado (24/09/2026)', () => {
+describe('variantes representada/assistida e pessoa jurídica (24/09/2026)', () => {
   const menor: ClienteParaDocumento = {
     ...cliente,
     nome: 'Miguel Barreto da Silva',
     documento: '54384339844',
-    estadoCivil: 'Solteiro',
-    profissao: 'estudante',
-    nomeMae: 'Cintia Cristina da Silva Soares',
     rg: '69.945.690-3',
-    endereco: 'Avenida Major Mello, nº 280, Vila Nova Aparecida',
-    cidade: 'Mogi das Cruzes',
-    cep: '05425070',
   }
   const mae = {
     nome: 'Cíntia Cristina da Silva Soares',
     documento: '36568755885',
     nacionalidade: 'brasileira',
     rg: '45.311.733-8 SSP/SP',
-    qualificacao: 'genitora',
+    qualificacao: null,
     estadoCivil: 'Casada',
     profissao: 'auxiliar de embalagem',
-    nomeMae: 'Maria Inez da Silva',
+    email: 'mae@exemplo.com.br',
+    telefone: '11955554444',
     endereco: 'Avenida Major Mello, nº 280, Vila Nova Aparecida',
     cidade: 'Mogi das Cruzes',
     uf: 'SP',
     cep: '05425070',
   }
 
-  function montar(): string {
-    const modelo = aplicarPartes(lerArquivo(MODELOS.PROCURACAO), {
-      outorgante: lerArquivo('procuracao-outorgante-menor'),
-      assinatura: lerArquivo('procuracao-assinatura-menor'),
-    })
+  function texto(nome: string, variante: VarianteDoDocumento, quem: ClienteParaDocumento, rep: typeof mae | typeof socio | null): string {
     const resultado = preencherModelo(
-      modelo,
-      valoresDoDocumento(menor, mae, null, emitidoEm),
+      lerModelo(nome, variante),
+      valoresDoDocumento(quem, rep, caso, emitidoEm),
     )
     if (!resultado.ok) throw new Error(`faltou: ${resultado.faltando.join(', ')}`)
     return resultado.html.replace(/\s+/g, ' ')
   }
 
-  it('qualifica o menor e, em seguida, o responsável, cada um com os seus dados', () => {
-    const html = montar()
-    expect(html).toContain('Miguel Barreto da Silva</span>, brasileiro, solteiro, estudante')
-    expect(html).toContain('RG nº 69.945.690-3, inscrito(a) no CPF/MF sob o nº 543.843.398-44')
-    expect(html).toContain('filho(a) de Cintia Cristina da Silva Soares')
-    expect(html).toContain('representado(a) por seu(sua) genitora:')
+  it('procuração assistida: o outorgante só com nome, RG e CPF; o assistente completo', () => {
+    const html = texto(MODELOS.PROCURACAO, 'assistida', menor, mae)
+    expect(html).toContain('Miguel Barreto da Silva</span>, brasileiro, portador(a) do RG nº 69.945.690-3')
+    expect(html).toContain('inscrito(a) no CPF sob o nº 543.843.398-44, neste ato assistido(a) por:')
     expect(html).toContain('Cíntia Cristina da Silva Soares</span>, brasileira, casada, auxiliar de embalagem')
-    expect(html).toContain('CEP 05425-070')
-    expect(html).not.toMatch(/\{\{/)
+    expect(html).toContain('e-mail: mae@exemplo.com.br, telefone: (11) 95555-4444')
+    expect(html).toContain('residente e domiciliado(a) Avenida Major Mello')
+    expect(html).toContain('CEP: 05425-070')
+    // O menor não entra com profissão, estado civil nem endereço.
+    expect(html).not.toContain('engenheiro')
+    expect(html).not.toContain('Rua das Flores')
   })
 
-  it('quem assina é o responsável, não o menor', () => {
-    const html = montar()
+  it('assinatura assistida: nome e CPF de quem outorga, "Representada por" o assistente', () => {
+    const html = texto(MODELOS.PROCURACAO, 'assistida', menor, mae)
     const assinatura = html.slice(html.indexOf('class="assinatura"'))
-    expect(assinatura).toContain('Cíntia Cristina da Silva Soares')
-    expect(assinatura).not.toContain('Miguel')
+    expect(assinatura).toContain('Miguel Barreto da Silva')
+    expect(assinatura).toContain('CPF nº 543.843.398-44')
+    expect(assinatura).toContain('Representada por: Cíntia Cristina da Silva Soares')
   })
 
-  it('sem a qualificação do responsável, o documento não sai — e diz o que falta', () => {
-    const modelo = aplicarPartes(lerArquivo(MODELOS.PROCURACAO), {
-      outorgante: lerArquivo('procuracao-outorgante-menor'),
-      assinatura: lerArquivo('procuracao-assinatura-menor'),
-    })
-    const resultado = preencherModelo(
-      modelo,
-      valoresDoDocumento(menor, { ...mae, profissao: null, endereco: null }, null, emitidoEm),
-    )
-    expect(resultado.ok).toBe(false)
-    if (resultado.ok) return
-    expect(resultado.faltando).toContain('profissão do representante legal')
-    expect(resultado.faltando).toContain('endereço do representante legal')
+  it('declaração assistida usa o mesmo desenho', () => {
+    const html = texto(MODELOS.DECLARACAO, 'assistida', menor, mae)
+    expect(html).toContain('Eu, <span class="maiusculas">Miguel Barreto da Silva</span>')
+    expect(html).toContain('neste ato assistido(a) por:')
+    expect(html).toContain('declaro, sob as penas da lei')
+    expect(html).toContain('arts. 98 e 99 do Código de Processo Civil')
+  })
+
+  it('procuração de pessoa jurídica: empresa e representante legal lado a lado', () => {
+    const html = texto(MODELOS.PROCURACAO, 'pj', empresa, socio)
+    expect(html).toContain('pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 11.222.333/0001-81')
+    expect(html).toContain('neste ato representada por seu representante legal')
+    expect(html).toContain('Sicrano de Tal</span>, brasileiro, casado')
+    expect(html).toContain('conforme atos constitutivos da sociedade')
+    const assinatura = html.slice(html.indexOf('class="assinatura"'))
+    expect(assinatura).toContain('CNPJ nº 11.222.333/0001-81')
+    expect(assinatura).toContain('Representada por: Sicrano de Tal')
+  })
+
+  it('o contrato traz o contratante da variante e a assinatura do escritório', () => {
+    const pj = texto(MODELOS.CONTRATO, 'pj', empresa, socio)
+    expect(pj).toContain('neste ato representada por seu representante legal')
+    expect(pj).toContain('doravante denominada CONTRATANTE')
+
+    const pf = texto(MODELOS.CONTRATO, 'pf', cliente, null)
+    expect(pf).toContain('doravante denominado(a) CONTRATANTE')
+    expect(pf).toContain('inscrita no CNPJ sob o nº 67.706.981/0001-68')
+    expect(pf).toContain('foro da Comarca de Mogi das Cruzes/SP')
+    expect(pf).toContain('Representada por Sérgio E. Ferreira')
   })
 })

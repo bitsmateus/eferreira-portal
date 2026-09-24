@@ -1,0 +1,23 @@
+<!--
+  Qualificação do OUTORGANTE pessoa física representada/assistida (menor ou
+  incapaz).
+
+  Modelo "Procuração Pessoa Fisica Representada Assitida", enviado pelo
+  escritório em 24/09/2026 — substitui a versão de 24/09 feita a partir do
+  exemplo do Miguel. O outorgante entra só com nome, nacionalidade, RG e CPF;
+  o assistente entra com a qualificação completa e o endereço. Regra 10: texto
+  do escritório; única adaptação, a concordância com "(a)".
+-->
+<p class="qualificacao">
+  <span class="rotulo-parte">Outorgante:</span>
+  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
+  portador(a) do RG nº {{cliente.rg}}, inscrito(a) no CPF sob o nº
+  {{cliente.documentoFormatado}}, neste ato assistido(a) por:
+  <span class="maiusculas">{{representante.nome}}</span>,
+  {{representante.nacionalidade}}, {{representante.estadoCivil}},
+  {{representante.profissao}}, portador(a) do RG nº {{representante.rg}},
+  inscrito(a) no CPF sob o nº {{representante.documentoFormatado}}, e-mail:
+  {{representante.email}}, telefone: {{representante.telefoneFormatado}},
+  residente e domiciliado(a) {{representante.endereco}}, CEP:
+  {{representante.cepFormatado}}, {{representante.cidade}}/{{representante.uf}}.
+</p>

@@ -94,6 +94,8 @@ beforeAll(async () => {
       nomeMae: 'Mãe de Teste',
       rg: '12.345.678-9',
       email: 'cliente.contrato.por.partes@exemplo.invalido',
+      telefone: '11987654321',
+      profissao: 'engenheira',
       endereco: 'Rua de Teste, 100',
       cidade: 'São Paulo',
       uf: 'SP',

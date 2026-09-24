@@ -178,8 +178,8 @@ export type ClienteQueAssina = {
  *  - **procuração** e **declaração**: só o cliente. São declarações dele; o
  *    escritório é destinatário, não parte que assina.
  *  - **contrato**: o cliente e o escritório — é bilateral.
- *  - **procuração de menor** (pessoa física com responsável vinculado): quem
- *    assina é o responsável, não o menor.
+ *  - **pessoa física com assistente vinculado** (menor ou incapaz, modelos
+ *    "representada/assistida" de 24/09/2026): quem assina é o assistente.
  *  - **pessoa jurídica**: empresa não assina, quem assina é o representante
  *    legal. Sem e-mail próprio dele, vale o da empresa.
  *  - **anexo**: nada AQUI — um anexo não tem cliente nem representante
@@ -195,8 +195,7 @@ export function partesQueAssinam(
   if (tipo === TipoDocumento.ANEXO) return []
 
   const partes: ParteQueAssina[] =
-    representante !== null &&
-    (cliente.tipoPessoa === TipoPessoa.JURIDICA || tipo === TipoDocumento.PROCURACAO)
+    representante !== null
       ? [
           {
             papel: 'representante',

@@ -5,16 +5,16 @@ import {
   CanalDePagamentoDosHonorariosFixos,
   NaturezaDoHonorarioPersonalizado,
   TipoDeObjeto,
+  TipoDocumento,
   TipoPessoa,
 } from '@prisma/client'
 
 import {
-  MODELOS,
   ROTULOS_DO_CASO,
-  aplicarPartes,
   arquivoDoObjeto,
   arquivosDosHonorarios,
   formaDePagamentoDosFixos,
+  montarModeloComArquivos,
   lacunasDoContrato,
   preencherModelo,
   valoresDoDocumento,
@@ -35,13 +35,7 @@ function lerArquivo(nome: string): string {
 }
 
 function montarContrato(caso: CasoParaDocumento): string {
-  const arquivo = arquivoDoObjeto(caso.tipoDeObjeto)
-  return aplicarPartes(lerArquivo(MODELOS.CONTRATO), {
-    objeto: arquivo === null ? '' : lerArquivo(arquivo),
-    honorarios: arquivosDosHonorarios(caso)
-      .map((parte) => lerArquivo(parte))
-      .join('\n'),
-  })
+  return montarModeloComArquivos(lerArquivo, TipoDocumento.CONTRATO, 'pf', caso)
 }
 
 const cliente: ClienteParaDocumento = {
@@ -50,9 +44,11 @@ const cliente: ClienteParaDocumento = {
   documento: '52998224725',
   nacionalidade: 'brasileiro',
   estadoCivil: 'casado',
+  profissao: 'engenheiro',
   nomeMae: 'Beltrana de Tal',
   rg: '12.345.678 SSP-SP',
   email: 'fulano@exemplo.com.br',
+  telefone: '11987654321',
   endereco: 'Rua das Flores, 100, Centro',
   cidade: 'Mogi das Cruzes',
   uf: 'SP',
@@ -139,7 +135,7 @@ describe('cláusula de objeto — as cinco variações', () => {
     expect(html).toContain('Ação de cobrança contra Construtora Exemplo Ltda')
     expect(html).toContain('1.1. O presente contrato tem por objeto')
     expect(html).toContain('1.2.')
-    expect(html).toContain('Cláusula Primeira – Do Objeto')
+    expect(html).toContain('Cláusula Primeira — Do Objeto')
   })
 
   it('uma variação não vaza o texto de outra', () => {
@@ -177,18 +173,14 @@ describe('cláusula de objeto — as cinco variações', () => {
 })
 
 describe('cláusula de honorários — blocos combináveis', () => {
-  it('escolhe os arquivos na ordem do escritório, com o bloco comum no fim', () => {
-    expect(arquivosDosHonorarios(SO_FIXOS)).toEqual([
-      'contrato-honorarios-fixos',
-      'contrato-honorarios-comuns',
-    ])
+  it('escolhe os arquivos na ordem do escritório', () => {
+    expect(arquivosDosHonorarios(SO_FIXOS)).toEqual(['contrato-honorarios-fixos'])
 
     expect(arquivosDosHonorarios(COMPLETO)).toEqual([
       'contrato-honorarios-fixos',
       'contrato-honorarios-exito',
       'contrato-honorarios-economia',
       'contrato-honorarios-personalizados',
-      'contrato-honorarios-comuns',
     ])
   })
 
@@ -199,27 +191,29 @@ describe('cláusula de honorários — blocos combináveis', () => {
     ])
   })
 
-  it('só fixos: bloco 1 e bloco comum, sem os outros', () => {
+  it('só fixos: o bloco 1 dentro do item 3.1, e os itens 3.2 a 3.5 do contrato', () => {
     const html = contratoPreenchido(SO_FIXOS)
 
     expect(html).toContain('Cláusula Terceira — Dos Honorários Contratuais')
-    expect(html).toContain('3.1. Pelos serviços descritos neste contrato')
+    expect(html).toContain('3.1. Pelos serviços contratados, serão devidos os honorários')
+    expect(html).toContain('Pelos serviços descritos neste contrato')
     expect(html).toContain('honorários fixos no valor de R$ 1.750,00')
     expect(html).toContain('mil setecentos e cinquenta reais')
     expect(html).toContain('mediante 3(três) parcelas')
-    expect(html).toContain('3.5. As modalidades expressamente previstas')
-    expect(html).toContain('3.9. O atraso superior a 10 (dez) dias')
+    expect(html).toContain('3.2. As modalidades previstas no item 3.1 serão cumulativas')
+    expect(html).toContain('3.5. Os pagamentos serão realizados pelos meios previstos no item 3.1')
+    expect(html).toContain('Banco 336 - C6 S.A.')
     expect(html).not.toContain('sobre os valores brutos efetivamente recebidos')
     expect(html).not.toContain('sobre a economia efetivamente obtida')
     expect(html).not.toContain('Pela prestação de')
   })
 
-  it('só êxito: começa em 3.2, como no arquivo do escritório', () => {
+  it('só êxito: entra sozinho sob o item 3.1', () => {
     const html = contratoPreenchido({ ...SEM_MODALIDADES, percentualExito: 25 })
 
-    expect(html).toContain('3.2. O CONTRATANTE pagará ao CONTRATADO honorários de 25%')
+    expect(html).toContain('O CONTRATANTE pagará ao CONTRATADO honorários de 25%')
     expect(html).not.toContain('honorários fixos no valor')
-    expect(html).toContain('3.5.')
+    expect(html).toContain('3.2. As modalidades previstas no item 3.1')
   })
 
   it('só proveito econômico traz a referência e o prazo', () => {
@@ -260,7 +254,7 @@ describe('cláusula de honorários — blocos combináveis', () => {
       personalizadoCondicoesEspecificas: 'sem abatimentos',
     })
 
-    expect(html).toContain('3.4. Pela prestação de a elaboração de parecer')
+    expect(html).toContain('Pela prestação de a elaboração de parecer')
     expect(html).toContain('calculados sobre não se aplica')
     expect(html).toContain('Esta remuneração será compensável em relação a contratação isolada')
     expect(html).toContain('condições específicas: sem abatimentos.')
@@ -282,20 +276,29 @@ describe('cláusula de honorários — blocos combináveis', () => {
   it('as quatro modalidades juntas, na ordem do escritório', () => {
     const html = contratoPreenchido(COMPLETO)
 
-    const posicoes = ['3.1.', '3.2.', '3.3.', '3.4.', '3.5.'].map((marco) =>
-      html.indexOf(marco),
-    )
+    const posicoes = [
+      'honorários fixos no valor',
+      'sobre os valores brutos efetivamente recebidos',
+      'sobre a economia efetivamente obtida',
+      'Pela prestação de',
+    ].map((marco) => html.indexOf(marco))
     expect(posicoes.every((posicao) => posicao >= 0)).toBe(true)
     expect([...posicoes].sort((a, b) => a - b)).toEqual(posicoes)
   })
 
-  it('nada da cláusula 2ª antiga sobra no contrato', () => {
+  it('nada do contrato antigo sobra: numeração única, sem cláusula 9ª repetida', () => {
     const html = contratoPreenchido(SO_FIXOS)
 
-    expect(html).not.toContain('Chave Pix')
     expect(html).not.toContain('Caso não haja proveito econômico, não será devido')
     expect(html).not.toContain('Cláusula 1ª')
-    expect(html).not.toContain('Cláusula 2ª')
+    expect(html).not.toContain('Cláusula 9ª')
+    expect(html).not.toContain('Testemunhas:')
+    for (const clausula of [
+      'Primeira', 'Segunda', 'Terceira', 'Quarta', 'Quinta', 'Sexta', 'Sétima',
+      'Oitava', 'Nona', 'Décima', 'Décima Primeira',
+    ]) {
+      expect(html.split(`Cláusula ${clausula} —`).length - 1, clausula).toBe(1)
+    }
   })
 
   it('todo rótulo de "falta" de caso leva para editar o caso', () => {

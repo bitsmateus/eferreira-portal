@@ -1,5 +1,9 @@
-<!-- Assinatura da pessoa física: o próprio outorgante. -->
+<!--
+  Assinatura da pessoa física: o próprio outorgante — nome e CPF, como no
+  modelo de 24/09/2026. Também é a assinatura do contrato e da declaração.
+-->
 <div class="assinatura">
   <div class="linha"></div>
   <div class="nome">{{cliente.nome}}</div>
+  <div class="documento">CPF nº {{cliente.documentoFormatado}}</div>
 </div>

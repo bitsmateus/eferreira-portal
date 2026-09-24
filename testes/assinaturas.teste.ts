@@ -486,17 +486,17 @@ describe('baixarAssinado', () => {
   })
 })
 
-describe('procuração de menor (24/09/2026)', () => {
-  const RESPONSAVEL = { nome: 'Mãe do Menor', email: 'mae@exemplo.invalido' }
+describe('pessoa física com assistente (24/09/2026)', () => {
+  const ASSISTENTE = { nome: 'Mãe do Menor', email: 'mae@exemplo.invalido' }
 
-  it('pessoa física com responsável: a procuração é assinada pelo responsável', () => {
-    const partes = partesQueAssinam(TipoDocumento.PROCURACAO, PESSOA_FISICA, RESPONSAVEL)
-    expect(partes).toHaveLength(1)
-    expect(partes[0]?.email).toBe('mae@exemplo.invalido')
-  })
-
-  it('o contrato e a declaração continuam em nome do cliente', () => {
-    const declaracao = partesQueAssinam(TipoDocumento.DECLARACAO, PESSOA_FISICA, RESPONSAVEL)
-    expect(declaracao.map((p) => p.email)).toEqual([PESSOA_FISICA.email])
+  it('procuração, declaração e contrato são assinados pelo assistente, não pelo assistido', () => {
+    for (const tipo of [
+      TipoDocumento.PROCURACAO,
+      TipoDocumento.DECLARACAO,
+      TipoDocumento.CONTRATO,
+    ]) {
+      const partes = partesQueAssinam(tipo, PESSOA_FISICA, ASSISTENTE)
+      expect(partes[0]?.email, tipo).toBe('mae@exemplo.invalido')
+    }
   })
 })

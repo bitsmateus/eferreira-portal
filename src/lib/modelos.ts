@@ -15,7 +15,7 @@ import {
   TipoDeObjeto,
   type CanalDePagamentoDosHonorariosFixos,
   type NaturezaDoHonorarioPersonalizado,
-  type TipoPessoa,
+  TipoPessoa,
 } from '@prisma/client'
 
 import {
@@ -25,7 +25,7 @@ import {
 } from '@/lib/escritorio'
 import { formatarDataExtenso } from '@/lib/datas'
 import { formatarDocumento } from '@/lib/documento'
-import { formatarCep } from '@/lib/formatos'
+import { formatarCep, formatarTelefone } from '@/lib/formatos'
 import { formatarReais, reaisPorExtenso } from '@/lib/extenso'
 
 /** Modelos disponíveis hoje. O termo de acordo ficou fora do escopo. */
@@ -53,8 +53,8 @@ export type ClienteParaDocumento = {
   documento: string
   nacionalidade: string | null
   estadoCivil: string | null
-  /** Só a procuração de menor usa ("estudante"). */
   profissao?: string | null
+  telefone?: string | null
   nomeMae: string | null
   rg: string | null
   email: string | null
@@ -80,11 +80,14 @@ export type RepresentanteParaDocumento = {
   /** "sócio", "sócio administrador", "presidente" — como no contrato social. */
   qualificacao: string | null
   /**
-   * Só a procuração de MENOR usa o que segue: nela o responsável entra com a
-   * qualificação completa, no lugar do sócio de empresa. Ausente = nulo.
+   * O que segue é a qualificação do representante que os modelos de
+   * 24/09/2026 pedem (sócio de empresa ou assistente de pessoa física).
+   * Ausente = nulo.
    */
   estadoCivil?: string | null
   profissao?: string | null
+  email?: string | null
+  telefone?: string | null
   nomeMae?: string | null
   endereco?: string | null
   cidade?: string | null
@@ -145,8 +148,9 @@ export function arquivoDoObjeto(tipo: TipoDeObjeto | null): string | null {
 
 /**
  * Os arquivos da cláusula de honorários, na ordem do escritório: fixos, êxito,
- * proveito econômico, personalizados — e por último o bloco comum, que vale
- * qualquer que seja a combinação. Vazio quando nenhuma modalidade foi marcada.
+ * proveito econômico, personalizados. O bloco comum (3.5 a 3.9) saiu em
+ * 24/09/2026: o contrato novo traz os itens 3.2 a 3.5 no próprio texto.
+ * Vazio quando nenhuma modalidade foi marcada.
  */
 export function arquivosDosHonorarios(
   caso: Pick<
@@ -166,7 +170,88 @@ export function arquivosDosHonorarios(
   }
   if (caso.honorariosPersonalizados) blocos.push('contrato-honorarios-personalizados')
 
-  return blocos.length === 0 ? [] : [...blocos, 'contrato-honorarios-comuns']
+  return blocos
+}
+
+/**
+ * Os três modelos do escritório (24/09/2026) têm a mesma divisão: pessoa
+ * física, pessoa física representada/assistida e — menos a declaração —
+ * pessoa jurídica. Pessoa física COM assistente vinculado é a assistida.
+ */
+export type VarianteDoDocumento = 'pf' | 'pj' | 'assistida'
+
+export function varianteDoDocumento(
+  tipoPessoa: TipoPessoa,
+  comAssistente: boolean,
+): VarianteDoDocumento {
+  return tipoPessoa === TipoPessoa.JURIDICA ? 'pj' : comAssistente ? 'assistida' : 'pf'
+}
+
+/**
+ * Encaixa as partes que mudam no modelo — a mesma composição que a geração
+ * usa e que os testes conferem (`ler` devolve o texto de um arquivo).
+ *
+ * O contrato muda com o caso (cláusula de objeto, blocos de honorários) e com
+ * a variante do contratante; a procuração e a declaração, só com a variante.
+ */
+export function montarModeloComArquivos(
+  ler: (nome: string) => string,
+  tipo: TipoDocumento,
+  variante: VarianteDoDocumento,
+  caso: CasoParaDocumento | null,
+): string {
+  const modelo = ler(MODELO_DO_TIPO[tipo] ?? '')
+  const assinatura = ler(`procuracao-assinatura-${variante}`)
+
+  if (tipo === TipoDocumento.CONTRATO && caso !== null) {
+    const arquivoDoTipoDeObjeto = arquivoDoObjeto(caso.tipoDeObjeto)
+    return aplicarPartes(modelo, {
+      contratante: ler(`contrato-contratante-${variante}`),
+      objeto: arquivoDoTipoDeObjeto === null ? '' : ler(arquivoDoTipoDeObjeto),
+      honorarios: arquivosDosHonorarios(caso)
+        .map((nome) => ler(nome))
+        .join('\n'),
+      assinatura,
+    })
+  }
+
+  if (tipo === TipoDocumento.DECLARACAO) {
+    return aplicarPartes(modelo, {
+      declarante: ler(`declaracao-declarante-${variante}`),
+      assinatura,
+    })
+  }
+
+  if (tipo !== TipoDocumento.PROCURACAO) return modelo
+
+  return aplicarPartes(modelo, {
+    outorgante: ler(`procuracao-outorgante-${variante}`),
+    assinatura,
+  })
+}
+
+/** O mesmo, para quem só consegue ler arquivo de forma assíncrona. */
+export async function montarModelo(
+  ler: (nome: string) => Promise<string>,
+  tipo: TipoDocumento,
+  variante: VarianteDoDocumento,
+  caso: CasoParaDocumento | null,
+): Promise<string> {
+  // Ensaio para descobrir quais arquivos entram; depois, lê todos e monta.
+  const nomes = new Set<string>()
+  montarModeloComArquivos(
+    (nome) => {
+      nomes.add(nome)
+      return ''
+    },
+    tipo,
+    variante,
+    caso,
+  )
+  const lidos = new Map<string, string>()
+  await Promise.all([...nomes].map(async (nome) => lidos.set(nome, await ler(nome))))
+
+  return montarModeloComArquivos((nome) => lidos.get(nome) ?? '', tipo, variante, caso)
 }
 
 /**
@@ -337,6 +422,10 @@ export function valoresDoDocumento(
     // do documento ("brasileira, casada, nome da mãe") vai em minúscula.
     'cliente.estadoCivil': ouNulo(cliente.estadoCivil)?.toLocaleLowerCase('pt-BR') ?? null,
     'cliente.profissao': ouNulo(cliente.profissao ?? null),
+    'cliente.telefoneFormatado':
+      cliente.telefone === null || cliente.telefone === undefined || cliente.telefone.trim() === ''
+        ? null
+        : formatarTelefone(cliente.telefone),
     'cliente.nomeMae': ouNulo(cliente.nomeMae),
     'cliente.rg': ouNulo(cliente.rg),
     'cliente.documentoFormatado': formatarDocumento(cliente.documento),
@@ -365,6 +454,13 @@ export function valoresDoDocumento(
     valores['representante.estadoCivil'] =
       ouNulo(representante.estadoCivil ?? null)?.toLocaleLowerCase('pt-BR') ?? null
     valores['representante.profissao'] = ouNulo(representante.profissao ?? null)
+    valores['representante.email'] = ouNulo(representante.email ?? null)
+    valores['representante.telefoneFormatado'] =
+      representante.telefone === null ||
+      representante.telefone === undefined ||
+      representante.telefone.trim() === ''
+        ? null
+        : formatarTelefone(representante.telefone)
     valores['representante.nomeMae'] = ouNulo(representante.nomeMae ?? null)
     valores['representante.endereco'] = ouNulo(representante.endereco ?? null)
     valores['representante.cidade'] = ouNulo(representante.cidade ?? null)
@@ -460,10 +556,9 @@ function valoresDoOutorgado(advogado: AdvogadoOutorgado): Record<string, string>
     'outorgado.nome': advogado.nome,
     'outorgado.qualificacao': advogado.qualificacao,
     'outorgado.oab': advogado.oab,
-    'outorgado.contato':
-      advogado.whatsapp === null
-        ? `endereço eletrônico: ${advogado.email}`
-        : `endereço eletrônico: ${advogado.email} e whatsapp: ${advogado.whatsapp}`,
+    // Desde 24/09/2026 o modelo cita o e-mail e o telefone do ESCRITÓRIO,
+    // para qualquer advogado — não os pessoais dele.
+    'outorgado.contato': `e-mail: ${ESCRITORIO.email}, telefone: ${ESCRITORIO.telefone}`,
   }
 }
 
@@ -499,6 +594,7 @@ const ROTULO_DO_MARCADOR: Record<string, string> = {
   'cliente.nacionalidade': 'nacionalidade',
   'cliente.estadoCivil': 'estado civil',
   'cliente.profissao': 'profissão',
+  'cliente.telefoneFormatado': 'telefone',
   'cliente.nomeMae': 'nome da mãe',
   'cliente.rg': 'RG',
   'cliente.email': 'e-mail',
@@ -514,6 +610,8 @@ const ROTULO_DO_MARCADOR: Record<string, string> = {
   'representante.qualificacao': 'qualificação do sócio (sócio, presidente)',
   'representante.estadoCivil': 'estado civil do representante legal',
   'representante.profissao': 'profissão do representante legal',
+  'representante.email': 'e-mail do representante legal',
+  'representante.telefoneFormatado': 'telefone do representante legal',
   'representante.nomeMae': 'nome da mãe do representante legal',
   'representante.endereco': 'endereço do representante legal',
   'representante.cidade': 'cidade do representante legal',
