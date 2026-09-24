@@ -797,7 +797,6 @@ export function FormularioDeCliente({
                       nome="representanteProfissao"
                       rotulo="Profissão"
                       erro={erros['representanteProfissao']}
-                      obrigatorio
                     >
                       <input
                         id="representanteProfissao"

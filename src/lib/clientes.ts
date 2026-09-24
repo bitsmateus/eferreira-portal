@@ -246,9 +246,10 @@ export const esquemaDoRepresentante = z
     representanteEstadoCivil: textoObrigatorioDoRepresentante(
       'O estado civil do representante legal é obrigatório.',
     ),
-    representanteProfissao: textoObrigatorioDoRepresentante(
-      'A profissão do representante legal é obrigatória.',
-    ),
+    // O modelo de procuração de pessoa jurídica (24/09/2026) não cita a
+    // profissão do representante legal — só a do assistente de pessoa física
+    // cita, e essa é conferida na hora de gerar o documento.
+    representanteProfissao: opcional,
     representanteNacionalidade: textoObrigatorioDoRepresentante(
       'A nacionalidade do representante legal é obrigatória.',
     ),

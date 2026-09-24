@@ -424,7 +424,7 @@ describe('campos obrigatórios (definidos pelo escritório em 14/09/2026)', () =
     expect(resultado.ok).toBe(true)
   })
 
-  it('mas exige contato também da pessoa jurídica', () => {
+  it('mas exige o endereço da pessoa jurídica (e-mail e telefone, não — 24/09/2026)', () => {
     const resultado = validarCliente(
       campos({
         documento: '11.222.333/0001-81',
@@ -444,11 +444,6 @@ describe('campos obrigatórios (definidos pelo escritório em 14/09/2026)', () =
     expect(resultado.ok).toBe(false)
     if (resultado.ok) return
 
-    expect(Object.keys(resultado.erros).sort()).toEqual([
-      'cep',
-      'email',
-      'endereco',
-      'telefone',
-    ])
+    expect(Object.keys(resultado.erros).sort()).toEqual(['cep', 'endereco'])
   })
 })

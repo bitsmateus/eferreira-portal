@@ -91,10 +91,19 @@ describe('a lista muda com o tipo de pessoa', () => {
     expect(ehObrigatorio('nomeMae', TipoPessoa.JURIDICA)).toBe(false)
   })
 
-  it('contato e endereço valem para os dois', () => {
-    for (const campo of ['email', 'telefone', 'cep', 'endereco', 'cidade', 'uf']) {
+  it('o endereço vale para os dois', () => {
+    for (const campo of ['cep', 'endereco', 'cidade', 'uf']) {
       expect(ehObrigatorio(campo, TipoPessoa.FISICA)).toBe(true)
       expect(ehObrigatorio(campo, TipoPessoa.JURIDICA)).toBe(true)
+    }
+  })
+
+  // Cabeçalho da procuração (24/09/2026): o da empresa não traz e-mail nem
+  // telefone dela — os que saem no documento são os do representante legal.
+  it('e-mail e telefone são da pessoa física; a empresa não precisa', () => {
+    for (const campo of ['email', 'telefone']) {
+      expect(ehObrigatorio(campo, TipoPessoa.FISICA)).toBe(true)
+      expect(ehObrigatorio(campo, TipoPessoa.JURIDICA)).toBe(false)
     }
   })
 

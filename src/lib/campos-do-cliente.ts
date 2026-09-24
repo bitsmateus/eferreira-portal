@@ -36,6 +36,15 @@ import { TipoPessoa } from '@prisma/client'
  * 17/09/2026, a pedido do escritório — fica registrado no cadastro mas nunca
  * bloqueia a gravação, nem da pessoa física nem do representante legal.
  *
+ * REVISTO em 24/09/2026: "para o cadastro o que precisamos de dados
+ * obrigatórios são os que estão no cabeçalho da procuração". O cabeçalho da
+ * pessoa física traz nome, nacionalidade, estado civil, profissão, RG, CPF,
+ * e-mail, telefone, endereço completo, CEP e cidade/UF — a lista de sempre.
+ * O da pessoa jurídica traz só razão social, CNPJ, endereço, cidade/UF e CEP:
+ * e-mail e telefone da empresa deixaram de ser obrigatórios (os que saem no
+ * documento são os do representante legal). Sem e-mail o acesso ao portal
+ * simplesmente não é liberado — ver "Acesso do cliente".
+ *
  * Bloqueiam a gravação, a pedido do escritório: "é melhor não deixar salvar,
  * para não criar futuras pendências".
  *
@@ -45,9 +54,12 @@ import { TipoPessoa } from '@prisma/client'
  * substantivo: "Nacionalidade é obrigatório" está errado, e num sistema de
  * escritório de advocacia isso salta aos olhos de quem lê o dia inteiro.
  */
-export const OBRIGATORIOS_COMUNS = [
+export const OBRIGATORIOS_DE_CONTATO = [
   ['email', 'E-mail', 'O e-mail é obrigatório.'],
   ['telefone', 'Telefone', 'O telefone é obrigatório.'],
+] as const
+
+export const OBRIGATORIOS_COMUNS = [
   ['cep', 'CEP', 'O CEP é obrigatório.'],
   ['endereco', 'Endereço', 'O endereço é obrigatório.'],
   ['cidade', 'Cidade', 'A cidade é obrigatória.'],
@@ -62,6 +74,7 @@ export const OBRIGATORIOS_DA_PESSOA = [
 ] as const
 
 export type CampoObrigatorio =
+  | (typeof OBRIGATORIOS_DE_CONTATO)[number][0]
   | (typeof OBRIGATORIOS_COMUNS)[number][0]
   | (typeof OBRIGATORIOS_DA_PESSOA)[number][0]
 
@@ -69,7 +82,7 @@ export function obrigatoriosPara(
   tipoPessoa: TipoPessoa,
 ): readonly (readonly [CampoObrigatorio, string, string])[] {
   return tipoPessoa === TipoPessoa.FISICA
-    ? [...OBRIGATORIOS_COMUNS, ...OBRIGATORIOS_DA_PESSOA]
+    ? [...OBRIGATORIOS_DE_CONTATO, ...OBRIGATORIOS_COMUNS, ...OBRIGATORIOS_DA_PESSOA]
     : OBRIGATORIOS_COMUNS
 }
 

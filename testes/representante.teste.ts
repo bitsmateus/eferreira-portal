@@ -60,7 +60,6 @@ describe('validarRepresentante', () => {
     'representanteNome',
     'representanteRg',
     'representanteEstadoCivil',
-    'representanteProfissao',
     'representanteNacionalidade',
     'representanteEmail',
     'representanteTelefone',
@@ -70,6 +69,14 @@ describe('validarRepresentante', () => {
     expect(resultado.ok).toBe(false)
     if (resultado.ok) return
     expect(resultado.erros[campo]).toBeDefined()
+  })
+
+  it('profissão do representante é opcional (o modelo de PJ de 24/09/2026 não a cita)', () => {
+    const resultado = validarRepresentante({ ...COMPLETO, representanteProfissao: '' })
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.profissao).toBeNull()
   })
 
   it('nome da mãe e qualificação continuam opcionais', () => {
