@@ -10,63 +10,35 @@ precisa recarregar a página.
 
 ---
 
-## 0. O que é SEU (fazer ou testar) — resumo
+## 0. O que é SEU (fazer ou testar) — só as alterações de 24/09
 
-**Fazer, em ordem**
-- [ ] **Deploy manual no EasyPanel** (produção). Ele aplica sozinho as
-      migrações novas (`empresa_vinculada_ao_caso`, `posicao_das_assinaturas`
-      e as de 22/09). Depois, abrir `/painel` e conferir que carrega.
-- [ ] Avisar o escritório que, na hora do deploy, quem estiver com uma tela
-      aberta precisa **recarregar a página** (senão aparece "alguma coisa
-      não funcionou"). O melhor é publicar fora do horário de trabalho.
-- [ ] **Homologação** continua no commit de 14/09 e com `D4SIGN_TOKEN_API`
-      vazia, de propósito. Publicar lá só se for testar algo sem assinatura.
-- [ ] **Backup automático do Postgres** em produção (EasyPanel) e repetir
-      `npm run banco:teste-restauracao` lá.
-- [ ] **DNS** de `homologacao.eferreira.adv.br` (Locaweb), se quiserem
-      homologação com endereço próprio.
-- [ ] **Limpar os dados de teste** em produção (clientes Joana, Padaria
-      Aurora, Carlos Aurora) antes da entrega — agora dá para "Desativar"
-      cliente, ou apagar com a exclusão forçada do administrador.
-- [ ] Passar à NX o **formato da integração** do cadastro único (o outro
-      sistema, do WhatsApp): hoje a API do portal já recebe cadastro; falta
-      o formato para o portal AVISAR a NX quando alguém cadastra na tela, e
-      decidir qual sistema é a fonte da verdade quando os dois mudam.
+**Fazer**
+- [ ] **Deploy manual no EasyPanel.** Aplica sozinho as migrações novas
+      (`empresa_vinculada_ao_caso`, `posicao_das_assinaturas`). Depois, abrir
+      `/painel` e conferir que carrega.
+- [ ] Quem estiver com tela aberta na hora precisa **recarregar a página**.
+- [ ] **Posição da assinatura:** ligar "Ativar posição da assinatura" no
+      cofre da D4Sign e depois `D4SIGN_POSICIONAR_ASSINATURA=1` — só quando
+      for testar (seção 7).
 
-**Testar (só você consegue)**
-- [ ] **Cliente entrando em `/consultar`** com CPF/CNPJ e código no e-mail de
-      verdade (caixa real). É o único caminho ainda não testado de ponta a
-      ponta. Lembrete: só recebe código quem tem contrato assinado registrado
-      e e-mail cadastrado.
-- [ ] **Primeiro envio de verdade pela D4Sign** (gasta 1 crédito; restavam
-      31 de 50): mandar um contrato para um e-mail do escritório, assinar, e
-      conferir que o PDF assinado volta para a pasta e o acesso do cliente
-      abre sozinho.
-- [ ] A **posição do carimbo** (seção 7 abaixo) — desligada até você testar.
-- [ ] Um **documento antigo de teste** ficou preso na D4Sign com duas vagas
-      "Não possui conta" (de 17/09); cancelar/resolver pelo painel da D4Sign,
-      em "Opções" de cada vaga.
-- [ ] `npm run email:teste` só funciona se as variáveis `SMTP_*` estiverem no
-      `.env` local (copiar do EasyPanel). Em produção o SMTP já foi conferido.
+**Testar** — as seções 1 a 7 abaixo. O que só você consegue:
+- [ ] Gerar de verdade os documentos (seção 1) e comparar com os do escritório.
+- [ ] Portal da empresa vinculada (seção 3): exige um contrato assinado
+      registrado e e-mail cadastrado na empresa.
+- [ ] Envio de teste pela D4Sign (seção 7): gasta 1 crédito.
 
-**Perguntar ao escritório (uma mensagem só)**
-- [ ] Contrato de **pessoa jurídica** e de **assistida**: pode ser derivado
-      das procurações (o arquivo deles só trouxe pessoa física)?
-- [ ] Item **3.5** do contrato: a conta (C6) e o Pix (Eferreira Assessoria e
-      Cobrança) do contrato antigo continuam valendo?
-- [ ] Mandar os "formatos específicos" de **objeto** e **honorários** já sem
-      a numeração 3.1–3.4?
-- [ ] "(a)" no lugar do masculino nos modelos e "4º andar" (os modelos deles
-      dizem "4ª"): ok?
-- [ ] A **empresa** vinculada ao caso pode ver os documentos do cliente
-      final? (hoje não vê; só casos e andamentos)
-- [ ] Cliente pode ter **mais de uma** empresa de origem, ou só uma?
-- [ ] Repasse ou comissão para a empresa parceira? (é financeiro — Anexo II,
-      fora do contrato)
-- [ ] Contrato de menor/assistido deve citar o assistente? (o texto derivado
-      cita, como na procuração)
-- [ ] Números do WhatsApp: (11) 4580-3696 é o de suporte e 11 93806-3696 o do
-      advogado — já confirmado em 21/09, só lembrar.
+**Perguntar ao escritório** (os pontos abertos das alterações de hoje)
+- [ ] Contrato de **pessoa jurídica** e de **assistida** derivados das
+      procurações: ok? (o arquivo deles só trouxe pessoa física)
+- [ ] Item **3.5** do contrato: a conta e o Pix do contrato antigo valem?
+- [ ] Mandar os "formatos específicos" de objeto e honorários sem a
+      numeração 3.1–3.4?
+- [ ] "(a)" no lugar do masculino e "4º andar" (os modelos dizem "4ª"): ok?
+- [ ] A empresa vinculada pode ver os documentos do cliente final? (hoje só
+      vê casos e andamentos)
+- [ ] Cliente pode ter mais de uma empresa de origem? Há repasse ou comissão
+      (financeiro, fora do contrato)?
+- [ ] Contrato de menor/assistido deve citar o assistente? (hoje cita)
 
 ---
 
@@ -168,11 +140,3 @@ Só depois de todo o resto. Nada disto muda enquanto
        página, lado e altura escolhidos na tela ("Onde cada um assina").
 7. [ ] Se algo der errado no meio, o envio para **antes de cobrar** e a tela
        diz que ficou no cofre; "tentar de novo" não duplica signatários.
-
-## 8. Pendências que não são de código
-
-- Backup automático do Postgres em produção + repetir o teste de restauração.
-- DNS de `homologacao.eferreira.adv.br`.
-- Dados de teste em produção (Joana, Padaria Aurora, Carlos Aurora).
-- Respostas do escritório: cliente pode ter mais de uma empresa de origem?
-  repasse/comissão fica de fora (é financeiro, Anexo II)?
