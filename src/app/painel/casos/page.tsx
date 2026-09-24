@@ -5,6 +5,7 @@ import { SituacaoCaso } from '@prisma/client'
 import { ROTULO_DA_SITUACAO } from '@/componentes/situacoes'
 import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { MenuDoCaso } from '@/componentes/menu-do-caso'
+import { SeletorDeCliente } from '@/componentes/seletor-de-cliente'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import {
   LIMITE_DA_LISTA,
@@ -12,6 +13,7 @@ import {
   contarCasos,
   lerFiltrosDeCaso,
   listarCasos,
+  listarEmpresas,
   listarResponsaveis,
 } from '@/lib/casos'
 import { formatarData } from '@/lib/datas'
@@ -28,6 +30,7 @@ type Consulta = {
   situacao?: string
   responsavel?: string
   numero?: string
+  empresa?: string
 }
 
 export default async function PaginaDeCasos({
@@ -42,10 +45,11 @@ export default async function PaginaDeCasos({
   const filtros = lerFiltrosDeCaso(consulta)
   const filtrando = termo !== '' || algumFiltroDeCasoAtivo(filtros)
 
-  const [lista, total, responsaveis] = await Promise.all([
+  const [lista, total, responsaveis, empresas] = await Promise.all([
     listarCasos(sessao, termo, filtros),
     contarCasos(sessao),
     listarResponsaveis(sessao),
+    listarEmpresas(sessao),
   ])
 
   const casos = lista.linhas
@@ -79,7 +83,7 @@ export default async function PaginaDeCasos({
                   type="search"
                   name="busca"
                   defaultValue={termo}
-                  placeholder="Número do processo, assunto ou cliente…"
+                  placeholder="Número do processo, assunto, cliente ou empresa…"
                   className="campo-entrada"
                 />
               </div>
@@ -139,6 +143,22 @@ export default async function PaginaDeCasos({
                 </select>
               </div>
 
+              {empresas.length > 0 && (
+                <div className="w-[260px]">
+                  <label className="campo-rotulo" htmlFor="empresa">
+                    Empresa vinculada
+                  </label>
+                  <SeletorDeCliente
+                    id="empresa"
+                    name="empresa"
+                    clientes={empresas}
+                    valorInicial={filtros.empresa}
+                    opcaoEmBranco="Todas as empresas"
+                    placeholder="Nome ou CNPJ…"
+                  />
+                </div>
+              )}
+
               <button type="submit" className="botao botao-secundario">
                 Filtrar
               </button>
@@ -189,6 +209,7 @@ export default async function PaginaDeCasos({
                     <th>Número do processo</th>
                     <th>Assunto</th>
                     <th>Cliente</th>
+                    <th>Empresa</th>
                     <th>Situação</th>
                     <th>Último andamento</th>
                     <th />
@@ -227,6 +248,18 @@ export default async function PaginaDeCasos({
                           <div className="mono text-[11.5px] text-texto-3">
                             {formatarDocumento(caso.cliente.documento)}
                           </div>
+                        </td>
+                        <td className="relative z-10">
+                          {caso.empresaVinculada === null ? (
+                            <span className="text-texto-3">—</span>
+                          ) : (
+                            <Link
+                              href={`/painel/clientes/${caso.empresaVinculada.id}`}
+                              className="underline decoration-borda underline-offset-2 hover:decoration-texto-2"
+                            >
+                              {caso.empresaVinculada.nome}
+                            </Link>
+                          )}
                         </td>
                         <td>
                           <EtiquetaDeSituacaoDoCaso situacao={caso.situacao} />

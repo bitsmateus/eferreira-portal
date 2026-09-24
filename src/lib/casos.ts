@@ -18,6 +18,7 @@ import {
   SituacaoCaso,
   SituacaoUsuario,
   TipoDeObjeto,
+  TipoPessoa,
 } from '@prisma/client'
 import { z } from 'zod'
 
@@ -279,6 +280,12 @@ export const esquemaDeCaso = z.object({
     .string()
     .trim()
     .transform((valor) => (valor === '' ? null : valor)),
+  // A empresa à qual o caso está ligado (24/09/2026). Só o id sai daqui; que
+  // ele é de uma pessoa jurídica que a sessão enxerga é conferido na escrita.
+  empresaVinculadaId: z
+    .string()
+    .trim()
+    .transform((valor) => (valor === '' ? null : valor)),
 })
 
 export type DadosDeCaso = z.output<typeof esquemaDeCaso>
@@ -338,6 +345,7 @@ const RESUMO = {
   situacao: true,
   criadoEm: true,
   cliente: { select: { id: true, nome: true, documento: true } },
+  empresaVinculada: { select: { id: true, nome: true } },
   responsavel: { select: { nome: true } },
   andamentos: {
     select: { data: true },
@@ -349,7 +357,8 @@ const RESUMO = {
 export type LinhaDeCaso = Prisma.CasoGetPayload<{ select: typeof RESUMO }>
 
 /**
- * Busca de caso por número do processo, assunto ou nome do cliente. Como na
+ * Busca de caso por número do processo, assunto, nome do cliente ou da empresa
+ * vinculada (nome ou CNPJ). Como na
  * lista de clientes, um termo só de dígitos é tratado como numeração.
  */
 function condicaoDaBusca(termo: string): Prisma.CasoWhereInput | undefined {
@@ -364,6 +373,8 @@ function condicaoDaBusca(termo: string): Prisma.CasoWhereInput | undefined {
       OR: [
         { numeroProcesso: { contains: digitos } },
         { cliente: { documento: { contains: digitos } } },
+        // "Digitando o CNPJ" da empresa a que o caso está ligado (24/09/2026).
+        { empresaVinculada: { documento: { contains: digitos } } },
       ],
     }
   }
@@ -372,6 +383,7 @@ function condicaoDaBusca(termo: string): Prisma.CasoWhereInput | undefined {
     OR: [
       { assunto: { contains: limpo, mode: 'insensitive' } },
       { cliente: { nome: { contains: limpo, mode: 'insensitive' } } },
+      { empresaVinculada: { nome: { contains: limpo, mode: 'insensitive' } } },
       { numeroProcesso: { contains: limpo, mode: 'insensitive' } },
     ],
   }
@@ -393,12 +405,15 @@ export type FiltrosDeCaso = {
   responsavel: string
   /** '' = todos; 'com'/'sem' número de processo (pré-processual). */
   numero: '' | 'com' | 'sem'
+  /** '' = todas; ou o id de uma empresa — "casos da GWA" (24/09/2026). */
+  empresa: string
 }
 
 export const FILTROS_DE_CASO_VAZIOS: FiltrosDeCaso = {
   situacao: '',
   responsavel: '',
   numero: '',
+  empresa: '',
 }
 
 export function lerFiltrosDeCaso(
@@ -416,11 +431,18 @@ export function lerFiltrosDeCaso(
     // caso nenhum, que é o resultado honesto.
     responsavel: (entrada['responsavel'] ?? '').trim(),
     numero: numero === 'com' || numero === 'sem' ? numero : '',
+    // Como o responsável: id inexistente não acha caso nenhum.
+    empresa: (entrada['empresa'] ?? '').trim(),
   }
 }
 
 export function algumFiltroDeCasoAtivo(filtros: FiltrosDeCaso): boolean {
-  return filtros.situacao !== '' || filtros.responsavel !== '' || filtros.numero !== ''
+  return (
+    filtros.situacao !== '' ||
+    filtros.responsavel !== '' ||
+    filtros.numero !== '' ||
+    filtros.empresa !== ''
+  )
 }
 
 export function condicaoDosFiltrosDeCaso(
@@ -440,6 +462,8 @@ export function condicaoDosFiltrosDeCaso(
   // quais são é a diferença entre lembrar e esquecer de protocolar.
   if (filtros.numero === 'com') condicoes.push({ numeroProcesso: { not: null } })
   if (filtros.numero === 'sem') condicoes.push({ numeroProcesso: null })
+
+  if (filtros.empresa !== '') condicoes.push({ empresaVinculadaId: filtros.empresa })
 
   return condicoes.length === 0 ? {} : { AND: condicoes }
 }
@@ -498,6 +522,33 @@ async function responsavelEhValido(responsavelId: string): Promise<boolean> {
   return encontrado !== null
 }
 
+/**
+ * Confere que a empresa escolhida existe, é PESSOA JURÍDICA e é de um
+ * cliente que ESTA sessão enxerga (regra 2) — o id vem de um campo do
+ * navegador.
+ */
+async function empresaEhValida(
+  sessao: SessaoServidor,
+  empresaId: string,
+): Promise<boolean> {
+  const encontrada = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { id: empresaId, tipoPessoa: TipoPessoa.JURIDICA }),
+    select: { id: true },
+  })
+  return encontrada !== null
+}
+
+/** As empresas cadastradas, para escolher a que um caso está ligado. */
+export async function listarEmpresas(sessao: SessaoServidor) {
+  exigirEquipe(sessao)
+
+  return prisma.cliente.findMany({
+    where: filtroDeClientes(sessao, { tipoPessoa: TipoPessoa.JURIDICA }),
+    select: { id: true, nome: true, documento: true },
+    orderBy: { nome: 'asc' },
+  })
+}
+
 export async function contarCasos(sessao: SessaoServidor): Promise<number> {
   return prisma.caso.count({ where: filtroDeCasos(sessao) })
 }
@@ -510,6 +561,7 @@ export async function obterCaso(sessao: SessaoServidor, id: string) {
       cliente: {
         select: { id: true, nome: true, documento: true, tipoPessoa: true },
       },
+      empresaVinculada: { select: { id: true, nome: true, documento: true } },
       responsavel: { select: { id: true, nome: true } },
       parcelas: { orderBy: { numero: 'asc' } },
     },
@@ -543,6 +595,8 @@ export type ResultadoDeCaso =
   | { situacao: 'numero_repetido'; casoId: string }
   /** O responsável escolhido não é operador nem administrador ativo. */
   | { situacao: 'responsavel_invalido' }
+  /** A empresa escolhida não existe, não é pessoa jurídica ou não é visível. */
+  | { situacao: 'empresa_invalida' }
 
 /** Numera as parcelas na ordem em que foram informadas. */
 function paraGravar(parcelas: readonly ParcelaInformada[]) {
@@ -571,6 +625,13 @@ export async function criarCaso(
 
   if (dados.responsavelId !== null && !(await responsavelEhValido(dados.responsavelId))) {
     return { situacao: 'responsavel_invalido' }
+  }
+
+  if (
+    dados.empresaVinculadaId !== null &&
+    !(await empresaEhValida(sessao, dados.empresaVinculadaId))
+  ) {
+    return { situacao: 'empresa_invalida' }
   }
 
   if (dados.numeroProcesso !== null) {
@@ -609,6 +670,7 @@ export async function criarCaso(
             clienteId: cliente.id,
             assunto: dados.assunto,
             numeroProcesso: dados.numeroProcesso,
+            empresaVinculadaId: dados.empresaVinculadaId,
           },
         },
         transacao,
@@ -638,6 +700,7 @@ export type ResultadoDeEdicaoDeCaso =
   | { situacao: 'nao_encontrado' }
   | { situacao: 'numero_repetido'; casoId: string }
   | { situacao: 'responsavel_invalido' }
+  | { situacao: 'empresa_invalida' }
 
 export async function atualizarCaso(
   sessao: SessaoServidor,
@@ -656,6 +719,13 @@ export async function atualizarCaso(
 
   if (dados.responsavelId !== null && !(await responsavelEhValido(dados.responsavelId))) {
     return { situacao: 'responsavel_invalido' }
+  }
+
+  if (
+    dados.empresaVinculadaId !== null &&
+    !(await empresaEhValida(sessao, dados.empresaVinculadaId))
+  ) {
+    return { situacao: 'empresa_invalida' }
   }
 
   if (dados.numeroProcesso !== null) {
@@ -694,6 +764,7 @@ export async function atualizarCaso(
             assunto: dados.assunto,
             numeroProcesso: dados.numeroProcesso,
             situacao: dados.situacao,
+            empresaVinculadaId: dados.empresaVinculadaId,
           },
         },
         transacao,

@@ -69,6 +69,7 @@ export function camposDeCasoDoCorpo(corpo: Record<string, unknown>): CamposDeCas
     parteContraria: comoTexto(corpo['parteContraria']),
     situacao: comoTexto(corpo['situacao']),
     responsavelId: comoTexto(corpo['responsavelId']),
+    empresaVinculadaId: comoTexto(corpo['empresaVinculadaId']),
   }
 }
 

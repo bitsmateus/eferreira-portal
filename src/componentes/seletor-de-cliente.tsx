@@ -9,24 +9,45 @@ export type ClienteParaEscolha = { id: string; nome: string; documento: string }
 /** Só decide como um cliente aparece e como o texto digitado casa com ele. */
 export function SeletorDeCliente({
   id,
+  name = 'clienteId',
   clientes,
   valorInicial = '',
   aoEscolher,
   obrigatorio = false,
+  opcaoEmBranco,
+  placeholder = 'Busque por nome ou CPF/CNPJ…',
 }: {
   id: string
+  /** O campo que viaja no formulário. `clienteId` por padrão. */
+  name?: string
   clientes: readonly ClienteParaEscolha[]
   valorInicial?: string
   aoEscolher?: (clienteId: string) => void
   obrigatorio?: boolean
+  /**
+   * Quando informado, "nenhum" vira um item de verdade da lista (id vazio) —
+   * para campo opcional, como a empresa a que um caso está ligado, ou o
+   * filtro "todas as empresas".
+   */
+  opcaoEmBranco?: string
+  placeholder?: string
 }) {
+  const itens: readonly ClienteParaEscolha[] =
+    opcaoEmBranco === undefined
+      ? clientes
+      : [{ id: '', nome: opcaoEmBranco, documento: '' }, ...clientes]
+
   return (
     <SeletorComBusca
       id={id}
-      name="clienteId"
-      itens={clientes}
+      name={name}
+      itens={itens}
       idDoItem={(cliente) => cliente.id}
-      rotulo={(cliente) => `${cliente.nome} — ${formatarDocumento(cliente.documento)}`}
+      rotulo={(cliente) =>
+        cliente.id === ''
+          ? cliente.nome
+          : `${cliente.nome} — ${formatarDocumento(cliente.documento)}`
+      }
       bate={(cliente, termo) => {
         const digitos = somenteDigitos(termo)
         return (
@@ -36,7 +57,7 @@ export function SeletorDeCliente({
       }}
       valorInicial={valorInicial}
       aoEscolher={aoEscolher}
-      placeholder="Busque por nome ou CPF/CNPJ…"
+      placeholder={placeholder}
       obrigatorio={obrigatorio}
     />
   )

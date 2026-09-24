@@ -11,7 +11,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
-import { listarResponsaveis } from '@/lib/casos'
+import { listarEmpresas, listarResponsaveis } from '@/lib/casos'
 import { listarClientesParaEscolha } from '@/lib/clientes'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
 import { cadastrarCaso } from '@/app/painel/casos/acoes'
@@ -27,9 +27,10 @@ export const metadata: Metadata = {
 export default async function PaginaDeNovoCasoAvulso() {
   const sessao = await exigirSessaoDaEquipe()
 
-  const [responsaveis, clientes] = await Promise.all([
+  const [responsaveis, clientes, empresas] = await Promise.all([
     listarResponsaveis(sessao),
     listarClientesParaEscolha(sessao),
+    listarEmpresas(sessao),
   ])
 
   // Sem nenhum cliente não há caso possível, e um seletor vazio só faria a
@@ -74,6 +75,7 @@ export default async function PaginaDeNovoCasoAvulso() {
 
       <div className="flex-1 overflow-auto px-6 py-6">
         <FormularioDeCaso
+          empresas={empresas}
           // Nulo: o cliente vem do seletor, e quem confere se esta sessão
           // pode usá-lo é `criarCaso`, pelo filtro da sessão (regra 2).
           acao={cadastrarCaso.bind(null, null)}

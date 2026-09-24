@@ -63,6 +63,17 @@ function clienteDaSessao(sessao: SessaoServidor): string {
   return sessao.clienteId
 }
 
+/**
+ * Os casos que o cliente da sessão enxerga: os DELE e — desde 24/09/2026 —
+ * os que estão ligados a ele como EMPRESA (`Caso.empresaVinculadaId`), que é
+ * o "mesmo acesso do cliente normal, vinculado a vários processos" que o
+ * escritório pediu. Só casos e andamentos; documento continua só do dono
+ * (`filtroDeDocumentos`): contrato e procuração são do cliente final.
+ */
+function casosDoCliente(clienteId: string): Prisma.CasoWhereInput {
+  return { OR: [{ clienteId }, { empresaVinculadaId: clienteId }] }
+}
+
 function combinar<F extends object>(restricao: F, extra: F | undefined): F {
   return (extra === undefined ? { AND: [restricao] } : { AND: [restricao, extra] }) as F
 }
@@ -87,7 +98,7 @@ export function filtroDeCasos(
 ): Prisma.CasoWhereInput {
   const restricao: Prisma.CasoWhereInput = ehEquipe(sessao)
     ? {}
-    : { clienteId: clienteDaSessao(sessao) }
+    : casosDoCliente(clienteDaSessao(sessao))
   return combinar(restricao, extra)
 }
 
@@ -97,7 +108,7 @@ export function filtroDeAndamentos(
 ): Prisma.AndamentoWhereInput {
   const restricao: Prisma.AndamentoWhereInput = ehEquipe(sessao)
     ? {}
-    : { caso: { clienteId: clienteDaSessao(sessao) } }
+    : { caso: casosDoCliente(clienteDaSessao(sessao)) }
   return combinar(restricao, extra)
 }
 

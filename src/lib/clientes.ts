@@ -777,6 +777,18 @@ export async function obterCliente(sessao: SessaoServidor, id: string) {
           },
         },
       },
+      // Casos de OUTROS clientes que estão ligados a esta empresa (24/09/2026).
+      casosDaEmpresa: {
+        orderBy: { criadoEm: 'desc' },
+        include: {
+          cliente: { select: { id: true, nome: true, documento: true } },
+          andamentos: {
+            select: { data: true },
+            orderBy: { data: 'desc' },
+            take: 1,
+          },
+        },
+      },
       // O sócio que assina pela empresa, e — quando este cliente é pessoa
       // física — as empresas pelas quais ele assina.
       representantes: {

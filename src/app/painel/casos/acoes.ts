@@ -35,6 +35,7 @@ function lerCampos(dados: FormData): CamposDeCaso {
     parteContraria: texto(dados, 'parteContraria'),
     situacao: texto(dados, 'situacao'),
     responsavelId: texto(dados, 'responsavelId'),
+    empresaVinculadaId: texto(dados, 'empresaVinculadaId'),
     honorarios: texto(dados, 'honorarios'),
     canalDePagamentoFixo: texto(dados, 'canalDePagamentoFixo'),
     percentualExito: texto(dados, 'percentualExito'),
@@ -147,6 +148,14 @@ export async function cadastrarCaso(
     }
   }
 
+  if (resultado.situacao === 'empresa_invalida') {
+    return {
+      erros: {
+        empresaVinculadaId: 'Empresa inválida. Escolha uma empresa cadastrada.',
+      },
+    }
+  }
+
   if (resultado.situacao === 'numero_repetido') {
     return {
       erros: {
@@ -188,6 +197,14 @@ export async function salvarEdicaoDeCaso(
       erros: {
         responsavelId:
           'Responsável inválido. Escolha um operador ou administrador ativo.',
+      },
+    }
+  }
+
+  if (resultado.situacao === 'empresa_invalida') {
+    return {
+      erros: {
+        empresaVinculadaId: 'Empresa inválida. Escolha uma empresa cadastrada.',
       },
     }
   }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
-import { listarResponsaveis, obterCaso } from '@/lib/casos'
+import { listarEmpresas, listarResponsaveis, obterCaso } from '@/lib/casos'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { formatarReais } from '@/lib/extenso'
 import { dataParaDiaCivil } from '@/lib/datas'
@@ -25,7 +25,10 @@ export default async function PaginaDeEdicaoDeCaso({
   const caso = await obterCaso(sessao, id)
   if (caso === null) notFound()
 
-  const responsaveis = await listarResponsaveis(sessao)
+  const [responsaveis, empresas] = await Promise.all([
+    listarResponsaveis(sessao),
+    listarEmpresas(sessao),
+  ])
 
   const valores: ValoresDoCaso = {
     numeroProcesso: caso.numeroProcesso ?? '',
@@ -34,6 +37,7 @@ export default async function PaginaDeEdicaoDeCaso({
     parteContraria: caso.parteContraria ?? '',
     situacao: caso.situacao,
     responsavelId: caso.responsavelId ?? '',
+    empresaVinculadaId: caso.empresaVinculadaId ?? '',
     honorarios:
       caso.honorariosEmCentavos === null
         ? ''
@@ -89,6 +93,7 @@ export default async function PaginaDeEdicaoDeCaso({
 
       <div className="flex-1 overflow-auto px-6 py-6">
         <FormularioDeCaso
+          empresas={empresas}
           acao={acao}
           valores={valores}
           responsaveis={responsaveis}

@@ -278,6 +278,11 @@ model Cliente {
   /// Quando este cliente é pessoa física: as empresas que ele representa.
   empresasQueRepresenta RepresentanteLegal[] @relation("Representa")
 
+  /// Casos ligados a esta EMPRESA (cliente pessoa jurídica) sem serem dela:
+  /// os casos dos clientes que ela envia ao escritório (ex.: GWA Consultoria).
+  /// Ver `Caso.empresaVinculadaId`.
+  casosDaEmpresa Caso[] @relation("CasoDaEmpresa")
+
   @@index([nomeBusca])
   @@index([contratoAssinadoEm])
   @@map("cliente")
@@ -411,6 +416,16 @@ model Caso {
   responsavelId String?
   responsavel   Usuario? @relation("CasoResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
 
+  /// Empresa (cliente pessoa jurídica) à qual o caso está ligado — pedido do
+  /// escritório em 24/09/2026: "eu só preciso ligar o caso à empresa pelo
+  /// processo, e não pelo cliente pessoa física". Serve para filtrar ("casos
+  /// da GWA", "da Mais Credit") e dá à empresa o mesmo acesso de cliente
+  /// comum, só que sobre os casos que estão ligados a ela. É outra coisa que
+  /// `clienteId`: o dono do caso (quem assina contrato e procuração) continua
+  /// sendo o cliente; a empresa só ganha visão. Nulo = caso sem empresa.
+  empresaVinculadaId String?
+  empresaVinculada   Cliente? @relation("CasoDaEmpresa", fields: [empresaVinculadaId], references: [id], onDelete: SetNull)
+
   /// Honorários contratados, em centavos — a cláusula 2ª do contrato precisa
   /// deles para ser gerada. Centavos, e não decimal, para não haver erro de
   /// arredondamento em valor que vai para documento assinado.
@@ -476,6 +491,7 @@ model Caso {
   parcelas   ParcelaDeHonorarios[]
 
   @@index([clienteId])
+  @@index([empresaVinculadaId])
   @@index([situacao])
   @@map("caso")
 }

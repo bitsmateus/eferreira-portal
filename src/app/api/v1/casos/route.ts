@@ -99,5 +99,11 @@ export async function POST(requisicao: NextRequest) {
     })
   }
 
+  if (resultado.situacao === 'empresa_invalida') {
+    return falhar('dados_invalidos', 'Empresa inválida.', {
+      campos: { empresaVinculadaId: 'Não é uma empresa (pessoa jurídica) cadastrada.' },
+    })
+  }
+
   return responder({ casoId: resultado.casoId, clienteId: cliente.id }, 201)
 }

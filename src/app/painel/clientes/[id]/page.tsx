@@ -191,6 +191,81 @@ export default async function PaginaDaFichaDoCliente({
               )}
             </div>
 
+            {cliente.casosDaEmpresa.length > 0 && (
+              <div className="cartao mt-4">
+                <div className="cartao-cabecalho">
+                  <h2>Casos ligados a esta empresa</h2>
+                  <span className="ml-auto text-[12px] text-texto-2">
+                    {cliente.casosDaEmpresa.length === 1
+                      ? '1 caso'
+                      : `${cliente.casosDaEmpresa.length} casos`}{' '}
+                    ·{' '}
+                    <Link
+                      href={`/painel/casos?empresa=${cliente.id}`}
+                      className="underline underline-offset-2"
+                    >
+                      ver na lista de casos
+                    </Link>
+                  </span>
+                </div>
+                <div className="rolagem-lateral">
+                  <table className="tabela">
+                    <thead>
+                      <tr>
+                        <th>Número do processo</th>
+                        <th>Assunto</th>
+                        <th>Cliente</th>
+                        <th>Situação</th>
+                        <th>Último andamento</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cliente.casosDaEmpresa.map((caso) => {
+                        const ultimo = caso.andamentos[0]
+                        return (
+                          <tr key={caso.id}>
+                            <td className="mono whitespace-nowrap font-semibold">
+                              {caso.numeroProcesso === null ? (
+                                <span className="font-normal text-texto-3">
+                                  sem número ainda
+                                </span>
+                              ) : (
+                                formatarNumeroDeProcesso(caso.numeroProcesso)
+                              )}
+                            </td>
+                            <td>{caso.assunto}</td>
+                            <td>
+                              <Link
+                                href={`/painel/clientes/${caso.cliente.id}`}
+                                className="underline decoration-borda underline-offset-2 hover:decoration-texto-2"
+                              >
+                                {caso.cliente.nome}
+                              </Link>
+                            </td>
+                            <td>
+                              <EtiquetaDeSituacaoDoCaso situacao={caso.situacao} />
+                            </td>
+                            <td className="text-[12px] text-texto-2">
+                              {ultimo === undefined ? '—' : formatarData(ultimo.data)}
+                            </td>
+                            <td className="text-right">
+                              <Link
+                                href={`/painel/casos/${caso.id}`}
+                                className="botao botao-secundario botao-pequeno"
+                              >
+                                Abrir
+                              </Link>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             <div className="mt-4">
               <RepresentantesLegais
                 variante={ehPessoaJuridica ? 'empresa' : 'menor'}

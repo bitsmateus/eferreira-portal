@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
-import { listarResponsaveis } from '@/lib/casos'
+import { listarEmpresas, listarResponsaveis } from '@/lib/casos'
 import { obterCliente } from '@/lib/clientes'
 import { formatarDocumento } from '@/lib/documento'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
@@ -28,7 +28,10 @@ export default async function PaginaDeNovoCaso({
   const cliente = await obterCliente(sessao, id)
   if (cliente === null) notFound()
 
-  const responsaveis = await listarResponsaveis(sessao)
+  const [responsaveis, empresas] = await Promise.all([
+    listarResponsaveis(sessao),
+    listarEmpresas(sessao),
+  ])
   const acao = cadastrarCaso.bind(null, cliente.id)
 
   return (
@@ -48,6 +51,7 @@ export default async function PaginaDeNovoCaso({
           acao={acao}
           valores={VALORES_VAZIOS}
           responsaveis={responsaveis}
+          empresas={empresas}
           rotuloDoBotao="Salvar caso"
           hrefCancelar={`/painel/clientes/${cliente.id}`}
         />

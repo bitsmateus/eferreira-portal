@@ -168,6 +168,18 @@ export default async function PaginaDoCaso({
                     <span className="text-texto-3">sem responsável definido</span>
                   )}
                 </Dado>
+                <Dado rotulo="Empresa vinculada">
+                  {caso.empresaVinculada === null ? (
+                    <span className="text-texto-3">nenhuma</span>
+                  ) : (
+                    <Link
+                      href={`/painel/clientes/${caso.empresaVinculada.id}`}
+                      className="underline decoration-borda underline-offset-2 hover:decoration-texto-2"
+                    >
+                      {caso.empresaVinculada.nome}
+                    </Link>
+                  )}
+                </Dado>
                 <Dado rotulo="Aberto em">
                   <span className="mono">{formatarData(caso.criadoEm)}</span>
                 </Dado>

@@ -29,6 +29,7 @@ export type ValoresDoCaso = {
   parteContraria: string
   situacao: string
   responsavelId: string
+  empresaVinculadaId: string
   honorarios: string
   canalDePagamentoFixo: string
   percentualExito: string
@@ -56,6 +57,7 @@ export const VALORES_VAZIOS: ValoresDoCaso = {
   parteContraria: '',
   situacao: SituacaoCaso.EM_ANDAMENTO,
   responsavelId: '',
+  empresaVinculadaId: '',
   honorarios: '',
   canalDePagamentoFixo: '',
   percentualExito: '',
@@ -90,6 +92,11 @@ type Props = {
    * seria só uma chance a mais de escolher errado.
    */
   clientes?: readonly { id: string; nome: string; documento: string }[]
+  /**
+   * As empresas (pessoas jurídicas) a que o caso pode ser ligado, 24/09/2026 —
+   * para filtrar "casos da GWA" e dar à empresa visão do caso. Opcional.
+   */
+  empresas?: readonly { id: string; nome: string; documento: string }[]
 }
 
 function Campo({
@@ -150,6 +157,7 @@ export function FormularioDeCaso({
   rotuloDoBotao,
   hrefCancelar,
   clientes,
+  empresas,
 }: Props) {
   const [estado, enviar] = useActionState(acao, undefined)
   const erros = estado?.erros ?? {}
@@ -170,6 +178,7 @@ export function FormularioDeCaso({
     parteContraria: valores.parteContraria,
     situacao: valores.situacao,
     responsavelId: valores.responsavelId,
+    empresaVinculadaId: valores.empresaVinculadaId,
     honorarios: valores.honorarios,
     canalDePagamentoFixo: valores.canalDePagamentoFixo,
     percentualExito: valores.percentualExito,
@@ -403,6 +412,24 @@ export function FormularioDeCaso({
                 </Campo>
               </div>
             </div>
+
+            {empresas !== undefined && (
+              <Campo
+                nome="empresaVinculadaId"
+                rotulo="Empresa vinculada (opcional)"
+                erro={erros['empresaVinculadaId']}
+                dica="Liga este caso a uma empresa — ex.: a que enviou o cliente. Serve para filtrar os casos dela, e a empresa passa a ver o andamento deste caso no portal. O contrato e a procuração continuam em nome do cliente."
+              >
+                <SeletorDeCliente
+                  id="empresaVinculadaId"
+                  name="empresaVinculadaId"
+                  clientes={empresas}
+                  valorInicial={valores.empresaVinculadaId}
+                  opcaoEmBranco="Nenhuma empresa"
+                  placeholder="Busque a empresa por nome ou CNPJ…"
+                />
+              </Campo>
+            )}
 
             <div className="my-[22px] border-t border-borda" />
 
