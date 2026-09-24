@@ -58,6 +58,15 @@ describe('ehEquipe', () => {
   })
 })
 
+/**
+ * O que o cliente da sessão alcança em caso: os DELE e, desde 24/09/2026, os
+ * ligados a ele como empresa. O OR fica DENTRO da restrição e do AND —
+ * o filtro de cima continua sendo um AND só.
+ */
+const CASOS_DO_CLIENTE_A = {
+  OR: [{ clienteId: 'cliente-a' }, { empresaVinculadaId: 'cliente-a' }],
+}
+
 describe('filtroDeCasos', () => {
   it('não restringe para a equipe do escritório', () => {
     expect(filtroDeCasos(operador)).toEqual({ AND: [{}] })
@@ -66,7 +75,7 @@ describe('filtroDeCasos', () => {
 
   it('prende o cliente ao próprio id, vindo da sessão do servidor', () => {
     expect(filtroDeCasos(clienteLiberado)).toEqual({
-      AND: [{ clienteId: 'cliente-a' }],
+      AND: [CASOS_DO_CLIENTE_A],
     })
   })
 
@@ -90,11 +99,11 @@ describe('filtroDeCasos', () => {
     const filtro = filtroDeCasos(clienteLiberado, { id: idDoCasoAlheio })
 
     expect(filtro).toEqual({
-      AND: [{ clienteId: 'cliente-a' }, { id: idDoCasoAlheio }],
+      AND: [CASOS_DO_CLIENTE_A, { id: idDoCasoAlheio }],
     })
 
     // A restrição da sessão continua presente e íntegra.
-    expect(filtro.AND).toContainEqual({ clienteId: 'cliente-a' })
+    expect(filtro.AND).toContainEqual(CASOS_DO_CLIENTE_A)
   })
 
   it('um extra que tenta reescrever o clienteId não apaga a restrição', () => {
@@ -102,9 +111,9 @@ describe('filtroDeCasos', () => {
 
     // As duas condições coexistem sob AND: o resultado é vazio, não o caso alheio.
     expect(filtro).toEqual({
-      AND: [{ clienteId: 'cliente-a' }, { clienteId: 'cliente-b' }],
+      AND: [CASOS_DO_CLIENTE_A, { clienteId: 'cliente-b' }],
     })
-    expect(filtro.AND).toContainEqual({ clienteId: 'cliente-a' })
+    expect(filtro.AND).toContainEqual(CASOS_DO_CLIENTE_A)
   })
 
   it('o filtro nunca vira um OR, que ampliaria o resultado', () => {
@@ -144,7 +153,7 @@ describe('filtroDeAndamentos', () => {
 
   it('o cliente só alcança andamentos dos próprios casos', () => {
     expect(filtroDeAndamentos(clienteLiberado)).toEqual({
-      AND: [{ caso: { clienteId: 'cliente-a' } }],
+      AND: [{ caso: CASOS_DO_CLIENTE_A }],
     })
   })
 
@@ -152,7 +161,7 @@ describe('filtroDeAndamentos', () => {
     const filtro = filtroDeAndamentos(clienteLiberado, {
       id: 'andamento-do-cliente-b',
     })
-    expect(filtro.AND).toContainEqual({ caso: { clienteId: 'cliente-a' } })
+    expect(filtro.AND).toContainEqual({ caso: CASOS_DO_CLIENTE_A })
   })
 
   it('bloqueia antes da assinatura do contrato', () => {

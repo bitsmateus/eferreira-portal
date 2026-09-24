@@ -17,6 +17,7 @@ function campos(troca: Partial<Record<string, string>> = {}) {
     parteContraria: '',
     situacao: SituacaoCaso.EM_ANDAMENTO,
     responsavelId: '',
+    empresaVinculadaId: '',
     honorarios: '',
     canalDePagamentoFixo: '',
     percentualExito: '',

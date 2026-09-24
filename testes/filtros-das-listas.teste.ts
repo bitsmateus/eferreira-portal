@@ -130,17 +130,19 @@ describe('filtros de cliente — condição', () => {
 })
 
 describe('filtros de caso — leitura da query string', () => {
-  it('lê os três filtros', () => {
+  it('lê os quatro filtros', () => {
     expect(
       lerFiltrosDeCaso({
         situacao: SituacaoCaso.ARQUIVADO,
         responsavel: 'abc123',
         numero: 'sem',
+        empresa: 'empresa-1',
       }),
     ).toEqual({
       situacao: SituacaoCaso.ARQUIVADO,
       responsavel: 'abc123',
       numero: 'sem',
+      empresa: 'empresa-1',
     })
   })
 
