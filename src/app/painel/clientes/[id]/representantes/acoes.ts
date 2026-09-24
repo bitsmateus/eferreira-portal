@@ -55,6 +55,10 @@ export async function vincularSocio(
     }
   }
 
+  if (resultado.situacao === 'mesmo_cliente') {
+    return { erros: { documento: 'Ninguém pode ser responsável por si mesmo.' } }
+  }
+
   if (resultado.situacao === 'ja_vinculado') {
     return { erros: { documento: `${resultado.nome} já é representante desta empresa.` } }
   }

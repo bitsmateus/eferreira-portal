@@ -191,22 +191,21 @@ export default async function PaginaDaFichaDoCliente({
               )}
             </div>
 
-            {ehPessoaJuridica && (
-              <div className="mt-4">
-                <RepresentantesLegais
-                  empresaId={cliente.id}
-                  representantes={cliente.representantes.map((vinculo) => ({
-                    pessoaFisicaId: vinculo.pessoaFisica.id,
-                    nome: vinculo.pessoaFisica.nome,
-                    documento: vinculo.pessoaFisica.documento,
-                    qualificacao: vinculo.qualificacao,
-                    qualificacaoCompleta:
-                      vinculo.pessoaFisica.rg !== null &&
-                      vinculo.pessoaFisica.nomeMae !== null,
-                  }))}
-                />
-              </div>
-            )}
+            <div className="mt-4">
+              <RepresentantesLegais
+                variante={ehPessoaJuridica ? 'empresa' : 'menor'}
+                empresaId={cliente.id}
+                representantes={cliente.representantes.map((vinculo) => ({
+                  pessoaFisicaId: vinculo.pessoaFisica.id,
+                  nome: vinculo.pessoaFisica.nome,
+                  documento: vinculo.pessoaFisica.documento,
+                  qualificacao: vinculo.qualificacao,
+                  qualificacaoCompleta:
+                    vinculo.pessoaFisica.rg !== null &&
+                    vinculo.pessoaFisica.nomeMae !== null,
+                }))}
+              />
+            </div>
 
             {cliente.empresasQueRepresenta.length > 0 && (
               <div className="mt-4">

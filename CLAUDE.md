@@ -313,6 +313,29 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Procuração de menor representado** (24/09/2026), a partir do modelo
+"Procuracao_Miguel.pdf" que o escritório mandou. Cliente pessoa física COM
+responsável vinculado = menor representado: a procuração sai com a
+qualificação do menor e, em seguida, "representado(a) por seu(sua)
+genitora: …", com a qualificação completa do responsável (estado civil,
+profissão, RG, CPF, filiação, endereço), e **quem assina — inclusive na
+D4Sign — é o responsável**. Partes novas: `procuracao-outorgante-menor.html`
+e `procuracao-assinatura-menor.html`. Sem migração: reaproveita o vínculo
+`RepresentanteLegal` (o campo se chama `pessoaJuridicaId` de antes; agora a
+ponta representada pode ser pessoa física) e a qualificação do vínculo
+("genitora", "genitor", "tutor") é o que entra no texto. Na ficha de toda
+pessoa física há o cartão "Responsável legal (cliente menor de idade)", para
+vincular por CPF — o responsável tem de ser cliente já cadastrado. Faltando
+dado do responsável, a tela diz o que é e leva ao cadastro DELE, não do menor.
+O texto usa "(a)" ("portador(a)", "inscrito(a)", "filho(a)") no lugar do
+masculino/feminino do original, como o bloco de pessoa física já fazia —
+única adaptação. **Só a procuração usa o responsável**: contrato e declaração
+de um menor continuam em nome do cliente, e isso provavelmente NÃO é o que o
+escritório quer para contrato de menor — **CONFIRMAR**. Também **CONFIRMAR** se
+o "Procuracao_Cintia.pdf" (PF) exige algo além do bloco atual: o texto dos
+poderes dos dois exemplos é o antigo (mais curto), e o sistema mantém o novo
+do modelo PJ, como decidido em 21/09.
+
 **Outorgado da procuração é escolhido na hora de gerar** (24/09/2026).
 Pedido do escritório: "precisa ter a opção de trocar o outorgado (advogado);
 o endereço profissional é o mesmo". Em "Gerar documento" há um seletor

@@ -1,0 +1,34 @@
+<!--
+  Qualificação do OUTORGANTE menor de idade, representado por responsável.
+
+  Transcrito do arquivo "Procuracao_Miguel.pdf", modelo de procuração de menor
+  representado por pessoa maior, enviado pelo escritório em 24/09/2026. O
+  menor aparece com a própria qualificação e, em seguida, "representado por
+  sua genitora", com a qualificação completa do responsável — cada um com os
+  seus dados, sem fundir um no outro.
+
+  ATENÇÃO — única adaptação: o original está no masculino para o menor e no
+  feminino para a mãe. Como nos demais blocos de pessoa física, a concordância
+  vai com "(a)" ("portador(a)", "inscrito(a)", "filho(a)"), porque o sistema
+  não sabe de antemão o gênero de quem assina. O texto do escritório fica o
+  mesmo; o "seu(sua)" e a qualificação ("genitora", "genitor", "tutor")
+  vêm do campo de qualificação do vínculo com o responsável.
+-->
+<p class="qualificacao">
+  <span class="rotulo-parte">Outorgante:</span>
+  <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
+  {{cliente.estadoCivil}}, {{cliente.profissao}}, portador(a) da Cédula de
+  Identidade RG nº {{cliente.rg}}, inscrito(a) no CPF/MF sob o nº
+  {{cliente.documentoFormatado}}, filho(a) de {{cliente.nomeMae}}, residente e
+  domiciliado(a) na {{cliente.endereco}}, {{cliente.cidade}} –
+  {{cliente.uf}}, CEP {{cliente.cepFormatado}}, representado(a) por seu(sua)
+  {{representante.qualificacao}}:
+  <span class="maiusculas">{{representante.nome}}</span>,
+  {{representante.nacionalidade}}, {{representante.estadoCivil}},
+  {{representante.profissao}}, portador(a) da Cédula de Identidade RG nº
+  {{representante.rg}}, inscrito(a) no CPF/MF sob o nº
+  {{representante.documentoFormatado}}, filho(a) de {{representante.nomeMae}},
+  residente e domiciliado(a) na {{representante.endereco}},
+  {{representante.cidade}} – {{representante.uf}}, CEP
+  {{representante.cepFormatado}}.
+</p>

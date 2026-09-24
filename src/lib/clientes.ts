@@ -1123,7 +1123,16 @@ export type ResultadoDeVinculo =
   /** O documento informado é de outra empresa, não de uma pessoa física. */
   | { situacao: 'nao_e_pessoa_fisica' }
   | { situacao: 'ja_vinculado'; nome: string }
+  /** Ninguém é responsável por si mesmo. */
+  | { situacao: 'mesmo_cliente' }
 
+/**
+ * Vincula quem responde por um cliente: o sócio que assina por uma EMPRESA
+ * ou, desde 24/09/2026, o responsável por um cliente pessoa física MENOR DE
+ * IDADE (procuração de menor, modelo do escritório). É a mesma tabela — só a
+ * ponta representada muda de tipo; o nome `pessoaJuridicaId` ficou de antes.
+ * Pessoa física com responsável vinculado = menor representado.
+ */
 export async function vincularRepresentante(
   sessao: SessaoServidor,
   pessoaJuridicaId: string,
@@ -1140,10 +1149,7 @@ export async function vincularRepresentante(
 
   // Regra 2: as duas pontas do vínculo passam pelo filtro da sessão.
   const empresa = await prisma.cliente.findFirst({
-    where: filtroDeClientes(sessao, {
-      id: pessoaJuridicaId,
-      tipoPessoa: TipoPessoa.JURIDICA,
-    }),
+    where: filtroDeClientes(sessao, { id: pessoaJuridicaId }),
     select: { id: true },
   })
   if (empresa === null) return { situacao: 'empresa_nao_encontrada' }
@@ -1156,6 +1162,7 @@ export async function vincularRepresentante(
     select: { id: true, nome: true },
   })
   if (pessoa === null) return { situacao: 'pessoa_nao_encontrada' }
+  if (pessoa.id === empresa.id) return { situacao: 'mesmo_cliente' }
 
   const jaExiste = await prisma.representanteLegal.findUnique({
     where: {

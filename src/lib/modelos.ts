@@ -53,6 +53,8 @@ export type ClienteParaDocumento = {
   documento: string
   nacionalidade: string | null
   estadoCivil: string | null
+  /** Só a procuração de menor usa ("estudante"). */
+  profissao?: string | null
   nomeMae: string | null
   rg: string | null
   email: string | null
@@ -77,6 +79,17 @@ export type RepresentanteParaDocumento = {
   rg: string | null
   /** "sócio", "sócio administrador", "presidente" — como no contrato social. */
   qualificacao: string | null
+  /**
+   * Só a procuração de MENOR usa o que segue: nela o responsável entra com a
+   * qualificação completa, no lugar do sócio de empresa. Ausente = nulo.
+   */
+  estadoCivil?: string | null
+  profissao?: string | null
+  nomeMae?: string | null
+  endereco?: string | null
+  cidade?: string | null
+  uf?: string | null
+  cep?: string | null
 }
 
 /**
@@ -323,6 +336,7 @@ export function valoresDoDocumento(
     // A lista do formulário oferece "Casada", "Solteiro"...; no meio da frase
     // do documento ("brasileira, casada, nome da mãe") vai em minúscula.
     'cliente.estadoCivil': ouNulo(cliente.estadoCivil)?.toLocaleLowerCase('pt-BR') ?? null,
+    'cliente.profissao': ouNulo(cliente.profissao ?? null),
     'cliente.nomeMae': ouNulo(cliente.nomeMae),
     'cliente.rg': ouNulo(cliente.rg),
     'cliente.documentoFormatado': formatarDocumento(cliente.documento),
@@ -348,6 +362,17 @@ export function valoresDoDocumento(
     valores['representante.nacionalidade'] = ouNulo(representante.nacionalidade)
     valores['representante.rg'] = ouNulo(representante.rg)
     valores['representante.qualificacao'] = ouNulo(representante.qualificacao)
+    valores['representante.estadoCivil'] =
+      ouNulo(representante.estadoCivil ?? null)?.toLocaleLowerCase('pt-BR') ?? null
+    valores['representante.profissao'] = ouNulo(representante.profissao ?? null)
+    valores['representante.nomeMae'] = ouNulo(representante.nomeMae ?? null)
+    valores['representante.endereco'] = ouNulo(representante.endereco ?? null)
+    valores['representante.cidade'] = ouNulo(representante.cidade ?? null)
+    valores['representante.uf'] = ouNulo(representante.uf ?? null)
+    valores['representante.cepFormatado'] =
+      representante.cep === null || representante.cep === undefined
+        ? null
+        : formatarCep(representante.cep)
   }
 
   for (const [chave, valor] of Object.entries(ESCRITORIO)) {
@@ -473,6 +498,7 @@ const ROTULO_DO_MARCADOR: Record<string, string> = {
   'cliente.nome': 'nome do cliente',
   'cliente.nacionalidade': 'nacionalidade',
   'cliente.estadoCivil': 'estado civil',
+  'cliente.profissao': 'profissão',
   'cliente.nomeMae': 'nome da mãe',
   'cliente.rg': 'RG',
   'cliente.email': 'e-mail',
@@ -486,6 +512,13 @@ const ROTULO_DO_MARCADOR: Record<string, string> = {
   'representante.nacionalidade': 'nacionalidade do sócio',
   'representante.rg': 'RG do sócio',
   'representante.qualificacao': 'qualificação do sócio (sócio, presidente)',
+  'representante.estadoCivil': 'estado civil do representante legal',
+  'representante.profissao': 'profissão do representante legal',
+  'representante.nomeMae': 'nome da mãe do representante legal',
+  'representante.endereco': 'endereço do representante legal',
+  'representante.cidade': 'cidade do representante legal',
+  'representante.uf': 'UF do representante legal',
+  'representante.cepFormatado': 'CEP do representante legal',
   'caso.descricaoDoObjeto': 'descrição do objeto do contrato',
   'honorarios.valorFormatado': 'valor dos honorários fixos',
   'honorarios.valorPorExtenso': 'valor dos honorários fixos',
@@ -517,6 +550,13 @@ const ROTULO_DO_MARCADOR: Record<string, string> = {
 export const ROTULOS_DO_CASO: ReadonlySet<string> = new Set(
   Object.entries(ROTULO_DO_MARCADOR)
     .filter(([marcador]) => marcador.startsWith('caso.') || marcador.startsWith('honorarios.'))
+    .map(([, rotulo]) => rotulo),
+)
+
+/** Rótulos que só se resolvem editando o REPRESENTANTE (sócio ou responsável). */
+export const ROTULOS_DO_REPRESENTANTE: ReadonlySet<string> = new Set(
+  Object.entries(ROTULO_DO_MARCADOR)
+    .filter(([marcador]) => marcador.startsWith('representante.'))
     .map(([, rotulo]) => rotulo),
 )
 

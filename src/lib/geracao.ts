@@ -29,6 +29,7 @@ import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import {
   MODELO_DO_TIPO,
   ROTULOS_DO_CASO,
+  ROTULOS_DO_REPRESENTANTE,
   aplicarPartes,
   arquivoDoObjeto,
   arquivosDosHonorarios,
@@ -81,6 +82,7 @@ async function montarModelo(
   tipo: TipoGeravel,
   tipoPessoa: TipoPessoa,
   caso: CasoParaDocumento | null,
+  comResponsavel: boolean,
 ): Promise<string> {
   const modelo = await lerModelo(MODELO_DO_TIPO[tipo] ?? '')
 
@@ -96,7 +98,10 @@ async function montarModelo(
 
   if (tipo !== TipoDocumento.PROCURACAO) return modelo
 
-  const sufixo = tipoPessoa === TipoPessoa.FISICA ? 'pf' : 'pj'
+  // Pessoa física COM responsável vinculado é cliente menor de idade,
+  // representado (modelo enviado em 24/09/2026).
+  const sufixo =
+    tipoPessoa === TipoPessoa.JURIDICA ? 'pj' : comResponsavel ? 'menor' : 'pf'
   const [outorgante, assinatura] = await Promise.all([
     lerModelo(`procuracao-outorgante-${sufixo}`),
     lerModelo(`procuracao-assinatura-${sufixo}`),
@@ -162,9 +167,15 @@ export async function montarPrevia(
     }
   }
 
-  // Empresa não assina sozinha: quem assina é o representante legal.
+  // Empresa não assina sozinha: quem assina é o representante legal. Numa
+  // pessoa física, o mesmo vínculo é o do RESPONSÁVEL pelo menor — e só a
+  // procuração o usa; contrato e declaração seguem em nome do cliente.
   const vinculo = cliente.representantes[0] ?? null
   const representante = vinculo?.pessoaFisica ?? null
+  const ehEmpresa = cliente.tipoPessoa === TipoPessoa.JURIDICA
+  const comResponsavel =
+    !ehEmpresa && representante !== null && tipo === TipoDocumento.PROCURACAO
+  const quemRepresenta = ehEmpresa || comResponsavel ? representante : null
 
   if (cliente.tipoPessoa === TipoPessoa.JURIDICA && representante === null) {
     return {
@@ -178,7 +189,7 @@ export async function montarPrevia(
   // qualificação pessoal do sócio ocupa o lugar da da empresa. A procuração
   // nova não funde mais os dois — ver `procuracao-outorgante-pj.html`.
   const paraDocumento: ClienteParaDocumento =
-    representante === null
+    !ehEmpresa || representante === null
       ? cliente
       : {
           ...cliente,
@@ -190,17 +201,24 @@ export async function montarPrevia(
         }
 
   const preenchido = preencherModelo(
-    await montarModelo(tipo, cliente.tipoPessoa, caso),
+    await montarModelo(tipo, cliente.tipoPessoa, caso, comResponsavel),
     valoresDoDocumento(
       paraDocumento,
-      representante === null
+      quemRepresenta === null
         ? null
         : {
-            nome: representante.nome,
-            documento: representante.documento,
-            nacionalidade: representante.nacionalidade,
-            rg: representante.rg,
+            nome: quemRepresenta.nome,
+            documento: quemRepresenta.documento,
+            nacionalidade: quemRepresenta.nacionalidade,
+            rg: quemRepresenta.rg,
             qualificacao: vinculo?.qualificacao ?? null,
+            estadoCivil: quemRepresenta.estadoCivil,
+            profissao: quemRepresenta.profissao,
+            nomeMae: quemRepresenta.nomeMae,
+            endereco: quemRepresenta.endereco,
+            cidade: quemRepresenta.cidade,
+            uf: quemRepresenta.uf,
+            cep: quemRepresenta.cep,
           },
       caso,
       new Date(),
@@ -219,9 +237,10 @@ export async function montarPrevia(
       faltando: preenchido.faltando,
       ondePreencher: soFaltaDoCaso
         ? `/painel/casos/${caso.id}/editar`
-        : representante === null
-          ? `/painel/clientes/${cliente.id}/editar`
-          : `/painel/clientes/${representante.id}/editar`,
+        : quemRepresenta !== null &&
+            preenchido.faltando.every((rotulo) => ROTULOS_DO_REPRESENTANTE.has(rotulo))
+          ? `/painel/clientes/${quemRepresenta.id}/editar`
+          : `/painel/clientes/${cliente.id}/editar`,
     }
   }
 

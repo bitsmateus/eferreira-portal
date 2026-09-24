@@ -45,13 +45,47 @@ function BotaoDesvincular({
   )
 }
 
+/**
+ * `empresa`: os sócios que assinam por uma pessoa jurídica.
+ * `menor`: o responsável por um cliente pessoa física menor de idade (a
+ * procuração de menor, modelo de 24/09/2026) — é o mesmo vínculo, com outras
+ * palavras. Cliente pessoa física com responsável vinculado = menor.
+ */
+export type VarianteDoVinculo = 'empresa' | 'menor'
+
+const TEXTOS = {
+  empresa: {
+    titulo: 'Representantes legais',
+    contagem: ['1 sócio', 'sócios'],
+    vazio:
+      'A procuração e o contrato de uma empresa são assinados pelo representante legal, e a qualificação que entra no documento é a dele. Sem sócio vinculado, não há como gerar os documentos desta empresa.',
+    vazioTitulo: 'Nenhum sócio vinculado.',
+    campo: 'CPF do sócio',
+    placeholder: 'sócio administrador',
+    dica: 'O sócio precisa já estar cadastrado como cliente pessoa física.',
+  },
+  menor: {
+    titulo: 'Responsável legal (cliente menor de idade)',
+    contagem: ['1 responsável', 'responsáveis'],
+    vazio:
+      'Só para cliente menor de idade: vinculando o responsável, a procuração sai no modelo de menor representado, com a qualificação dele, e é ele quem assina. Cliente maior de idade não precisa de nada aqui.',
+    vazioTitulo: 'Nenhum responsável vinculado.',
+    campo: 'CPF do responsável',
+    placeholder: 'genitora, genitor, tutor…',
+    dica: 'O responsável precisa já estar cadastrado como cliente pessoa física.',
+  },
+} as const
+
 export function RepresentantesLegais({
   empresaId,
   representantes,
+  variante = 'empresa',
 }: {
   empresaId: string
   representantes: readonly Representante[]
+  variante?: VarianteDoVinculo
 }) {
+  const textos = TEXTOS[variante]
   const [estado, enviar] = useActionState(vincularSocio.bind(null, empresaId), undefined)
   const formulario = useRef<HTMLFormElement>(null)
 
@@ -62,21 +96,22 @@ export function RepresentantesLegais({
   return (
     <div className="cartao">
       <div className="cartao-cabecalho">
-        <h2>Representantes legais</h2>
+        <h2>{textos.titulo}</h2>
         <span className="ml-auto text-[12px] text-texto-2">
-          {representantes.length === 1 ? '1 sócio' : `${representantes.length} sócios`}
+          {representantes.length === 1
+            ? textos.contagem[0]
+            : `${representantes.length} ${textos.contagem[1]}`}
         </span>
       </div>
 
       <div className="cartao-corpo">
         {representantes.length === 0 ? (
-          <div className="aviso aviso-atencao mb-4">
+          <div
+            className={`aviso ${variante === 'empresa' ? 'aviso-atencao' : 'aviso-info'} mb-4`}
+          >
             <span aria-hidden="true">▲</span>
             <div>
-              <b>Nenhum sócio vinculado.</b> A procuração e o contrato de uma empresa
-              são assinados pelo representante legal, e a qualificação que entra no
-              documento é a dele. Sem sócio vinculado, não há como gerar os documentos
-              desta empresa.
+              <b>{textos.vazioTitulo}</b> {textos.vazio}
             </div>
           </div>
         ) : (
@@ -127,7 +162,7 @@ export function RepresentantesLegais({
           <div className="flex flex-col gap-0 sm:flex-row sm:gap-3">
             <div className="flex-1">
               <label className="campo-rotulo" htmlFor="documento">
-                CPF do sócio
+                {textos.campo}
               </label>
               <input
                 id="documento"
@@ -146,7 +181,7 @@ export function RepresentantesLegais({
                 id="qualificacao"
                 name="qualificacao"
                 className="campo-entrada"
-                placeholder="sócio administrador"
+                placeholder={textos.placeholder}
               />
             </div>
           </div>
@@ -156,9 +191,7 @@ export function RepresentantesLegais({
               {estado.erros['documento']}
             </p>
           ) : (
-            <p className="dica">
-              O sócio precisa já estar cadastrado como cliente pessoa física.
-            </p>
+            <p className="dica">{textos.dica}</p>
           )}
 
           <div className="mt-3">

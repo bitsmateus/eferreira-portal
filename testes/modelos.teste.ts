@@ -365,3 +365,78 @@ describe('outorgado da procuração (24/09/2026)', () => {
     expect(advogadoPorId('fulano')).toBeUndefined()
   })
 })
+
+describe('procuração de menor representado (24/09/2026)', () => {
+  const menor: ClienteParaDocumento = {
+    ...cliente,
+    nome: 'Miguel Barreto da Silva',
+    documento: '54384339844',
+    estadoCivil: 'Solteiro',
+    profissao: 'estudante',
+    nomeMae: 'Cintia Cristina da Silva Soares',
+    rg: '69.945.690-3',
+    endereco: 'Avenida Major Mello, nº 280, Vila Nova Aparecida',
+    cidade: 'Mogi das Cruzes',
+    cep: '05425070',
+  }
+  const mae = {
+    nome: 'Cíntia Cristina da Silva Soares',
+    documento: '36568755885',
+    nacionalidade: 'brasileira',
+    rg: '45.311.733-8 SSP/SP',
+    qualificacao: 'genitora',
+    estadoCivil: 'Casada',
+    profissao: 'auxiliar de embalagem',
+    nomeMae: 'Maria Inez da Silva',
+    endereco: 'Avenida Major Mello, nº 280, Vila Nova Aparecida',
+    cidade: 'Mogi das Cruzes',
+    uf: 'SP',
+    cep: '05425070',
+  }
+
+  function montar(): string {
+    const modelo = aplicarPartes(lerArquivo(MODELOS.PROCURACAO), {
+      outorgante: lerArquivo('procuracao-outorgante-menor'),
+      assinatura: lerArquivo('procuracao-assinatura-menor'),
+    })
+    const resultado = preencherModelo(
+      modelo,
+      valoresDoDocumento(menor, mae, null, emitidoEm),
+    )
+    if (!resultado.ok) throw new Error(`faltou: ${resultado.faltando.join(', ')}`)
+    return resultado.html.replace(/\s+/g, ' ')
+  }
+
+  it('qualifica o menor e, em seguida, o responsável, cada um com os seus dados', () => {
+    const html = montar()
+    expect(html).toContain('Miguel Barreto da Silva</span>, brasileiro, solteiro, estudante')
+    expect(html).toContain('RG nº 69.945.690-3, inscrito(a) no CPF/MF sob o nº 543.843.398-44')
+    expect(html).toContain('filho(a) de Cintia Cristina da Silva Soares')
+    expect(html).toContain('representado(a) por seu(sua) genitora:')
+    expect(html).toContain('Cíntia Cristina da Silva Soares</span>, brasileira, casada, auxiliar de embalagem')
+    expect(html).toContain('CEP 05425-070')
+    expect(html).not.toMatch(/\{\{/)
+  })
+
+  it('quem assina é o responsável, não o menor', () => {
+    const html = montar()
+    const assinatura = html.slice(html.indexOf('class="assinatura"'))
+    expect(assinatura).toContain('Cíntia Cristina da Silva Soares')
+    expect(assinatura).not.toContain('Miguel')
+  })
+
+  it('sem a qualificação do responsável, o documento não sai — e diz o que falta', () => {
+    const modelo = aplicarPartes(lerArquivo(MODELOS.PROCURACAO), {
+      outorgante: lerArquivo('procuracao-outorgante-menor'),
+      assinatura: lerArquivo('procuracao-assinatura-menor'),
+    })
+    const resultado = preencherModelo(
+      modelo,
+      valoresDoDocumento(menor, { ...mae, profissao: null, endereco: null }, null, emitidoEm),
+    )
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+    expect(resultado.faltando).toContain('profissão do representante legal')
+    expect(resultado.faltando).toContain('endereço do representante legal')
+  })
+})
