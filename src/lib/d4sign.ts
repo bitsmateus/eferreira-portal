@@ -33,6 +33,7 @@
  * ─────────────────────────────────────────────────────────────────────────
  */
 
+import type { PinDaAssinatura } from '@/lib/posicao-da-assinatura'
 import { Buffer } from 'node:buffer'
 
 export type ConfiguracaoD4Sign = {
@@ -322,6 +323,27 @@ export async function definirSignatarios(
       `A D4Sign aceitou a chamada mas não cadastrou todos os signatários: ${JSON.stringify(resposta).slice(0, 300)}`,
     )
   }
+}
+
+/**
+ * Diz à D4Sign ONDE cada um assina (`addpins`), em milímetros. Não consome
+ * crédito nem manda e-mail — vem depois de `definirSignatarios` e antes de
+ * `mandarAssinar`. Exige "Ativar posição da assinatura" ligado no cofre.
+ * Ver `src/lib/posicao-da-assinatura.ts` sobre o que ainda não foi conferido.
+ */
+export async function posicionarAssinaturas(
+  configuracao: ConfiguracaoD4Sign,
+  uuidDocumento: string,
+  pins: readonly PinDaAssinatura[],
+): Promise<void> {
+  if (pins.length === 0) return
+
+  await chamar(configuracao, `/documents/${uuidDocumento}/addpins`, {
+    metodo: 'POST',
+    corpo: {
+      pins: pins.map((pin) => ({ document: uuidDocumento, ...pin })),
+    },
+  })
 }
 
 /** O passo que consome o crédito e dispara os e-mails. */

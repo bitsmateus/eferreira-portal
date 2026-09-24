@@ -65,6 +65,17 @@ import {
 } from '@/lib/armazenamento'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import { ESCRITORIO } from '@/lib/escritorio'
+import {
+  ajusteDoAmbiente,
+  lerPaginasDoPdf,
+  pinsDosAvulsos,
+  pinsPelasMarcas,
+  posicionamentoLigado,
+  type AjusteDoPin,
+  type PaginaDoPdf,
+  type PinDaAssinatura,
+  type PosicaoEscolhida,
+} from '@/lib/posicao-da-assinatura'
 import { registrarAssinatura } from '@/lib/assinatura'
 import {
   baixarAssinado,
@@ -72,6 +83,7 @@ import {
   consultarDocumento,
   definirSignatarios,
   mandarAssinar,
+  posicionarAssinaturas,
   saldo,
   subirDocumento,
   type ConfiguracaoD4Sign,
@@ -122,12 +134,21 @@ export type SignatarioAvulso = {
   nome: string
   email: string
   papel: PapelDaParte
+  /** Onde este signatário assina, se o operador escolheu (24/09/2026). */
+  posicao?: PosicaoEscolhida | undefined
 }
+
+const esquemaDePosicao = z.object({
+  pagina: z.number().int().min(0).max(999),
+  lado: z.enum(['esquerda', 'centro', 'direita']),
+  alturaEmPercentual: z.number().min(5).max(95),
+})
 
 const esquemaDeSignatarioAvulso = z.object({
   nome: z.string().trim().min(2).max(180),
   email: z.string().trim().toLowerCase().email(),
   papel: z.nativeEnum(PapelDaParte),
+  posicao: esquemaDePosicao.optional(),
 })
 
 const esquemaDeAvulsos = z.array(esquemaDeSignatarioAvulso)
@@ -272,6 +293,45 @@ export function mensagemDoEnvio(tipo: TipoDocumento, nomeDoCliente: string): str
 export function nomeDoAssinado(nomeOriginal: string): string {
   const semExtensao = nomeOriginal.replace(/\.pdf$/i, '')
   return `${semExtensao} (assinado).pdf`
+}
+
+/**
+ * Os pins do envio. Cliente, representante e escritório entram pela marca que
+ * o modelo deixou no PDF; documento avulso, pelo que o operador escolheu (ou
+ * pelo padrão). Testemunha do contrato fica sem pin — o contrato não tem lugar
+ * marcado para ela, e a D4Sign a posiciona como sempre fez.
+ */
+export function pinsDoEnvio(
+  tipo: TipoDocumento,
+  partes: readonly ParteQueAssina[],
+  avulsos: readonly SignatarioAvulso[],
+  paginas: readonly PaginaDoPdf[],
+  ajuste: AjusteDoPin,
+): PinDaAssinatura[] {
+  if (tipo === TipoDocumento.ANEXO) {
+    return pinsDosAvulsos(
+      paginas,
+      partes
+        .filter((parte) => parte.email !== null && parte.email.trim() !== '')
+        .map((parte) => ({
+          email: (parte.email ?? '').trim(),
+          posicao: avulsos.find((avulso) => avulso.email === (parte.email ?? '').trim())?.posicao,
+        })),
+      ajuste,
+    )
+  }
+
+  const marcadas = partes.flatMap((parte) => {
+    const email = (parte.email ?? '').trim()
+    if (email === '') return []
+    if (parte.papel === 'escritorio') return [{ email, chave: 'escritorio' }]
+    if (parte.papel === 'cliente' || parte.papel === 'representante') {
+      return [{ email, chave: 'parte' }]
+    }
+    return []
+  })
+
+  return pinsPelasMarcas(paginas, marcadas, ajuste)
 }
 
 // ---------------------------------------------------------------------------
@@ -589,16 +649,23 @@ export async function enviarParaAssinatura(
   // tentativa NÃO pode repetir esse passo — ver o comentário grande logo
   // abaixo, no bloco que usa esta variável.
   let signatariosJaDefinidos = false
+  // Idem para a posição dos carimbos (`addpins`).
+  let posicoesJaDefinidas = false
 
   if (preparo.retomavel !== null) {
     envioId = preparo.retomavel.id
     const anterior = await prisma.envioParaAssinatura.findUnique({
       where: { id: envioId },
-      select: { uuidDocumento: true, signatariosDefinidosEm: true },
+      select: {
+        uuidDocumento: true,
+        signatariosDefinidosEm: true,
+        posicoesDefinidasEm: true,
+      },
     })
     if (anterior === null) return { situacao: 'nao_encontrado' }
     uuid = anterior.uuidDocumento
     signatariosJaDefinidos = anterior.signatariosDefinidosEm !== null
+    posicoesJaDefinidas = anterior.posicoesDefinidasEm !== null
   } else {
     const pdf = await lerArquivo(documento.chaveArquivo)
     uuid = await subirDocumento(configuracao, configuracao.cofre, documento.nome, pdf)
@@ -651,6 +718,24 @@ export async function enviarParaAssinatura(
       await prisma.envioParaAssinatura.update({
         where: { id: envioId },
         data: { signatariosDefinidosEm: new Date() },
+      })
+    }
+
+    // Onde cada um assina. Desligado por padrão (ver
+    // `posicao-da-assinatura.ts`); ligado, uma falha aqui PARA o envio antes
+    // do passo que cobra — carimbo fora do lugar é o defeito que se quer evitar.
+    if (posicionamentoLigado() && !posicoesJaDefinidas) {
+      const pdf = await lerArquivo(documento.chaveArquivo)
+      const paginas = await lerPaginasDoPdf(pdf)
+      await posicionarAssinaturas(
+        configuracao,
+        uuid,
+        pinsDoEnvio(documento.tipo, preparo.partes, avulsos, paginas, ajusteDoAmbiente()),
+      )
+
+      await prisma.envioParaAssinatura.update({
+        where: { id: envioId },
+        data: { posicoesDefinidasEm: new Date() },
       })
     }
 

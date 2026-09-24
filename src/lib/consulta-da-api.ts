@@ -13,7 +13,7 @@
 
 import { TipoPessoa, type SituacaoCaso } from '@prisma/client'
 
-import { filtroDeClientes, type SessaoServidor } from '@/lib/autorizacao'
+import { filtroDeCasos, filtroDeClientes, type SessaoServidor } from '@/lib/autorizacao'
 import { prisma } from '@/lib/prisma'
 import { diaEmSaoPaulo } from '@/lib/datas'
 import { formatarDocumento, normalizarDocumento } from '@/lib/documento'
@@ -37,8 +37,25 @@ export type CasoNaApi = {
   situacaoRotulo: string
   /** O mais recente. Nulo quando o caso ainda não teve andamento. */
   andamento: AndamentoNaApi | null
+  /** A empresa a que o caso está ligado (24/09/2026), ou nulo. */
+  empresa: { id: string; nome: string; documento: string } | null
   /** Só vem com `?historico=true`. */
   historico?: AndamentoNaApi[]
+}
+
+/** Um caso na consulta por EMPRESA: traz também de quem é o caso. */
+export type CasoDaEmpresaNaApi = Omit<CasoNaApi, 'empresa'> & {
+  cliente: { id: string; nome: string; documento: string; documentoFormatado: string }
+}
+
+export type RespostaDaConsultaPorEmpresa = {
+  empresa: {
+    id: string
+    nome: string
+    documento: string
+    documentoFormatado: string
+  }
+  casos: CasoDaEmpresaNaApi[]
 }
 
 export type RespostaDaConsulta = {
@@ -87,6 +104,7 @@ export async function consultarPorDocumento(
           assunto: true,
           vara: true,
           situacao: true,
+          empresaVinculada: { select: { id: true, nome: true, documento: true } },
           andamentos: {
             select: {
               data: true,
@@ -129,9 +147,84 @@ export async function consultarPorDocumento(
         situacao: caso.situacao,
         situacaoRotulo: ROTULO_DA_SITUACAO[caso.situacao],
         andamento: ultimo === undefined ? null : comoAndamento(ultimo),
+        empresa: caso.empresaVinculada,
         ...(comHistorico
           ? { historico: caso.andamentos.map(comoAndamento) }
           : {}),
+      }
+    }),
+  }
+}
+
+/**
+ * Os casos LIGADOS a uma empresa (24/09/2026), pelo CNPJ dela — "casos da GWA".
+ * É outro recorte que a consulta por documento: aquela devolve os casos DO
+ * cliente; esta, os casos de outros clientes que estão ligados à empresa. Cada
+ * caso traz de quem é. Passa por `filtroDeClientes` e `filtroDeCasos`, como
+ * tudo (regra 2). Nulo quando não há empresa (pessoa jurídica) com o CNPJ.
+ */
+export async function consultarCasosDaEmpresa(
+  sessao: SessaoServidor,
+  documentoBruto: string,
+  comHistorico: boolean,
+): Promise<RespostaDaConsultaPorEmpresa | null> {
+  const documento = normalizarDocumento(documentoBruto)
+
+  const empresa = await prisma.cliente.findFirst({
+    where: filtroDeClientes(sessao, { documento, tipoPessoa: TipoPessoa.JURIDICA }),
+    select: { id: true, nome: true, documento: true },
+  })
+  if (empresa === null) return null
+
+  const casos = await prisma.caso.findMany({
+    where: filtroDeCasos(sessao, { empresaVinculadaId: empresa.id }),
+    select: {
+      id: true,
+      numeroProcesso: true,
+      assunto: true,
+      vara: true,
+      situacao: true,
+      cliente: { select: { id: true, nome: true, documento: true } },
+      andamentos: {
+        select: {
+          data: true,
+          descricao: true,
+          status: { select: { nome: true } },
+        },
+        orderBy: [{ data: 'desc' }, { criadoEm: 'desc' }],
+      },
+    },
+    orderBy: [{ situacao: 'asc' }, { criadoEm: 'desc' }],
+  })
+
+  return {
+    empresa: {
+      id: empresa.id,
+      nome: empresa.nome,
+      documento: empresa.documento,
+      documentoFormatado: formatarDocumento(empresa.documento),
+    },
+    casos: casos.map((caso) => {
+      const ultimo = caso.andamentos[0]
+
+      return {
+        id: caso.id,
+        processo:
+          caso.numeroProcesso === null
+            ? null
+            : formatarNumeroDeProcesso(caso.numeroProcesso),
+        assunto: caso.assunto,
+        vara: caso.vara,
+        situacao: caso.situacao,
+        situacaoRotulo: ROTULO_DA_SITUACAO[caso.situacao],
+        andamento: ultimo === undefined ? null : comoAndamento(ultimo),
+        cliente: {
+          id: caso.cliente.id,
+          nome: caso.cliente.nome,
+          documento: caso.cliente.documento,
+          documentoFormatado: formatarDocumento(caso.cliente.documento),
+        },
+        ...(comHistorico ? { historico: caso.andamentos.map(comoAndamento) } : {}),
       }
     }),
   }

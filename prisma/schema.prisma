@@ -726,6 +726,11 @@ model EnvioParaAssinatura {
   /// completaria — e o envio nunca fechava 100% na D4Sign.
   signatariosDefinidosEm DateTime?
 
+  /// Preenchido quando a posição dos carimbos de assinatura (`addpins`) foi
+  /// cadastrada na D4Sign — 24/09/2026. Mesma razão do campo acima: um retry
+  /// não deve repetir um passo que já funcionou.
+  posicoesDefinidasEm DateTime?
+
   /// Para quem o e-mail de assinatura foi, com nome e papel. É a resposta à
   /// pergunta "para qual endereço isto foi?", feita sempre depois do envio.
   signatarios Json

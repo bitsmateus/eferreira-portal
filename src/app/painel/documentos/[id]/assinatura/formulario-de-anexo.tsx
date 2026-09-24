@@ -6,11 +6,17 @@ import { PapelDaParte } from '@prisma/client'
 
 import { ROTULO_DO_PAPEL, ROTULO_DO_PAPEL_DA_PARTE } from '@/lib/rotulos-de-assinatura'
 import type { LinhaDeParte } from '@/lib/partes'
+import { posicaoPadrao, type PosicaoEscolhida } from '@/lib/posicao-da-assinatura'
 import type { ParteQueAssina } from '@/lib/assinaturas'
 import { enviarDocumentoParaAssinatura, prepararEnvioDeAnexo } from './acoes'
 
 type Extra = { nome: string; email: string; papel: PapelDaParte }
-type SignatarioEscolhido = { nome: string; email: string; papel: PapelDaParte }
+type SignatarioEscolhido = {
+  nome: string
+  email: string
+  papel: PapelDaParte
+  posicao?: PosicaoEscolhida
+}
 
 function Botao({
   children,
@@ -79,14 +85,29 @@ export function FormularioDeAnexo({
     undefined,
   )
   const [confirmando, setConfirmando] = useState(false)
+  // Onde cada um assina (24/09/2026), por e-mail. Quem não mexeu fica com a
+  // posição padrão: última página, perto do pé, um ao lado do outro.
+  const [posicoes, setPosicoes] = useState<Record<string, PosicaoEscolhida>>({})
 
-  const escolhidos: SignatarioEscolhido[] = [
+  const semPosicao: SignatarioEscolhido[] = [
     ...cadastradas
       .filter((parte) => selecionadas.has(parte.id))
       .map((parte) => ({ nome: parte.nome, email: parte.email, papel: parte.papel })),
     ...extras,
   ]
+  const escolhidos: SignatarioEscolhido[] = semPosicao.map((pessoa, indice) => ({
+    ...pessoa,
+    // Contrato: testemunha sem lugar marcado, a D4Sign posiciona como sempre.
+    ...(soTestemunhas ? {} : { posicao: posicoes[pessoa.email] ?? posicaoPadrao(indice) }),
+  }))
   const avulsosJson = JSON.stringify(escolhidos)
+
+  function definirPosicao(email: string, indice: number, mudanca: Partial<PosicaoEscolhida>): void {
+    setPosicoes((atual) => ({
+      ...atual,
+      [email]: { ...(atual[email] ?? posicaoPadrao(indice)), ...mudanca },
+    }))
+  }
 
   function alternar(parteId: string): void {
     setSelecionadas((atual) => {
@@ -325,6 +346,78 @@ export function FormularioDeAnexo({
             </li>
           ))}
         </ul>
+      )}
+
+      {!soTestemunhas && escolhidos.length > 0 && (
+        <div className="mb-[15px]">
+          <span className="campo-rotulo">Onde cada um assina (opcional)</span>
+          <ul className="rounded-md border border-borda">
+            {escolhidos.map((pessoa, indice) => {
+              const posicao = pessoa.posicao ?? posicaoPadrao(indice)
+              return (
+                <li
+                  key={pessoa.email}
+                  className="flex flex-wrap items-center gap-2 border-b border-prata-100 px-3 py-2 text-[12.5px] last:border-b-0"
+                >
+                  <span className="min-w-[140px] flex-1 truncate font-medium">{pessoa.nome}</span>
+                  <label className="flex items-center gap-1 text-texto-2">
+                    página
+                    <input
+                      type="number"
+                      min={0}
+                      max={999}
+                      className="campo-entrada w-[70px]"
+                      value={posicao.pagina}
+                      onChange={(evento) =>
+                        definirPosicao(pessoa.email, indice, {
+                          pagina: Math.max(0, Math.trunc(Number(evento.target.value) || 0)),
+                        })
+                      }
+                    />
+                  </label>
+                  <select
+                    className="campo-entrada w-[110px]"
+                    value={posicao.lado}
+                    onChange={(evento) =>
+                      definirPosicao(pessoa.email, indice, {
+                        lado: evento.target.value as PosicaoEscolhida['lado'],
+                      })
+                    }
+                    aria-label="Lado da página"
+                  >
+                    <option value="esquerda">esquerda</option>
+                    <option value="centro">centro</option>
+                    <option value="direita">direita</option>
+                  </select>
+                  <label className="flex items-center gap-1 text-texto-2">
+                    altura
+                    <input
+                      type="number"
+                      min={5}
+                      max={95}
+                      className="campo-entrada w-[70px]"
+                      value={posicao.alturaEmPercentual}
+                      onChange={(evento) =>
+                        definirPosicao(pessoa.email, indice, {
+                          alturaEmPercentual: Math.min(
+                            95,
+                            Math.max(5, Number(evento.target.value) || 85),
+                          ),
+                        })
+                      }
+                    />
+                    %
+                  </label>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="dica">
+            Página 0 é a última. Altura é a distância do topo da página: 85% fica
+            perto do pé. Quem não for ajustado assina na última página, um ao lado do
+            outro. Vale quando o posicionamento de assinatura está ligado no ambiente.
+          </p>
+        </div>
       )}
 
       <Botao variante="secundario">Revisar envio</Botao>

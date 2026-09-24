@@ -166,9 +166,44 @@ curl -s "https://HOMOLOGACAO/api/v1/consulta?documento=529.982.247-25" \
   ele, e use `situacaoRotulo` só para exibir.
 - `contratoAssinadoEm` é `null` enquanto o contrato não foi assinado.
 
+Cada caso traz `empresa` (`{ id, nome, documento }`) quando está ligado a uma
+empresa, ou `null`.
+
 Documento válido sem cliente cadastrado devolve `404`; documento que reprova no
 dígito verificador devolve `422`. São coisas diferentes de propósito: a primeira
 é resposta, a segunda é erro de quem chamou.
+
+### Casos ligados a uma empresa
+
+```
+GET /api/v1/consulta/empresa?documento=<CNPJ>
+```
+
+Permissão: `CONSULTAR`. Devolve os casos de OUTROS clientes que estão ligados à
+empresa (ex.: os clientes que a GWA envia ao escritório) — a consulta por
+`documento`, acima, devolve os casos do próprio cliente. `historico=true`
+acrescenta a linha do tempo. A ligação é feita no cadastro do caso
+(`empresaVinculadaId`).
+
+```json
+{
+  "empresa": { "id": "clxe1…", "nome": "GWA Consultoria", "documento": "11222333000181", "documentoFormatado": "11.222.333/0001-81" },
+  "casos": [
+    {
+      "id": "clxb2…",
+      "processo": "0012845-63.2026.8.26.0100",
+      "assunto": "Ação de cobrança",
+      "vara": null,
+      "situacao": "EM_ANDAMENTO",
+      "situacaoRotulo": "Em andamento",
+      "andamento": null,
+      "cliente": { "id": "clx9a…", "nome": "Nome do cliente", "documento": "52998224725", "documentoFormatado": "529.982.247-25" }
+    }
+  ]
+}
+```
+
+`404` sem empresa (pessoa jurídica) com aquele CNPJ; `422` para CNPJ inválido.
 
 ---
 

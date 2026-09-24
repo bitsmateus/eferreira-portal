@@ -370,14 +370,30 @@ respostas do escritório. Os sete pontos do cliente:
    CASO ("Documentos deste caso", na ficha do caso), com anexo vinculado a um
    caso ou não.
 
-**NÃO feitos (aguardam o escritório):** (a) posição da assinatura na D4Sign:
-a API tem `addpins` (posição em milímetros, com página e tamanho da página),
-mas a origem das coordenadas não é documentada e não há como testar sem gastar
-crédito — precisa de um exemplo do que está "fora do local" (print do
-documento assinado) e de um envio de teste. Também exige ligar "Ativar
-posição da assinatura" no cofre, no painel da D4Sign. (b) Onde assina o
-documento personalizado (anexo): proposta em conversa — o operador escolhe
-página e ponto numa prévia, ou o padrão é o fim do documento.
+**Posição da assinatura na D4Sign e assinatura de documento avulso** (24/09/2026,
+mesmo dia, depois do pedido "faça tudo"): implementados, mas **DESLIGADOS
+por padrão** — nunca foram conferidos contra a D4Sign de verdade (isso gasta
+crédito e a documentação não diz de que ponto do carimbo a coordenada vale).
+- Cada bloco de assinatura dos modelos leva uma marca invisível
+  (`[[assina:parte]]`, `[[assina:escritorio]]`, texto de 1px quase branco). O
+  PDF pronto é lido com `pdfjs-dist` (`src/lib/posicao-da-assinatura.ts`) para
+  achar página e ponto de cada marca, e a D4Sign recebe os `addpins`
+  (milímetros) depois de `createlist` e ANTES de `sendtosigner`. Falha no
+  `addpins` para o envio antes de cobrar; retry não repete `createlist` nem
+  `addpins` (`posicoesDefinidasEm`, migração `20260924191757`).
+- Documento avulso: na tela de envio o operador escolhe, por pessoa, página
+  (0 = última), lado e altura; sem escolha, última página e um ao lado do outro.
+  Testemunha do contrato fica sem pin (o contrato novo não tem lugar marcado).
+- **Para ligar**: (1) ativar "posição da assinatura" no cofre, no painel da
+  D4Sign; (2) `D4SIGN_POSICIONAR_ASSINATURA=1` na homologação/produção; (3)
+  mandar um documento de teste a um e-mail do escritório e ver onde o carimbo
+  cai; (4) se deslocado, acertar `D4SIGN_PIN_AJUSTE_X_MM` / `_Y_MM` (padrão -20
+  e -14: supõe canto superior esquerdo do carimbo). `npm run d4sign:posicoes --
+  arquivo.pdf` mostra o que seria enviado, sem falar com a D4Sign.
+- A marca fica no texto do PDF (invisível na página, mas selecionável).
+- **API**: `GET /api/v1/consulta/empresa?documento=<CNPJ>` devolve os casos
+  ligados a uma empresa (cada um com o cliente); a consulta por documento
+  passou a trazer `empresa` em cada caso (`docs/api.md`).
 
 **Procuração de menor representado** (24/09/2026), a partir do modelo
 "Procuracao_Miguel.pdf" que o escritório mandou. Cliente pessoa física COM

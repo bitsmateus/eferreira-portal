@@ -147,6 +147,18 @@ p {
   break-after: avoid;
 }
 
+/* Marca que o sistema lê no PDF pronto para saber onde cada pessoa assina
+   (`src/lib/posicao-da-assinatura.ts`): texto de 1px, quase branco, logo acima
+   da linha. Não aparece impresso, mas fica no texto do PDF. */
+.marca-de-assinatura {
+  height: 1px;
+  margin: 0;
+  font-size: 1px;
+  line-height: 1px;
+  color: #fefefe;
+  text-align: center;
+}
+
 .maiusculas {
   text-transform: uppercase;
 }

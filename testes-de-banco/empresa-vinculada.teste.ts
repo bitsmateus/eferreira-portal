@@ -18,6 +18,7 @@ import { PerfilUsuario, TipoPessoa } from '@prisma/client'
 import { SemAutorizacao, filtroDeAndamentos, type SessaoServidor } from '@/lib/autorizacao'
 import { meusCasos, meusDocumentos } from '@/lib/area-do-cliente'
 import { criarCaso, esquemaDeCaso, listarCasos, lerFiltrosDeCaso, type DadosDeCaso } from '@/lib/casos'
+import { consultarCasosDaEmpresa, consultarPorDocumento } from '@/lib/consulta-da-api'
 import { prisma } from '@/lib/prisma'
 
 const DOC_PESSOA = '52998224725'
@@ -256,5 +257,29 @@ describe('achar os casos de uma empresa', () => {
       lerFiltrosDeCaso({ empresa: outraEmpresaId }),
     )
     expect(lista.linhas).toEqual([])
+  })
+})
+
+describe('a API — casos ligados a uma empresa', () => {
+  it('devolve os casos ligados, cada um com o cliente a que pertence', async () => {
+    const resposta = await consultarCasosDaEmpresa(sessaoDaEquipe(), DOC_EMPRESA, false)
+
+    expect(resposta?.empresa.nome).toBe('GWA do teste')
+    expect(resposta?.casos.map((caso) => caso.id)).toEqual([casoLigadoId])
+    expect(resposta?.casos[0]?.cliente.documento).toBe(DOC_PESSOA)
+  })
+
+  it('CNPJ de empresa sem caso devolve lista vazia; CPF de pessoa não é empresa', async () => {
+    expect((await consultarCasosDaEmpresa(sessaoDaEquipe(), DOC_OUTRA_EMPRESA, false))?.casos).toEqual([])
+    expect(await consultarCasosDaEmpresa(sessaoDaEquipe(), DOC_PESSOA, false)).toBeNull()
+  })
+
+  it('a consulta por documento do cliente mostra a empresa de cada caso', async () => {
+    const resposta = await consultarPorDocumento(sessaoDaEquipe(), DOC_PESSOA, false)
+    const ligado = resposta?.casos.find((caso) => caso.id === casoLigadoId)
+    const outro = resposta?.casos.find((caso) => caso.id === casoSoDaPessoaId)
+
+    expect(ligado?.empresa?.nome).toBe('GWA do teste')
+    expect(outro?.empresa).toBeNull()
   })
 })

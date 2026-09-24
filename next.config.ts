@@ -2,6 +2,9 @@ import type { NextConfig } from 'next'
 
 const config: NextConfig = {
   reactStrictMode: true,
+  // Lê o PDF para achar onde cada um assina (src/lib/posicao-da-assinatura.ts):
+  // biblioteca de Node, que não deve ser empacotada junto do código do Next.
+  serverExternalPackages: ['pdfjs-dist'],
   poweredByHeader: false,
   experimental: {
     // O anexo da pasta do cliente sobe pela ação de servidor, e o limite
