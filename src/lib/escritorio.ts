@@ -91,3 +91,62 @@ export type DadosDoEscritorio = typeof ESCRITORIO
  */
 export const MENSAGEM_DE_SUPORTE_NO_WHATSAPP =
   'Olá! Vim pelo site do Portal do Cliente e preciso de ajuda para acessar.'
+
+/**
+ * Quem pode ser o OUTORGADO da procuração — pedido do escritório em
+ * 24/09/2026 ("precisa ter a opção de trocar o outorgado (advogado); o
+ * endereço profissional é o mesmo"). Quem escolhe é o operador, na hora de
+ * gerar; o endereço do escritório (acima) vale para todos.
+ *
+ * O primeiro da lista é o padrão, e é o mesmo advogado do restante de
+ * `ESCRITORIO`: o CONTRATO continua sendo dele (razão social, OAB), só a
+ * procuração troca de outorgado.
+ *
+ * Como o resto deste arquivo, vive no código e não no banco: para incluir
+ * outro advogado, acrescente uma linha aqui. (Quando a tela de administração
+ * do escritório existir, isto vai para lá.)
+ *
+ * `whatsapp` nulo: o modelo do escritório cita "endereço eletrônico: X e
+ * whatsapp: Y" — sem número, a frase termina no e-mail.
+ */
+export type AdvogadoOutorgado = {
+  id: string
+  nome: string
+  /** Concordância do texto: "outorgada", "inscrita", "sua bastante procuradora". */
+  feminino: boolean
+  /** Como entra depois do nome: "brasileiro, solteiro, advogado". */
+  qualificacao: string
+  oab: string
+  email: string
+  whatsapp: string | null
+}
+
+export const ADVOGADOS: readonly AdvogadoOutorgado[] = [
+  {
+    id: 'sergio',
+    nome: ESCRITORIO.advogado,
+    feminino: false,
+    qualificacao: ESCRITORIO.advogadoQualificacao,
+    oab: ESCRITORIO.oab,
+    email: ESCRITORIO.emailDoAdvogado,
+    whatsapp: ESCRITORIO.whatsapp,
+  },
+  {
+    // Dados da procuração de exemplo enviada em 24/09/2026.
+    id: 'cristina',
+    nome: 'Dra. Cristina Moura Santos Lopes',
+    feminino: true,
+    qualificacao: 'brasileira, divorciada, advogada',
+    oab: '453.976',
+    email: 'cristina.msl.adv@gmail.com',
+    whatsapp: null,
+  },
+]
+
+export const ADVOGADO_PADRAO: AdvogadoOutorgado = ADVOGADOS[0] as AdvogadoOutorgado
+
+/** `null` ou vazio = o padrão; id que não existe = `undefined` (quem chama recusa). */
+export function advogadoPorId(id: string | null): AdvogadoOutorgado | undefined {
+  if (id === null || id === '') return ADVOGADO_PADRAO
+  return ADVOGADOS.find((advogado) => advogado.id === id)
+}

@@ -29,6 +29,11 @@
   arquivo inteiro colado dentro de um comentário fecha o comentário no meio,
   derramando o resto dele no documento assinado. Aconteceu.
 
+  O OUTORGADO (advogado) é escolhido na hora de gerar — ver ADVOGADOS em
+  src/lib/escritorio.ts. Os marcadores de outorgado só trocam nome, dados e a
+  concordância de gênero (o/a, inscrito/inscrita, procurador/procuradora); o
+  texto do escritório é o mesmo.
+
   Ver src/lib/modelos.ts para a lista de campos.
 -->
 <h1>Procuração Ad Judicia Et Extra</h1>
@@ -36,18 +41,17 @@
 {{>outorgante}}
 
 <p class="qualificacao">
-  <span class="rotulo-parte">Outorgado:</span>
-  <span class="maiusculas">{{escritorio.advogado}}</span>,
-  {{escritorio.advogadoQualificacao}}, inscrito na OAB/{{escritorio.uf}} sob o
-  nº {{escritorio.oab}}, com escritório profissional na
+  <span class="rotulo-parte">{{outorgado.rotulo}}:</span>
+  <span class="maiusculas">{{outorgado.nome}}</span>,
+  {{outorgado.qualificacao}}, {{outorgado.inscrito}} na OAB/{{escritorio.uf}} sob o
+  nº {{outorgado.oab}}, com escritório profissional na
   {{escritorio.endereco}}, {{escritorio.cidade}} – {{escritorio.uf}}, CEP
-  {{escritorio.cep}}, endereço eletrônico: {{escritorio.emailDoAdvogado}} e
-  whatsapp: {{escritorio.whatsapp}}
+  {{escritorio.cep}}, {{outorgado.contato}}
 </p>
 
 <p>
-  <span class="rotulo-parte">Poderes:</span> A OUTORGANTE nomeia e constitui o
-  OUTORGADO seu bastante procurador e advogado, conferindo-lhe os poderes da
+  <span class="rotulo-parte">Poderes:</span> A OUTORGANTE nomeia e constitui {{outorgado.o}}
+  {{outorgado.ROTULO}} {{outorgado.procurador}}, conferindo-lhe os poderes da
   cláusula AD JUDICIA ET EXTRA, para representá-la ativa ou passivamente, em
   qualquer juízo, tribunal, instância ou grau de jurisdição, podendo propor
   ações, apresentar defesas, contestações, reconvenções, impugnações,
@@ -59,7 +63,7 @@
   artigo 105 do Código de Processo Civil, para confessar, reconhecer a
   procedência do pedido, transigir, desistir, renunciar ao direito sobre o qual
   se funda a ação, receber, dar quitação, firmar compromisso e assinar
-  declaração de hipossuficiência econômica, quando cabível. O OUTORGADO poderá,
+  declaração de hipossuficiência econômica, quando cabível. {{outorgado.O}} {{outorgado.ROTULO}} poderá,
   ainda, representar a OUTORGANTE perante órgãos e entidades públicas ou
   privadas quando necessário à atuação jurídica decorrente deste mandato, bem
   como substabelecer, no todo ou em parte, com ou sem reserva de poderes. O

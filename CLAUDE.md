@@ -313,6 +313,27 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Outorgado da procuração é escolhido na hora de gerar** (24/09/2026).
+Pedido do escritório: "precisa ter a opção de trocar o outorgado (advogado);
+o endereço profissional é o mesmo". Em "Gerar documento" há um seletor
+"Outorgado" (vale só para a procuração); o endereço profissional continua o
+do escritório para qualquer advogado. A lista vive em `ADVOGADOS`
+(`src/lib/escritorio.ts`) — hoje o Dr. Sergio (padrão, sai igual a antes) e a
+Dra. Cristina Moura Santos Lopes (OAB/SP 453.976, dados da procuração de
+exemplo de 24/09; **sem WhatsApp** — a frase termina no e-mail). Para incluir
+outro advogado, uma linha nesse arquivo. O modelo `procuracao.html` ganhou
+marcadores `{{outorgado.*}}` que só trocam dados e a concordância de gênero
+(o/a, inscrito/inscrita, procurador/procuradora) — o texto do escritório é o
+mesmo (regra 10), e um teste garante que o texto do Dr. Sergio sai idêntico.
+O id vem do navegador mas é conferido no servidor: id desconhecido é
+recusado. A auditoria do documento gerado guarda quem foi o outorgado.
+O CONTRATO continua sendo do Dr. Sergio (razão social e OAB) e a assinatura
+eletrônica do escritório também. **CONFIRMAR com o escritório:** (a) a
+Dra. Cristina assina pela D4Sign no lugar do escritório quando ela é a
+outorgada? (hoje não — só o cliente assina a procuração); (b) chegaram
+também um modelo de procuração de MENOR representado pela mãe e um de PF —
+não implementados, ficaram para depois ("por enquanto faça isso").
+
 **Senha digitada pelo administrador e "Minha conta"** (23/09/2026). O
 administrador agora pode DIGITAR a senha de qualquer usuário — ao cadastrar e
 ao redefinir (campo opcional; em branco, o sistema sorteia como antes; mínimo

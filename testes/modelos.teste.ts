@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { advogadoPorId } from '@/lib/escritorio'
 import {
   NaturezaDoHonorarioPersonalizado,
   TipoDeObjeto,
@@ -326,3 +327,41 @@ describe('os modelos e o dicionário estão em dia', () => {
   })
 })
 
+
+describe('outorgado da procuração (24/09/2026)', () => {
+  function procuracaoCom(id: string | null): string {
+    const advogado = advogadoPorId(id)
+    if (advogado === undefined) throw new Error('advogado inexistente')
+    const resultado = preencherModelo(
+      lerModelo(MODELOS.PROCURACAO),
+      valoresDoDocumento(cliente, null, null, emitidoEm, advogado),
+    )
+    if (!resultado.ok) throw new Error(`faltou: ${resultado.faltando.join(', ')}`)
+    return resultado.html.replace(/\s+/g, ' ')
+  }
+
+  it('sem escolha, sai o advogado de sempre, com o texto masculino de sempre', () => {
+    const html = procuracaoCom(null)
+    expect(html).toContain('Dr. Sergio Evangelista Ferreira')
+    expect(html).toContain('brasileiro, solteiro, advogado, inscrito na OAB/SP sob o nº 378.532')
+    expect(html).toContain('endereço eletrônico: sergioferreira@eferreira.adv.br e whatsapp: 11 93806.3696')
+    expect(html).toContain('constitui o OUTORGADO seu bastante procurador e advogado, conferindo-lhe')
+    expect(html).toContain('O OUTORGADO poderá')
+  })
+
+  it('outra advogada troca dados e concordância; o endereço do escritório é o mesmo', () => {
+    const html = procuracaoCom('cristina')
+    expect(html).toContain('Dra. Cristina Moura Santos Lopes')
+    expect(html).toContain('brasileira, divorciada, advogada, inscrita na OAB/SP sob o nº 453.976')
+    expect(html).toContain('Rua Olegário Paiva, nº 180, 4º andar, Sala 411, Centro')
+    expect(html).toContain('endereço eletrônico: cristina.msl.adv@gmail.com </p>')
+    expect(html).not.toContain('whatsapp: 11 93806')
+    expect(html).toContain('constitui a OUTORGADA sua bastante procuradora e advogada, conferindo-lhe')
+    expect(html).toContain('A OUTORGADA poderá')
+    expect(html).not.toContain('Sergio')
+  })
+
+  it('id desconhecido não vira advogado nenhum', () => {
+    expect(advogadoPorId('fulano')).toBeUndefined()
+  })
+})

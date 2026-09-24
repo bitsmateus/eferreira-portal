@@ -20,10 +20,12 @@ export function FormularioDeGeracao({
   clienteId,
   tipo,
   casoId,
+  advogadoId,
 }: {
   clienteId: string
   tipo: TipoGeravel
   casoId: string | null
+  advogadoId: string
 }) {
   const [estado, enviar] = useActionState(
     gerarEArquivar.bind(null, clienteId),
@@ -34,6 +36,7 @@ export function FormularioDeGeracao({
     <form action={enviar}>
       <input type="hidden" name="tipo" value={tipo} />
       <input type="hidden" name="casoId" value={casoId ?? ''} />
+      <input type="hidden" name="advogadoId" value={advogadoId} />
 
       {estado?.mensagem !== undefined && (
         <div className="aviso aviso-erro mb-3" role="alert">

@@ -21,6 +21,7 @@ import {
   filtroDeClientes,
   type SessaoServidor,
 } from '@/lib/autorizacao'
+import { advogadoPorId } from '@/lib/escritorio'
 import { prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { enviarArquivo, gerarChaveDeArquivo, removerArquivo } from '@/lib/armazenamento'
@@ -114,8 +115,14 @@ export async function montarPrevia(
   clienteId: string,
   tipo: TipoGeravel,
   casoId: string | null,
+  advogadoId: string | null = null,
 ): Promise<ResultadoDaPrevia> {
   exigirEquipe(sessao)
+
+  // Vale só para a procuração, mas um id que não existe é recusado sempre:
+  // o navegador não inventa quem assina como outorgado.
+  const advogado = advogadoPorId(advogadoId)
+  if (advogado === undefined) return { situacao: 'nao_encontrado' }
 
   const cliente = await prisma.cliente.findFirst({
     where: filtroDeClientes(sessao, { id: clienteId }),
@@ -197,6 +204,7 @@ export async function montarPrevia(
           },
       caso,
       new Date(),
+      advogado,
     ),
   )
 
@@ -236,8 +244,9 @@ export async function gerarDocumento(
   tipo: TipoGeravel,
   casoId: string | null,
   emailDoAutor: string | null,
+  advogadoId: string | null = null,
 ): Promise<ResultadoDaGeracao> {
-  const previa = await montarPrevia(sessao, clienteId, tipo, casoId)
+  const previa = await montarPrevia(sessao, clienteId, tipo, casoId, advogadoId)
 
   if (previa.situacao !== 'pronto') return previa
 
@@ -278,7 +287,15 @@ export async function gerarDocumento(
           acao: AcaoAuditoria.CRIACAO,
           entidade: 'documento',
           entidadeId: criado.id,
-          detalhes: { origem: 'gerado', tipo, clienteId: cliente.id, casoId },
+          detalhes: {
+            origem: 'gerado',
+            tipo,
+            clienteId: cliente.id,
+            casoId,
+            ...(tipo === TipoDocumento.PROCURACAO
+              ? { outorgado: advogadoPorId(advogadoId)?.id }
+              : {}),
+          },
         },
         transacao,
       )

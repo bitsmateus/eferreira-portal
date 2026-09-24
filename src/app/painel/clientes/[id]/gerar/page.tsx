@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { SeletorDeCaso } from '@/componentes/seletor-de-caso'
+import { ADVOGADOS, advogadoPorId } from '@/lib/escritorio'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import { obterCliente } from '@/lib/clientes'
@@ -26,11 +27,11 @@ export default async function PaginaDeGeracao({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tipo?: string; casoId?: string }>
+  searchParams: Promise<{ tipo?: string; casoId?: string; advogadoId?: string }>
 }) {
   const sessao = await exigirSessaoDaEquipe()
   const { id } = await params
-  const { tipo: tipoBruto, casoId: casoBruto } = await searchParams
+  const { tipo: tipoBruto, casoId: casoBruto, advogadoId: advogadoBruto } = await searchParams
 
   const cliente = await obterCliente(sessao, id)
   if (cliente === null) notFound()
@@ -38,19 +39,24 @@ export default async function PaginaDeGeracao({
   const naQuery = tipoBruto ?? ''
   const tipo: TipoGeravel | null = ehTipoGeravel(naQuery) ? naQuery : null
   const casoId = casoBruto === undefined || casoBruto === '' ? null : casoBruto
+  // Id desconhecido cai no padrão na tela; o servidor recusa de verdade em
+  // `montarPrevia` (regra 2), a tela só evita mostrar um seletor quebrado.
+  const advogadoId = advogadoPorId(advogadoBruto ?? null)?.id ?? ADVOGADOS[0]?.id ?? ''
 
   // A prévia é montada pelo mesmo caminho que a geração usa, então o que
   // aparece aqui é o que sai no PDF — não há um "renderizador de prévia"
   // separado que possa divergir.
   const previa =
-    tipo === null ? null : await montarPrevia(sessao, cliente.id, tipo, casoId)
+    tipo === null
+      ? null
+      : await montarPrevia(sessao, cliente.id, tipo, casoId, advogadoId)
 
   // A prévia é o PDF de verdade, gerado pela mesma função e pelo mesmo
   // Chromium — inclusive as quebras de página. Se um dia aparecer um segundo
   // caminho que desenha o documento de outro jeito, ele vai mentir; não crie.
   const enderecoDaPrevia =
     previa?.situacao === 'pronto'
-      ? `/painel/clientes/${cliente.id}/gerar/previa?tipo=${tipo}&casoId=${casoId ?? ''}`
+      ? `/painel/clientes/${cliente.id}/gerar/previa?tipo=${tipo}&casoId=${casoId ?? ''}&advogadoId=${advogadoId}`
       : null
 
   return (
@@ -125,6 +131,28 @@ export default async function PaginaDeGeracao({
                     </p>
                   </div>
 
+                  <div className="mb-[15px]">
+                    <label className="campo-rotulo" htmlFor="advogadoId">
+                      Outorgado (advogado da procuração)
+                    </label>
+                    <select
+                      id="advogadoId"
+                      name="advogadoId"
+                      className="campo-entrada"
+                      defaultValue={advogadoId}
+                    >
+                      {ADVOGADOS.map((advogado) => (
+                        <option key={advogado.id} value={advogado.id}>
+                          {advogado.nome} — OAB/SP {advogado.oab}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="dica">
+                      Vale só para a procuração. O endereço profissional é o do
+                      escritório, para qualquer advogado.
+                    </p>
+                  </div>
+
                   <button type="submit" className="botao botao-secundario">
                     Ver prévia
                   </button>
@@ -137,6 +165,7 @@ export default async function PaginaDeGeracao({
                       clienteId={cliente.id}
                       tipo={tipo}
                       casoId={casoId}
+                      advogadoId={advogadoId}
                     />
                   </>
                 )}

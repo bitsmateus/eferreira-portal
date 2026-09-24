@@ -18,7 +18,11 @@ import {
   type TipoPessoa,
 } from '@prisma/client'
 
-import { ESCRITORIO } from '@/lib/escritorio'
+import {
+  ADVOGADO_PADRAO,
+  ESCRITORIO,
+  type AdvogadoOutorgado,
+} from '@/lib/escritorio'
 import { formatarDataExtenso } from '@/lib/datas'
 import { formatarDocumento } from '@/lib/documento'
 import { formatarCep } from '@/lib/formatos'
@@ -311,6 +315,7 @@ export function valoresDoDocumento(
   representante: RepresentanteParaDocumento | null,
   caso: CasoParaDocumento | null,
   emitidoEm: Date,
+  advogado: AdvogadoOutorgado = ADVOGADO_PADRAO,
 ): Record<string, string | null> {
   const valores: Record<string, string | null> = {
     'cliente.nome': ouNulo(cliente.nome),
@@ -348,6 +353,8 @@ export function valoresDoDocumento(
   for (const [chave, valor] of Object.entries(ESCRITORIO)) {
     valores[`escritorio.${chave}`] = valor
   }
+
+  Object.assign(valores, valoresDoOutorgado(advogado))
 
   if (caso !== null) {
     valores['caso.descricaoDoObjeto'] = ouNulo(caso.descricaoDoObjeto)
@@ -407,6 +414,32 @@ export function valoresDoDocumento(
   }
 
   return valores
+}
+
+/**
+ * O outorgado da procuração. Só a concordância de gênero é nossa (o/a,
+ * inscrito/inscrita...); o texto em volta é do escritório e não muda.
+ */
+function valoresDoOutorgado(advogado: AdvogadoOutorgado): Record<string, string> {
+  const f = advogado.feminino
+  const rotulo = f ? 'Outorgada' : 'Outorgado'
+  return {
+    'outorgado.rotulo': rotulo,
+    'outorgado.ROTULO': rotulo.toUpperCase(),
+    'outorgado.o': f ? 'a' : 'o',
+    'outorgado.O': f ? 'A' : 'O',
+    'outorgado.procurador': f
+      ? 'sua bastante procuradora e advogada'
+      : 'seu bastante procurador e advogado',
+    'outorgado.inscrito': f ? 'inscrita' : 'inscrito',
+    'outorgado.nome': advogado.nome,
+    'outorgado.qualificacao': advogado.qualificacao,
+    'outorgado.oab': advogado.oab,
+    'outorgado.contato':
+      advogado.whatsapp === null
+        ? `endereço eletrônico: ${advogado.email}`
+        : `endereço eletrônico: ${advogado.email} e whatsapp: ${advogado.whatsapp}`,
+  }
 }
 
 /** Como a natureza entra na frase "Esta remuneração será ... em relação a". */
