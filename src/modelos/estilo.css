@@ -187,8 +187,10 @@ p:has(+ .local-e-data) {
   break-after: avoid;
 }
 
+/* 2,6cm entre a data e a linha: é onde cai o carimbo da assinatura eletrônica
+   (pedido do escritório, 25/09/2026 — antes 0,9cm, apertado demais). */
 .assinatura {
-  margin-top: 0.9cm;
+  margin-top: 2.6cm;
   text-align: center;
   page-break-inside: avoid;
 }
