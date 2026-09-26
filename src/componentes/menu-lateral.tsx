@@ -26,6 +26,7 @@ const MENU = [
       { icone: '◉', rotulo: 'Clientes', href: '/painel/clientes' },
       { icone: '▦', rotulo: 'Casos', href: '/painel/casos' },
       { icone: '◈', rotulo: 'Partes', href: '/painel/partes' },
+      { icone: '⚖', rotulo: 'Advogados', href: '/painel/advogados' },
       { icone: '▣', rotulo: 'Documentos', href: '/painel/documentos' },
     ],
   },

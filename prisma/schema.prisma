@@ -157,6 +157,39 @@ enum AcaoAuditoria {
 // pode consultar; operador e administrador não apontam para nenhum.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Advogado — quem pode ser o OUTORGADO da procuração (25/09/2026). Antes era
+// uma lista no código, com só dois nomes; o escritório pediu um lugar para
+// incluir advogados. Não é usuário do sistema (não entra, não assina nada):
+// é só o cadastro que a procuração cita. O endereço profissional, o e-mail e
+// o telefone que o documento traz são os do ESCRITÓRIO, iguais para todos.
+// ---------------------------------------------------------------------------
+
+model Advogado {
+  id String @id @default(cuid())
+
+  /// Como sai no documento, com o tratamento: "Dr. Sergio Evangelista Ferreira".
+  nome         String
+  /// Concordância do texto: outorgada, inscrita, "sua bastante procuradora".
+  feminino     Boolean  @default(false)
+  nacionalidade String
+  estadoCivil  String
+  /// Só o número, como se escreve: "378.532".
+  oab          String
+  /// Seção da OAB: "SP".
+  oabUf        String   @default("SP")
+
+  /// O que vem escolhido ao gerar a procuração. Um só.
+  padrao Boolean @default(false)
+  /// Desativar não apaga: a auditoria dos documentos já gerados cita o id.
+  ativo  Boolean @default(true)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("advogado")
+}
+
 model Usuario {
   id        String          @id @default(cuid())
   nome      String

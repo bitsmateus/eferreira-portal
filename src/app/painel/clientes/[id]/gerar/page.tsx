@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { SeletorDeCaso } from '@/componentes/seletor-de-caso'
-import { ADVOGADOS, advogadoPorId } from '@/lib/escritorio'
+import { listarAdvogadosAtivos } from '@/lib/advogados'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import { obterCliente } from '@/lib/clientes'
@@ -41,7 +41,12 @@ export default async function PaginaDeGeracao({
   const casoId = casoBruto === undefined || casoBruto === '' ? null : casoBruto
   // Id desconhecido cai no padrão na tela; o servidor recusa de verdade em
   // `montarPrevia` (regra 2), a tela só evita mostrar um seletor quebrado.
-  const advogadoId = advogadoPorId(advogadoBruto ?? null)?.id ?? ADVOGADOS[0]?.id ?? ''
+  const advogados = await listarAdvogadosAtivos(sessao)
+  const advogadoId =
+    advogados.find((advogado) => advogado.id === advogadoBruto)?.id ??
+    advogados.find((advogado) => advogado.padrao)?.id ??
+    advogados[0]?.id ??
+    ''
 
   // A prévia é montada pelo mesmo caminho que a geração usa, então o que
   // aparece aqui é o que sai no PDF — não há um "renderizador de prévia"
@@ -141,15 +146,19 @@ export default async function PaginaDeGeracao({
                       className="campo-entrada"
                       defaultValue={advogadoId}
                     >
-                      {ADVOGADOS.map((advogado) => (
+                      {advogados.map((advogado) => (
                         <option key={advogado.id} value={advogado.id}>
-                          {advogado.nome} — OAB/SP {advogado.oab}
+                          {advogado.nome} — OAB/{advogado.oabUf} {advogado.oab}
                         </option>
                       ))}
                     </select>
                     <p className="dica">
                       Vale só para a procuração. O endereço profissional é o do
-                      escritório, para qualquer advogado.
+                      escritório, para qualquer advogado.{' '}
+                      <Link href="/painel/advogados" className="underline underline-offset-2">
+                        Cadastrar ou editar advogados
+                      </Link>
+                      .
                     </p>
                   </div>
 

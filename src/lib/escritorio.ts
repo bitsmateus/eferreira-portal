@@ -102,18 +102,10 @@ export const MENSAGEM_DE_SUPORTE_NO_WHATSAPP =
   'Olá! Vim pelo site do Portal do Cliente e preciso de ajuda para acessar.'
 
 /**
- * Quem pode ser o OUTORGADO da procuração — pedido do escritório em
- * 24/09/2026 ("precisa ter a opção de trocar o outorgado (advogado); o
- * endereço profissional é o mesmo"). Quem escolhe é o operador, na hora de
- * gerar; o endereço do escritório (acima) vale para todos.
- *
- * O primeiro da lista é o padrão, e é o mesmo advogado do restante de
- * `ESCRITORIO`: o CONTRATO continua sendo dele (razão social, OAB), só a
- * procuração troca de outorgado.
- *
- * Como o resto deste arquivo, vive no código e não no banco: para incluir
- * outro advogado, acrescente uma linha aqui. (Quando a tela de administração
- * do escritório existir, isto vai para lá.)
+ * O OUTORGADO da procuração. Desde 25/09/2026 quem cadastra os advogados é a
+ * equipe, na tela "Advogados" (`src/lib/advogados.ts`); o que está aqui é só
+ * o FORMATO e os dois advogados de sempre, usados como padrão quando o banco
+ * ainda está vazio e nos testes das funções puras.
  *
  * O e-mail e o telefone que a procuração cita são os do ESCRITÓRIO
  * (`ESCRITORIO.email`/`telefone`), iguais para qualquer advogado.
@@ -126,8 +118,8 @@ export type AdvogadoOutorgado = {
   /** Como entra depois do nome: "brasileiro, solteiro, advogado". */
   qualificacao: string
   oab: string
-  email: string
-  whatsapp: string | null
+  /** Seccional da OAB: "SP". */
+  oabUf: string
 }
 
 export const ADVOGADOS: readonly AdvogadoOutorgado[] = [
@@ -137,24 +129,21 @@ export const ADVOGADOS: readonly AdvogadoOutorgado[] = [
     feminino: false,
     qualificacao: ESCRITORIO.advogadoQualificacao,
     oab: ESCRITORIO.oab,
-    email: ESCRITORIO.emailDoAdvogado,
-    whatsapp: ESCRITORIO.whatsapp,
+    oabUf: 'SP',
   },
   {
-    // Dados da procuração de exemplo enviada em 24/09/2026.
     id: 'cristina',
     nome: 'Dra. Cristina Moura Santos Lopes',
     feminino: true,
     qualificacao: 'brasileira, divorciada, advogada',
     oab: '453.976',
-    email: 'cristina.msl.adv@gmail.com',
-    whatsapp: null,
+    oabUf: 'SP',
   },
 ]
 
 export const ADVOGADO_PADRAO: AdvogadoOutorgado = ADVOGADOS[0] as AdvogadoOutorgado
 
-/** `null` ou vazio = o padrão; id que não existe = `undefined` (quem chama recusa). */
+/** Para as funções puras e os testes: procura na lista fixa acima. */
 export function advogadoPorId(id: string | null): AdvogadoOutorgado | undefined {
   if (id === null || id === '') return ADVOGADO_PADRAO
   return ADVOGADOS.find((advogado) => advogado.id === id)

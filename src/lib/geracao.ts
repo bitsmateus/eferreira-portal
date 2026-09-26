@@ -21,7 +21,7 @@ import {
   filtroDeClientes,
   type SessaoServidor,
 } from '@/lib/autorizacao'
-import { advogadoPorId } from '@/lib/escritorio'
+import { obterAdvogadoParaDocumento } from '@/lib/advogados'
 import { prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { enviarArquivo, gerarChaveDeArquivo, removerArquivo } from '@/lib/armazenamento'
@@ -58,7 +58,7 @@ export function exigeCaso(tipo: TipoGeravel): boolean {
 }
 
 export type ResultadoDaPrevia =
-  | { situacao: 'pronto'; html: string; titulo: string }
+  | { situacao: 'pronto'; html: string; titulo: string; advogadoId: string }
   | { situacao: 'nao_encontrado' }
   | { situacao: 'caso_obrigatorio' }
   /** O cadastro está incompleto: a lista diz exatamente o que falta. */
@@ -82,7 +82,7 @@ export async function montarPrevia(
 
   // Vale só para a procuração, mas um id que não existe é recusado sempre:
   // o navegador não inventa quem assina como outorgado.
-  const advogado = advogadoPorId(advogadoId)
+  const advogado = await obterAdvogadoParaDocumento(advogadoId)
   if (advogado === undefined) return { situacao: 'nao_encontrado' }
 
   const cliente = await prisma.cliente.findFirst({
@@ -203,6 +203,7 @@ export async function montarPrevia(
     situacao: 'pronto',
     html: preenchido.html,
     titulo: `${ROTULO_DO_TIPO[tipo]} — ${cliente.nome}`,
+    advogadoId: advogado.id,
   }
 }
 
@@ -268,7 +269,7 @@ export async function gerarDocumento(
             clienteId: cliente.id,
             casoId,
             ...(tipo === TipoDocumento.PROCURACAO
-              ? { outorgado: advogadoPorId(advogadoId)?.id }
+              ? { outorgado: previa.advogadoId }
               : {}),
           },
         },

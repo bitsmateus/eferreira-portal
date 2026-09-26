@@ -556,6 +556,7 @@ function valoresDoOutorgado(advogado: AdvogadoOutorgado): Record<string, string>
     'outorgado.nome': advogado.nome,
     'outorgado.qualificacao': advogado.qualificacao,
     'outorgado.oab': advogado.oab,
+    'outorgado.oabUf': advogado.oabUf,
     // Desde 24/09/2026 o modelo cita o e-mail e o telefone do ESCRITÓRIO,
     // para qualquer advogado — não os pessoais dele.
     'outorgado.contato': `e-mail: ${ESCRITORIO.email}, telefone: ${ESCRITORIO.telefone}`,

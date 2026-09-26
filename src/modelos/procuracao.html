@@ -28,8 +28,8 @@
   arquivo inteiro colado dentro de um comentário fecha o comentário no meio,
   derramando o resto dele no documento assinado. Aconteceu.
 
-  O OUTORGADO (advogado) é escolhido na hora de gerar — ver ADVOGADOS em
-  src/lib/escritorio.ts. Os marcadores de outorgado só trocam nome, dados e a
+  O OUTORGADO (advogado) é escolhido na hora de gerar — cadastro
+  na tela "Advogados" (src/lib/advogados.ts). Os marcadores de outorgado só trocam nome, dados e a
   concordância de gênero (o/a, inscrito/inscrita, procurador/procuradora); o
   texto do escritório é o mesmo.
 
@@ -43,7 +43,7 @@
 <p class="qualificacao">
   <span class="rotulo-parte">{{outorgado.rotulo}}:</span>
   <span class="maiusculas">{{outorgado.nome}}</span>,
-  {{outorgado.qualificacao}}, {{outorgado.inscrito}} na OAB/{{escritorio.uf}} sob o
+  {{outorgado.qualificacao}}, {{outorgado.inscrito}} na OAB/{{outorgado.oabUf}} sob o
   nº {{outorgado.oab}}, com escritório profissional na
   {{escritorio.endereco}}, {{escritorio.cidade}} – {{escritorio.uf}}, CEP
   {{escritorio.cep}}, {{outorgado.contato}}.
