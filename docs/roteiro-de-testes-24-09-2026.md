@@ -47,6 +47,25 @@ precisa recarregar a página.
 
 ---
 
+## 0b. Acrescentado em 25/09/2026
+
+- [ ] **Deploy** de novo (há migração: `advogados`).
+- [ ] Contrato: item **3.5** com a conta da Nu Pagamentos; rodapé do papel
+      timbrado com os contatos no canto inferior esquerdo, em todos os documentos.
+- [ ] **Anexar documento**: escolher vários arquivos de uma vez; um arquivo
+      inválido no meio recusa o lote e diz qual.
+- [ ] **Advogados** (menu): cadastrar um, gerar procuração escolhendo-o, tornar
+      padrão, desativar.
+- [ ] **Retorno automático da D4Sign**: definir `D4SIGN_RETORNO_SEGREDO` no
+      EasyPanel e cadastrar no cofre (Configurações → Callback) a URL
+      `https://portal.eferreira.adv.br/api/d4sign/retorno?chave=<segredo>`. Depois de uma
+      assinatura de teste, o documento assinado deve aparecer sozinho na pasta.
+- [ ] **Download do assinado**: abrir o "(assinado).pdf" da pasta — tem que ter o
+      documento inteiro + a página do certificado. Se aparecer só o certificado, o
+      portal agora recusa arquivar e mostra o motivo; me mande o arquivo.
+
+---
+
 ## 1. Documentos gerados (procuração, declaração, contrato)
 
 Em **Clientes → ficha → Gerar documento**.

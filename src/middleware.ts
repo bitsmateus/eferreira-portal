@@ -19,6 +19,6 @@ export const config = {
     // cabeçalho (Anexo I, 3.c) e cada rota confere a sua. Passar o maquinário
     // de sessão em toda requisição de API seria custo sem efeito — e um
     // middleware que "deixa passar" nunca foi garantia de nada por aqui.
-    '/((?!api/auth|api/v1|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/auth|api/v1|api/d4sign|_next/static|_next/image|favicon.ico).*)',
   ],
 }

@@ -313,6 +313,37 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Rodada de 25/09/2026** (cláusula 3.5, rodapé, advogados, anexos, D4Sign):
+
+1. **Cláusula 3.5 nova** ("newwww/Contrato ... (1).docx", só ela mudou): dados de
+   pagamento agora são os do próprio escritório — Nu Pagamentos (260), ag.
+   0001, conta 278408077-1, Pix financeiro@eferreira.adv.br, favorecido a
+   Sergio E. Ferreira Sociedade Individual de Advocacia. A conta C6 / Eferreira
+   Assessoria saiu. Os dados moram em `escritorio.ts`.
+2. **Rodapé do timbre trocado**: o .docx do contrato traz outro papel timbrado
+   (contatos no canto inferior ESQUERDO, sem "SERGIO E. FERREIRA OAB/SP
+   378532"). Virou o timbre de todos os documentos (`timbre.png` e os três
+   recortes). Cabeçalho e marca d'água são iguais.
+3. **Anexar vários arquivos de uma vez** (até 20, 25 MB cada, 100 MB no total;
+   `validarArquivos`, tipo e caso valem para todos; lote inteiro é conferido
+   antes de gravar). `bodySizeLimit` do Next subiu para 100mb.
+4. **Advogados** agora são cadastro (`Advogado`, migração
+   `20260926000902_advogados`, semente com Dr. Sergio — padrão — e Dra.
+   Cristina), tela `/painel/advogados` (equipe): nome com tratamento, gênero,
+   nacionalidade, estado civil, OAB e UF; desativar, tornar padrão. O seletor
+   de "Gerar documento" lê do banco; a auditoria guarda o id do outorgado.
+   Não são usuários do sistema.
+5. **Retorno automático da D4Sign**: `POST /api/d4sign/retorno?chave=<segredo>`
+   (`D4SIGN_RETORNO_SEGREDO`). Só o UUID do aviso é lido; a situação vem da
+   pergunta de volta à D4Sign (mesma conferência do botão). A rota só existe
+   com o segredo definido. **Falta configurar** no cofre: Opções do cofre →
+   Configurações → Callback/Webhook.
+6. **Download do assinado "só o certificado"**: agora o PDF que volta é
+   conferido contra o original (`conferencia-do-assinado.ts`: mínimo de páginas
+   e começo do texto). Se parecer só o certificado, NADA é arquivado e a tela
+   mostra o motivo. **Causa real não confirmada** — falta um exemplo do que
+   baixa (quantas páginas, o que aparece).
+
 **Modelos novos do escritório, cadastro e empresa vinculada** (24/09/2026),
 a partir da pasta "EFERREIRA" (contrato, procuração PF / representada
 assistida / PJ, declaração PF / representada assistida — .docx e .pdf) e das

@@ -47,6 +47,7 @@ import {
   AcaoAuditoria,
   OrigemDoDocumento,
   PapelDaParte,
+  PerfilUsuario,
   SituacaoDoEnvio,
   TipoDocumento,
   TipoPessoa,
@@ -77,6 +78,7 @@ import {
   type PosicaoEscolhida,
 } from '@/lib/posicao-da-assinatura'
 import { registrarAssinatura } from '@/lib/assinatura'
+import { assinadoEstaCompleto, resumirPdf } from '@/lib/conferencia-do-assinado'
 import {
   baixarAssinado,
   configuracaoD4Sign,
@@ -861,6 +863,7 @@ export async function conferirAssinatura(
           tipo: true,
           casoId: true,
           clienteId: true,
+          chaveArquivo: true,
         },
       },
     },
@@ -914,6 +917,51 @@ export async function conferirAssinatura(
   return arquivarAssinado(sessao, configuracao, envio, emailDoAutor, agora)
 }
 
+/**
+ * O aviso automático da D4Sign (25/09/2026): quando alguém assina, ela chama o
+ * endereço de retorno do cofre (`/api/d4sign/retorno`) e esta função confere
+ * aquele documento — a mesma conferência do botão "Conferir assinatura", sem
+ * ninguém apertar nada.
+ *
+ * Nada do que a D4Sign manda é tomado por verdade: o corpo do aviso só diz QUAL
+ * documento olhar, e a situação de verdade vem da pergunta que o portal faz de
+ * volta (`consultarDocumento`). Um aviso forjado, no máximo, faz o portal
+ * perguntar à D4Sign algo que ela responderia de qualquer jeito.
+ *
+ * Quem "assinou" a ação, para a auditoria (regra 6), é quem pediu o envio —
+ * o registro diz que veio do retorno automático.
+ */
+export async function conferirAssinaturaPorRetorno(
+  uuidDocumento: string,
+): Promise<ResultadoDaConferencia> {
+  const envio = await prisma.envioParaAssinatura.findUnique({
+    where: { uuidDocumento },
+    select: { id: true, pedidoPorId: true },
+  })
+  if (envio === null) return { situacao: 'nao_encontrado' }
+
+  // Quem pediu o envio; se essa pessoa não existe mais, um administrador ativo
+  // — a auditoria precisa de alguém, e o registro diz que veio do retorno.
+  const autorId =
+    envio.pedidoPorId ??
+    (
+      await prisma.usuario.findFirst({
+        where: { perfil: PerfilUsuario.ADMINISTRADOR, situacao: 'ATIVO' },
+        select: { id: true },
+      })
+    )?.id
+  if (autorId === undefined) return { situacao: 'nao_encontrado' }
+
+  const sessaoDoPedido: SessaoServidor = {
+    usuarioId: autorId,
+    perfil: PerfilUsuario.OPERADOR,
+    clienteId: null,
+    contratoAssinado: false,
+  }
+
+  return conferirAssinatura(sessaoDoPedido, envio.id, 'retorno automático da D4Sign')
+}
+
 type EnvioParaArquivar = {
   id: string
   uuidDocumento: string
@@ -923,6 +971,7 @@ type EnvioParaArquivar = {
     tipo: TipoDocumento
     casoId: string | null
     clienteId: string
+    chaveArquivo: string
   }
 }
 
@@ -953,6 +1002,22 @@ async function arquivarAssinado(
       },
     })
     return { situacao: 'aguardando' }
+  }
+
+  // O que voltou tem que ser o documento assinado COMPLETO, e não só o
+  // certificado de assinaturas (reportado pelo escritório em 25/09/2026). Se
+  // parecer só o certificado, NADA é arquivado: um arquivo errado na pasta como
+  // "assinado" é pior do que nenhum, e a tela diz o motivo.
+  const veredito = assinadoEstaCompleto(
+    await resumirPdf(await lerArquivo(envio.documento.chaveArquivo)),
+    await resumirPdf(pdf),
+  )
+  if (!veredito.completo) {
+    await prisma.envioParaAssinatura.update({
+      where: { id: envio.id },
+      data: { situacaoNaD4Sign: veredito.motivo, conferidoEm: agora },
+    })
+    return { situacao: 'desconhecida', situacaoNaD4Sign: veredito.motivo }
   }
 
   const chave = gerarChaveDeArquivo()
