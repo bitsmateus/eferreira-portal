@@ -16,7 +16,8 @@
         contrato-honorarios-*.html (fixos, êxito, proveito econômico e
         personalizados), SEM a numeração "3.1 a 3.4" que tinham — o item 3.1
         agora é do contrato e as modalidades vêm logo abaixo dele;
-    [DADOS_DE_PAGAMENTO]  →  a conta do escritório, em `escritorio.ts`.
+    o item 3.5 (dados de pagamento) veio completo no arquivo de 25/09/2026,
+        com a conta do escritório: os dados moram em `escritorio.ts`.
 
   Os blocos de objeto e de honorários vieram em 21/09/2026, antes deste
   contrato; o bloco comum de honorários (3.5 a 3.9) saiu — o contrato novo o
@@ -97,10 +98,18 @@
   definição de valor, vencimento e efeitos de eventual revogação.
 </p>
 <p class="item">
-  3.5. Os pagamentos serão realizados pelos meios previstos no item 3.1, nos
-  seguintes dados: {{escritorio.dadosDePagamento}}. Alterações serão
-  comunicadas pelo CONTRATADO por canal oficial e deverão ser confirmadas pelo
-  CONTRATANTE antes do pagamento.
+  3.5. Os pagamentos observarão os meios e as condições previstos no item 3.1.
+  Para pagamento por Pix ou transferência bancária, serão utilizados os
+  seguintes dados, de titularidade do CONTRATADO, Favorecido:
+  {{escritorio.favorecido}}, CNPJ: {{escritorio.cnpj}}, Instituição:
+  {{escritorio.instituicaoDePagamento}}, Agência:
+  {{escritorio.agenciaDePagamento}}, Conta: {{escritorio.contaDePagamento}},
+  Chave Pix (e-mail): {{escritorio.chavePixDePagamento}}
+</p>
+<p class="item">
+  Eventuais alterações desses dados serão comunicadas pelo CONTRATADO e deverão
+  ser confirmadas pelo CONTRATANTE, antes do pagamento, por canal oficial do
+  escritório previamente conhecido.
 </p>
 
 <h2>Cláusula Quarta — Das Custas e Despesas</h2>

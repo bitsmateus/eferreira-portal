@@ -76,21 +76,18 @@ export const ESCRITORIO = {
   email: 'contato@eferreira.adv.br',
   site: 'eferreira.adv.br',
 
-  // Conta de recebimento citada na cláusula 2.2 do contrato. É a mesma que
-  // aparece impressa em todo contrato assinado pelo escritório.
-  banco: 'Banco 336 - C6 S.A.',
-  agencia: '0001',
-  conta: '31387773-4',
-  chavePix: 'Cnpj 53.909.599/0001-47',
-  razaoSocialRecebedora: 'EFERREIRA ASSESSORIA E COBRANCA LTDA',
-
   /**
-   * O que entra no item 3.5 do contrato ("nos seguintes dados: ..."). O
-   * contrato novo (24/09/2026) manda preencher [DADOS_DE_PAGAMENTO] e não diz
-   * quais; usa-se a conta que já constava no contrato antigo. CONFIRMAR.
+   * Dados de pagamento do item 3.5 do contrato — texto do escritório, que
+   * mandou a cláusula nova em 25/09/2026 ("Contrato ... (1).docx"), com a conta
+   * do próprio escritório (a Eferreira Assessoria e Cobrança e o C6, que
+   * constavam antes, saíram). Estão aqui, e não no HTML, para trocar de conta
+   * ser mudar um lugar só.
    */
-  dadosDePagamento:
-    'Banco 336 - C6 S.A., agência 0001, conta 31387773-4, chave Pix CNPJ 53.909.599/0001-47, em nome de EFERREIRA ASSESSORIA E COBRANCA LTDA',
+  favorecido: 'SERGIO E. FERREIRA SOCIEDADE INDIVIDUAL DE ADVOCACIA',
+  instituicaoDePagamento: 'Nu Pagamentos S.A. — código 260',
+  agenciaDePagamento: '0001',
+  contaDePagamento: '278408077-1',
+  chavePixDePagamento: 'financeiro@eferreira.adv.br',
 } as const
 
 export type DadosDoEscritorio = typeof ESCRITORIO

@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import {
   anexarDocumento,
   validarAnexo,
-  validarArquivo,
+  validarArquivos,
   type CamposDeAnexo,
 } from '@/lib/documentos'
 import { texto, type ErrosDeCampo } from '@/lib/formulario'
@@ -29,33 +29,38 @@ export async function anexarNaPasta(
   const conferido = validarAnexo(campos)
   if (!conferido.ok) return { erros: conferido.erros }
 
-  const bruto = dados.get('arquivo')
-  const arquivo = bruto instanceof File ? bruto : null
+  // Um ou vários arquivos (25/09/2026). O tipo e o caso valem para todos.
+  const brutos = dados.getAll('arquivo')
+  const arquivos = brutos.filter((item): item is File => item instanceof File)
 
-  const conferidoArquivo = validarArquivo(arquivo)
-  if (!conferidoArquivo.ok) return { erros: conferidoArquivo.erros }
-  if (arquivo === null) return { erros: { arquivo: 'Escolha um arquivo para anexar.' } }
+  const conferidoArquivos = validarArquivos(arquivos)
+  if (!conferidoArquivos.ok) return { erros: { arquivo: conferidoArquivos.mensagem } }
 
-  const conteudo = new Uint8Array(await arquivo.arrayBuffer())
+  const emailDoAutor = await emailDaSessao(sessao)
+  const anexados: string[] = []
 
-  const resultado = await anexarDocumento(
-    sessao,
-    clienteId,
-    conferido.dados,
-    {
-      nome: conferidoArquivo.dados.nome,
-      tipoConteudo: conferidoArquivo.dados.tipoConteudo,
-      conteudo,
-    },
-    await emailDaSessao(sessao),
-  )
+  for (const item of conferidoArquivos.dados) {
+    const resultado = await anexarDocumento(
+      sessao,
+      clienteId,
+      conferido.dados,
+      {
+        nome: item.nome,
+        tipoConteudo: item.tipoConteudo,
+        conteudo: new Uint8Array(await item.arquivo.arrayBuffer()),
+      },
+      emailDoAutor,
+    )
 
-  if (resultado.situacao === 'cliente_nao_encontrado') {
-    return { mensagem: 'Cliente não encontrado.' }
-  }
+    if (resultado.situacao === 'cliente_nao_encontrado') {
+      return { mensagem: 'Cliente não encontrado.' }
+    }
 
-  if (resultado.situacao === 'caso_invalido') {
-    return { erros: { casoId: 'Escolha um caso deste cliente.' } }
+    if (resultado.situacao === 'caso_invalido') {
+      return { erros: { casoId: 'Escolha um caso deste cliente.' } }
+    }
+
+    anexados.push(item.nome)
   }
 
   revalidatePath(`/painel/clientes/${clienteId}`)

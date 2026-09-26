@@ -8,9 +8,10 @@ const config: NextConfig = {
   poweredByHeader: false,
   experimental: {
     // O anexo da pasta do cliente sobe pela ação de servidor, e o limite
-    // padrão do Next é 1 MB. Acompanha TAMANHO_MAXIMO_BYTES em
+    // padrão do Next é 1 MB. Acompanha TAMANHO_TOTAL_MAXIMO_BYTES (vários arquivos por envio, 25/09/2026;
+    // cada arquivo continua limitado a TAMANHO_MAXIMO_BYTES, 25 MB) em
     // src/lib/documentos.ts — se um mudar, o outro muda junto.
-    serverActions: { bodySizeLimit: '25mb' },
+    serverActions: { bodySizeLimit: '100mb' },
   },
   // Regra 5: nenhum arquivo é público. Nada é servido a partir de /public
   // sem passar pela camada de autorização — os documentos saem por URL

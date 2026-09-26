@@ -6,7 +6,12 @@ import { useFormStatus } from 'react-dom'
 import { TipoDocumento } from '@prisma/client'
 
 import { SeletorDeCaso } from '@/componentes/seletor-de-caso'
-import { EXTENSOES_ACEITAS, ROTULO_DO_TIPO, TIPOS_ACEITOS } from '@/lib/arquivos'
+import {
+  EXTENSOES_ACEITAS,
+  LIMITE_DE_ARQUIVOS_POR_ENVIO,
+  ROTULO_DO_TIPO,
+  TIPOS_ACEITOS,
+} from '@/lib/arquivos'
 import { anexarNaPasta } from './acoes'
 
 type Caso = { id: string; numeroProcesso: string | null; assunto: string }
@@ -59,12 +64,13 @@ export function FormularioDeAnexo({
           <div className="cartao-corpo">
             <div className="mb-[15px]">
               <label className="campo-rotulo" htmlFor="arquivo">
-                Documento
+                Documentos
               </label>
               <input
                 id="arquivo"
                 name="arquivo"
                 type="file"
+                multiple
                 required
                 accept={[...Object.keys(TIPOS_ACEITOS), ...EXTENSOES_ACEITAS].join(',')}
                 className="campo-entrada file:mr-3 file:rounded-md file:border-0 file:bg-prata-100 file:px-3 file:py-1.5 file:text-[12.5px] file:text-grafite-800"
@@ -75,7 +81,9 @@ export function FormularioDeAnexo({
                 </p>
               ) : (
                 <p className="dica">
-                  Até 25 MB. Aceitos: {EXTENSOES_ACEITAS.join(', ')}.
+                  Pode escolher vários de uma vez (até {LIMITE_DE_ARQUIVOS_POR_ENVIO}, 25 MB
+                  cada e 100 MB no total). O tipo e o caso abaixo valem para todos.
+                  Aceitos: {EXTENSOES_ACEITAS.join(', ')}.
                 </p>
               )}
             </div>

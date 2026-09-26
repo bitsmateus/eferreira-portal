@@ -36,7 +36,9 @@ import {
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 import {
   EXTENSOES_ACEITAS,
+  LIMITE_DE_ARQUIVOS_POR_ENVIO,
   TAMANHO_MAXIMO_BYTES,
+  TAMANHO_TOTAL_MAXIMO_BYTES,
   TIPOS_ACEITOS,
 } from '@/lib/arquivos'
 import { somenteDigitos } from '@/lib/formatos'
@@ -111,6 +113,64 @@ export function validarArquivo(
       tamanho: arquivo.size,
     },
   }
+}
+
+/**
+ * Vários arquivos de uma vez (25/09/2026): "precisamos anexar mais de um
+ * documento de uma vez". O limite por arquivo continua sendo o de sempre; o
+ * teto de quantidade e de tamanho total existe para uma única requisição não
+ * virar um jeito de encher o servidor — o corpo da ação de servidor cabe
+ * `TAMANHO_TOTAL_MAXIMO_BYTES` (ver `next.config.ts`).
+ */
+export type ArquivoConferido = { arquivo: File; nome: string; tipoConteudo: string }
+
+/**
+ * Confere a lista inteira ANTES de gravar qualquer coisa: um arquivo ruim no
+ * meio não pode deixar metade do lote no ar. Cada recusa diz de qual arquivo é.
+ */
+export function validarArquivos(
+  arquivos: readonly File[],
+): { ok: true; dados: ArquivoConferido[] } | { ok: false; mensagem: string } {
+  const escolhidos = arquivos.filter((arquivo) => arquivo.size > 0)
+
+  if (escolhidos.length === 0) {
+    return { ok: false, mensagem: 'Escolha ao menos um arquivo para anexar.' }
+  }
+
+  if (escolhidos.length > LIMITE_DE_ARQUIVOS_POR_ENVIO) {
+    return {
+      ok: false,
+      mensagem: `No máximo ${LIMITE_DE_ARQUIVOS_POR_ENVIO} arquivos por vez. Você escolheu ${escolhidos.length}.`,
+    }
+  }
+
+  const total = escolhidos.reduce((soma, arquivo) => soma + arquivo.size, 0)
+  if (total > TAMANHO_TOTAL_MAXIMO_BYTES) {
+    return {
+      ok: false,
+      mensagem: `Os arquivos juntos passam de ${Math.floor(
+        TAMANHO_TOTAL_MAXIMO_BYTES / (1024 * 1024),
+      )} MB. Envie em mais de uma vez.`,
+    }
+  }
+
+  const conferidos: ArquivoConferido[] = []
+  for (const arquivo of escolhidos) {
+    const conferido = validarArquivo(arquivo)
+    if (!conferido.ok) {
+      return {
+        ok: false,
+        mensagem: `"${arquivo.name}": ${conferido.erros['arquivo'] ?? 'arquivo inválido.'}`,
+      }
+    }
+    conferidos.push({
+      arquivo,
+      nome: conferido.dados.nome,
+      tipoConteudo: conferido.dados.tipoConteudo,
+    })
+  }
+
+  return { ok: true, dados: conferidos }
 }
 
 // ---------------------------------------------------------------------------
