@@ -36,6 +36,7 @@ export const VERSAO_DA_API = '1'
 export type CodigoDeErro =
   | 'nao_autenticado'
   | 'sem_permissao'
+  | 'nao_verificado'
   | 'dados_invalidos'
   | 'nao_encontrado'
   | 'conflito'
@@ -44,6 +45,7 @@ export type CodigoDeErro =
 const STATUS: Record<CodigoDeErro, number> = {
   nao_autenticado: 401,
   sem_permissao: 403,
+  nao_verificado: 403,
   dados_invalidos: 422,
   nao_encontrado: 404,
   conflito: 409,

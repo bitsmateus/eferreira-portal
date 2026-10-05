@@ -313,6 +313,20 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Atendimento por IA com código por e-mail** (05/10/2026). A IA do WhatsApp
+(agente "Léa", no n8n) só consulta processo depois de o dono do documento
+acertar o mesmo código por e-mail da tela `/consultar`. Quatro rotas novas em
+`/api/v1/atendimento/*` (`codigo`, `validar`, `consulta`, `consulta/empresa`),
+documentadas em `docs/api.md`. Reaproveitam `pedirCodigo`/`conferirCodigo` sem
+copiar lógica (`src/lib/acesso-do-atendimento.ts`). Sem migração: o comprovante
+é o próprio `CodigoDeAcesso` usado, amarrado à conversa pela `origem` (impressão
+digital do telefone gravada no campo `enderecoIp`, prefixo `api:`) e vale 30
+minutos. A consulta por empresa devolve só o NOME do cliente de cada caso.
+Verificado: `tsc`, lint e 512 unitários; os testes de banco
+(`testes-de-banco/atendimento-com-codigo.teste.ts`) foram escritos mas **não
+rodaram** — sem Docker na sessão. **Falta:** rodar `npm run test:banco` e fazer
+o deploy no EasyPanel (que não é automático) antes de publicar o fluxo do n8n.
+
 **Dois pedidos para "Casos" (05/10/2026) — numeração e, depois de acordado
 separadamente com o escritório, o módulo de eventos.**
 

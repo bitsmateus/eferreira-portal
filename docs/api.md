@@ -205,6 +205,51 @@ acrescenta a linha do tempo. A ligação é feita no cadastro do caso
 
 `404` sem empresa (pessoa jurídica) com aquele CNPJ; `422` para CNPJ inválido.
 
+### Consulta com código por e-mail (atendimento)
+
+Para um atendente automático (a IA no WhatsApp) consultar processo **só depois
+de o dono do documento provar quem é**, com o mesmo código de seis dígitos da
+tela `/consultar` do portal. Quatro rotas, todas com permissão `CONSULTAR`, e
+todas recebem `origem`: o identificador da conversa (ex.: telefone + ticket),
+de 4 a 80 caracteres. **A origem deve vir do sistema que recebe a mensagem, não
+do texto que um modelo escreve** — é ela que amarra o código à conversa.
+
+```
+POST /api/v1/atendimento/codigo     { "documento": "...", "origem": "..." }
+POST /api/v1/atendimento/validar    { "documento": "...", "codigo": "123456", "origem": "..." }
+GET  /api/v1/atendimento/consulta?documento=<CPF ou CNPJ>&origem=...
+GET  /api/v1/atendimento/consulta/empresa?documento=<CNPJ>&origem=...
+```
+
+1. **`/codigo`** devolve sempre `{ "situacao": "pedido_registrado" }`, exista o
+   documento ou não: responder diferente diria a qualquer um quem é cliente do
+   escritório. O código vai para o **e-mail do cadastro** (cliente ativo, com
+   contrato assinado e e-mail), vale 10 minutos, e valem os limites do portal
+   (um pedido por minuto, três a cada quinze por cliente; dez a cada quinze por
+   `origem`).
+2. **`/validar`** devolve `{ "situacao": "confere", "nome": "...",
+   "validoPorMinutos": 30 }` ou `{ "situacao": "nao_confere" }` — um motivo só
+   para documento, código, validade e tentativas. Na quinta tentativa errada o
+   código morre.
+3. **`/consulta`** e **`/consulta/empresa`** respondem como as rotas de mesmo
+   nome da seção 4 (sem `historico`), mas **só** para a `origem` que acertou o
+   código **daquele documento** nos últimos 30 minutos. Sem isso: `403` com
+   `erro: "nao_verificado"`, igual para documento existente ou não.
+
+Detalhes que importam:
+
+- O comprovante fica **no servidor** (o próprio código usado). Não há token para
+  guardar nem para repassar, e desativar o cliente ou revogar o acesso fecha a
+  consulta na hora.
+- Para a consulta **por empresa**, o código é o do **CNPJ da empresa** e vai para
+  o e-mail da empresa — quem tem direito àqueles casos no portal. Cada caso traz
+  só o **nome** do cliente (`cliente`), nunca o CPF nem o id.
+- Verificar um CPF não abre o CNPJ, e o que uma conversa verificou não vale para
+  outra.
+- A chave de API que usar estas rotas ainda consegue chamar `/consulta` e
+  `/consulta/empresa` diretamente, sem código: guarde-a como segredo do atendente
+  e não a ponha em lugar nenhum que um modelo consiga ler.
+
 ---
 
 ## 5. Lista de situações de andamento

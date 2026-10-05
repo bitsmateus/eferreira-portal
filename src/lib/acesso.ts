@@ -21,3 +21,9 @@ export const SEGUNDOS_ENTRE_PEDIDOS = 60
 export const PEDIDOS_POR_CLIENTE = 3
 export const PEDIDOS_POR_IP = 10
 export const JANELA_DE_PEDIDOS_MINUTOS = 15
+
+/**
+ * Quanto tempo uma conversa de atendimento (a IA no WhatsApp) continua
+ * "verificada" depois de acertar o código. Passou disso, pede outro código.
+ */
+export const MINUTOS_DE_ACESSO_DO_ATENDIMENTO = 30
