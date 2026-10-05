@@ -363,14 +363,14 @@ separadamente com o escritório, o módulo de eventos.**
      e exclusão —, com o mesmo cuidado de `encerraOCaso` em `andamentos.ts`:
      marcar de novo o que já está no mesmo estado não grava registro
      repetido.
-   - **Verificado nesta sessão**: `tsc`, lint, `npm run build` e os 506
-     testes unitários (11 novos, em `testes/eventos.teste.ts`). **Não
-     verificado**: os testes de banco em `testes-de-banco/eventos.teste.ts`
-     (escritos no mesmo padrão dos demais) nem a migração contra um Postgres
-     de verdade — o Docker Desktop não estava disponível nesta máquina
-     durante a sessão. Antes de publicar: `npx prisma migrate dev` (ou
-     `migrate deploy` num ambiente com banco) para gerar/aplicar a migração
-     de verdade, e `npm run test:banco` para confirmar os novos testes.
+   - **Tudo verificado**, incluindo contra o Postgres de verdade: `tsc`,
+     lint, `npm run build`, os 506 testes unitários (11 novos, em
+     `testes/eventos.teste.ts`) e, depois que o Docker Desktop foi aberto
+     nesta mesma sessão, a migração `20261005180000_eventos_do_caso`
+     aplicada com `npx prisma migrate deploy` (sem erro — a SQL escrita à
+     mão bateu certinho com o schema) e os 184 testes de banco (13 novos,
+     em `testes-de-banco/eventos.teste.ts`). Falta só aplicar a mesma
+     migração em homologação e produção, pelo EasyPanel.
 
 **Rodada de 25/09/2026** (cláusula 3.5, rodapé, advogados, anexos, D4Sign):
 
