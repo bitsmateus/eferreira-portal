@@ -3,9 +3,21 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * `html`/`body` travados em `h-full` + `overflow: hidden`: quem rola é só
+   * o miolo de cada página (o `overflow-auto` de cada `page.tsx`) e a barra
+   * lateral (`overflow-y-auto` própria) — nunca o documento inteiro. Sem
+   * isto, um caso com pouco conteúdo expõe um bug de navegador nesta
+   * combinação (grid + coluna flex + divs de rolagem aninhadas): o
+   * documento relata alguns pixels a mais de altura rolável do que
+   * deveria, e rolar até lá mostra um vão em branco abaixo do painel —
+   * inclusive cortando a barra lateral, que para de acompanhar o resto da
+   * tela. `overflow: hidden` aqui fecha essa rota de vez, independente da
+   * causa exata do cálculo errado.
+   */
   html,
   body {
-    @apply h-full;
+    @apply h-full overflow-hidden;
   }
 
   body {

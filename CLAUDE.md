@@ -371,6 +371,36 @@ separadamente com o escritório, o módulo de eventos.**
      mão bateu certinho com o schema) e os 184 testes de banco (13 novos,
      em `testes-de-banco/eventos.teste.ts`). Falta só aplicar a mesma
      migração em homologação e produção, pelo EasyPanel.
+   - **Achado e corrigido no mesmo dia: a tela rolava inteira em caso com
+     pouco conteúdo** (andamento, documento e evento vazios — exatamente o
+     que o cartão novo deixou mais comum). Depois do deploy, o escritório
+     reportou "a tela tá ficando cortada embaixo": rolando até o fim de um
+     caso vazio, a barra lateral parava de acompanhar e sobrava um vão
+     cinza por baixo do painel inteiro.
+
+     Reproduzido local com Playwright, medindo a página de verdade: a barra
+     lateral e o miolo da tela mediam exatamente a altura da janela, os
+     dois certinhos — mas o **documento** (`document.documentElement`)
+     ainda conseguia rolar uns 180px a mais do que deveria, um
+     comportamento de navegador nesta combinação específica (grid de duas
+     colunas + coluna flex + uma área de rolagem própria dentro dela) que
+     só aparece quando o conteúdo de dentro é curto o bastante para sobrar
+     espaço — i.e., um caso nascido sem andamento, documento ou evento
+     nenhum, muito mais comum agora que existe um terceiro cartão vazio
+     para preencher. Confirmado isolando o cartão de Eventos: removê-lo
+     fazia o vão sumir por completo.
+
+     A correção não foi mexer no cartão em si (ele está correto) e sim
+     fechar a rota de vez: `html, body { overflow: hidden }`, em
+     `src/app/globals.css`. O desenho do painel já dizia, desde a Sprint de
+     responsividade, que quem deveria rolar é só o miolo de cada página e a
+     barra lateral — nunca o documento inteiro; faltava essa trava no nível
+     mais alto para o navegador não ter como fugir dela. Conferido de novo
+     com Playwright, simulando a roda do mouse de verdade (não
+     `scrollTo` programático, que ainda force a rolagem mesmo com
+     `overflow: hidden`): rolar além do fim do conteúdo agora para onde
+     deveria, sem mover o documento nem cortar a barra lateral.
+     `tsc`, lint, os 506 testes e `npm run build` continuam verdes.
 
 **Rodada de 25/09/2026** (cláusula 3.5, rodapé, advogados, anexos, D4Sign):
 
