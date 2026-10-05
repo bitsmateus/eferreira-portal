@@ -135,6 +135,7 @@ export default async function PaginaDoCaso({
                 envios={envios}
                 titulo="Documentos deste caso"
                 mostrarVinculo={false}
+                numerarAnexos
               />
             </div>
           </div>

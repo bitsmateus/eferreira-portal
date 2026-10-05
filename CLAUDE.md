@@ -313,6 +313,32 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Dois pedidos para "Casos" (05/10/2026) — um feito, um recusado por contrato.**
+
+1. **FEITO: numeração dos anexos.** Pedido: "organizar os anexos por números à
+   medida que forem sendo colocados no sistema". Em "Documentos deste caso" (a
+   pasta na ficha do caso), cada anexo agora mostra "1.", "2."... pela ordem em
+   que entrou no sistema — o mais antigo é o 1. É só rótulo de tela
+   (`numerarPorInclusao`, `src/lib/documentos.ts`), calculado na hora, não um
+   campo gravado: a lista continua do mais recente para o mais antigo (é o que
+   o uso diário aproveita melhor), e o número sobe junto com a ordem de
+   chegada — o documento mais novo aparece no topo já com o maior número.
+   Excluir um documento do meio não deixa buraco: não é numeração de página de
+   processo, é só organização de pasta. Vale só para a pasta do CASO
+   (`numerarAnexos` em `PastaDoCliente`) — a pasta do cliente inteira mistura
+   documentos de casos diferentes, onde "documento nº 3" não diria nada.
+
+2. **RECUSADO: "criar evento" com responsável, assunto, data de criação e
+   prazo de entrega, guardado como anexo.** Isto é **gestão de prazos e
+   tarefas** — e `docs/01-escopo-contratual.md`, Anexo II, item 2 (Fases
+   futuras), lista *exatamente* isso: "gestão de prazos, tarefas e agenda da
+   equipe [...] escopo próprio a ser detalhado e contratado separadamente".
+   Regra 12 do CLAUDE.md é direta: não implementar nada disso, "nem preparado
+   para, nem só a estrutura" — nem fingir que é um anexo. **Não implementado.**
+   O escritório precisa decidir se quer contratar essa frente à parte; se
+   quiser, vira um módulo próprio (prazo, responsável, status de cumprido),
+   não um documento dentro da pasta.
+
 **Rodada de 25/09/2026** (cláusula 3.5, rodapé, advogados, anexos, D4Sign):
 
 1. **Cláusula 3.5 nova** ("newwww/Contrato ... (1).docx", só ela mudou): dados de

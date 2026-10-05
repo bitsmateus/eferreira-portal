@@ -220,6 +220,29 @@ export async function listarDocumentosDoCaso(
   })
 }
 
+/**
+ * O número de cada anexo, pela ordem em que foi colocado no sistema — pedido
+ * do escritório em 05/10/2026, para achar mais fácil "o documento 3" ou "o
+ * documento 5" de um caso. O mais antigo é o nº 1.
+ *
+ * É só um rótulo da tela, calculado na hora — não é um campo gravado no banco.
+ * A lista continua ordenada do mais recente para o mais antigo (é assim que o
+ * uso diário aproveita melhor); o número é que sobe junto com a ordem de
+ * chegada, então o documento mais novo aparece no topo já com o maior número.
+ *
+ * Excluir um documento do meio reaproveita os números dos que ficaram — não
+ * há "buraco" de propósito: não é uma numeração de página de processo, é só
+ * organização de pasta.
+ */
+export function numerarPorInclusao(
+  documentos: readonly { id: string; criadoEm: Date }[],
+): ReadonlyMap<string, number> {
+  const emOrdemDeChegada = [...documentos].sort(
+    (a, b) => a.criadoEm.getTime() - b.criadoEm.getTime() || a.id.localeCompare(b.id),
+  )
+  return new Map(emOrdemDeChegada.map((documento, indice) => [documento.id, indice + 1]))
+}
+
 // ---------------------------------------------------------------------------
 // Tela de Documentos — item 2 da lista de melhorias: "quais contratos estão
 // aguardando assinatura?" sem abrir cliente por cliente.

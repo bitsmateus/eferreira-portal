@@ -4,6 +4,7 @@ import { SituacaoDoEnvio, TipoDocumento } from '@prisma/client'
 import {
   algumFiltroDeDocumentoAtivo,
   lerFiltrosDeDocumento,
+  numerarPorInclusao,
   situacaoDeAssinaturaDoDocumento,
   validarAnexo,
   validarArquivo,
@@ -198,5 +199,34 @@ describe('lerFiltrosDeDocumento', () => {
       tipo: '',
       situacao: '',
     })
+  })
+})
+
+describe('numerarPorInclusao (05/10/2026)', () => {
+  it('o mais antigo é o 1, o mais novo fica com o maior número', () => {
+    const numeros = numerarPorInclusao([
+      { id: 'c', criadoEm: new Date('2026-10-03T10:00:00Z') },
+      { id: 'a', criadoEm: new Date('2026-10-01T10:00:00Z') },
+      { id: 'b', criadoEm: new Date('2026-10-02T10:00:00Z') },
+    ])
+
+    expect(numeros.get('a')).toBe(1)
+    expect(numeros.get('b')).toBe(2)
+    expect(numeros.get('c')).toBe(3)
+  })
+
+  it('lista vazia não quebra', () => {
+    expect(numerarPorInclusao([]).size).toBe(0)
+  })
+
+  it('o mesmo instante é desempatado de forma estável, pelo id', () => {
+    const mesmoInstante = new Date('2026-10-01T10:00:00Z')
+    const numeros = numerarPorInclusao([
+      { id: 'z', criadoEm: mesmoInstante },
+      { id: 'a', criadoEm: mesmoInstante },
+    ])
+
+    expect(numeros.get('a')).toBe(1)
+    expect(numeros.get('z')).toBe(2)
   })
 })

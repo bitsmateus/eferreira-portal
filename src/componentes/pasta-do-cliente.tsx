@@ -14,7 +14,7 @@ import { ExcluirDocumentoBotao } from '@/componentes/excluir-documento-botao'
 import type { EnvioEmAndamento } from '@/lib/assinaturas'
 import { formatarData } from '@/lib/datas'
 import { ROTULO_DO_TIPO } from '@/lib/arquivos'
-import type { LinhaDeDocumento } from '@/lib/documentos'
+import { numerarPorInclusao, type LinhaDeDocumento } from '@/lib/documentos'
 import { formatarNumeroDeProcesso, formatarTamanho } from '@/lib/formatos'
 
 /**
@@ -63,13 +63,22 @@ export function PastaDoCliente({
   /** Na ficha do caso a pasta mostra só o que é daquele caso. */
   titulo = 'Pasta do cliente',
   mostrarVinculo = true,
+  /**
+   * Numera os anexos pela ordem de inclusão (05/10/2026). Vale para a pasta de
+   * um CASO — a pasta do cliente inteira mistura documentos de casos
+   * diferentes, onde "documento nº 3" não diria muito.
+   */
+  numerarAnexos = false,
 }: {
   clienteId: string
   documentos: readonly LinhaDeDocumento[]
   envios?: ReadonlyMap<string, EnvioEmAndamento>
   titulo?: string
   mostrarVinculo?: boolean
+  numerarAnexos?: boolean
 }) {
+  const numeros = numerarAnexos ? numerarPorInclusao(documentos) : null
+
   return (
     <div className="cartao">
       <div className="cartao-cabecalho">
@@ -125,7 +134,14 @@ export function PastaDoCliente({
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[13px] font-medium">{documento.nome}</div>
+                <div className="truncate text-[13px] font-medium">
+                  {numeros !== null && (
+                    <span className="mono mr-1.5 text-texto-3">
+                      {numeros.get(documento.id)}.
+                    </span>
+                  )}
+                  {documento.nome}
+                </div>
                 <div className="mt-0.5 text-[11.5px] text-texto-3">
                   {ROTULO_DO_TIPO[documento.tipo]} ·{' '}
                   <span className="mono">{formatarData(documento.criadoEm)}</span> ·{' '}
