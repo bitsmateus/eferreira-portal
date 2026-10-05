@@ -8,11 +8,14 @@ import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import { EtiquetaDeSituacaoDoCaso } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
 import { listarAndamentosDoCaso, listarStatus } from '@/lib/andamentos'
-import { obterCaso } from '@/lib/casos'
+import { obterCaso, listarResponsaveis } from '@/lib/casos'
 import { enviosDoCliente } from '@/lib/assinaturas'
 import { listarDocumentosDoCaso } from '@/lib/documentos'
+import { listarEventosDoCaso } from '@/lib/eventos'
 import { diaEmSaoPaulo, formatarData } from '@/lib/datas'
 import { FormularioDeAndamento } from './formulario-de-andamento'
+import { FormularioDeEvento } from './formulario-de-evento'
+import { ListaDeEventos } from './lista-de-eventos'
 import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
@@ -43,11 +46,13 @@ export default async function PaginaDoCaso({
   const caso = await obterCaso(sessao, id)
   if (caso === null) notFound()
 
-  const [documentos, andamentos, status, envios] = await Promise.all([
+  const [documentos, andamentos, status, envios, eventos, responsaveis] = await Promise.all([
     listarDocumentosDoCaso(sessao, caso.id),
     listarAndamentosDoCaso(sessao, caso.id),
     listarStatus(),
     enviosDoCliente(sessao, caso.cliente.id),
+    listarEventosDoCaso(sessao, caso.id),
+    listarResponsaveis(sessao),
   ])
 
   const hoje = diaEmSaoPaulo(new Date())
@@ -137,6 +142,27 @@ export default async function PaginaDoCaso({
                 mostrarVinculo={false}
                 numerarAnexos
               />
+            </div>
+
+            {/*
+              Eventos do caso — prazo e tarefa interna da equipe (05/10/2026).
+              Módulo contratado separadamente do Anexo I/II original; ver o
+              comentário grande em `src/lib/eventos.ts`. Não aparece para o
+              cliente: é interno ao painel da equipe.
+            */}
+            <div className="mt-4">
+              <div className="cartao">
+                <div className="cartao-cabecalho">
+                  <h2>Eventos do caso</h2>
+                  <span className="ml-auto text-[12px] text-texto-2">
+                    {eventos.length === 1 ? '1 evento' : `${eventos.length} eventos`}
+                  </span>
+                </div>
+                <div className="cartao-corpo">
+                  <FormularioDeEvento casoId={caso.id} responsaveis={responsaveis} />
+                  <ListaDeEventos casoId={caso.id} eventos={eventos} hoje={hoje} />
+                </div>
+              </div>
             </div>
           </div>
 

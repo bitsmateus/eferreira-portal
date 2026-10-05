@@ -313,7 +313,8 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
-**Dois pedidos para "Casos" (05/10/2026) — um feito, um recusado por contrato.**
+**Dois pedidos para "Casos" (05/10/2026) — numeração e, depois de acordado
+separadamente com o escritório, o módulo de eventos.**
 
 1. **FEITO: numeração dos anexos.** Pedido: "organizar os anexos por números à
    medida que forem sendo colocados no sistema". Em "Documentos deste caso" (a
@@ -328,16 +329,48 @@ o risco é do painel do D4Sign do escritório, não do portal.
    (`numerarAnexos` em `PastaDoCliente`) — a pasta do cliente inteira mistura
    documentos de casos diferentes, onde "documento nº 3" não diria nada.
 
-2. **RECUSADO: "criar evento" com responsável, assunto, data de criação e
-   prazo de entrega, guardado como anexo.** Isto é **gestão de prazos e
-   tarefas** — e `docs/01-escopo-contratual.md`, Anexo II, item 2 (Fases
-   futuras), lista *exatamente* isso: "gestão de prazos, tarefas e agenda da
-   equipe [...] escopo próprio a ser detalhado e contratado separadamente".
-   Regra 12 do CLAUDE.md é direta: não implementar nada disso, "nem preparado
-   para, nem só a estrutura" — nem fingir que é um anexo. **Não implementado.**
-   O escritório precisa decidir se quer contratar essa frente à parte; se
-   quiser, vira um módulo próprio (prazo, responsável, status de cumprido),
-   não um documento dentro da pasta.
+2. **RECUSADO primeiro, depois AUTORIZADO como módulo separado e
+   IMPLEMENTADO (mesmo dia).** Pedido: "criar evento" com responsável,
+   assunto/atividade, data de criação e prazo de entrega, guardado como
+   anexo. Isto é **gestão de prazos e tarefas** — e
+   `docs/01-escopo-contratual.md`, Anexo II, item 2 (Fases futuras), lista
+   *exatamente* isso: "gestão de prazos, tarefas e agenda da equipe [...]
+   escopo próprio a ser detalhado e contratado separadamente". Pela regra 12,
+   a primeira resposta foi recusar e avisar o dono do sistema, com uma
+   mensagem pronta para cobrar o escritório sobre o que estava sendo pedido.
+
+   O dono do sistema confirmou, na mesma conversa, que já havia acordado
+   isto com o escritório como frente adicional — **"ja acordei com eles,
+   pode fazer"**. A partir daí, isto passou a ser módulo contratado à parte,
+   não uma reinterpretação da regra 12 nem um documento dentro da pasta:
+
+   - **Modelo novo, `Evento`** (migração `20261005180000_eventos_do_caso`),
+     ligado ao CASO (não ao cliente): responsável (um da equipe, ativo —
+     mesma conferência de `responsavelEhValido` em `casos.ts`), assunto/
+     atividade, prazo de entrega (dia civil, regra 11) e `cumpridoEm` (nulo =
+     pendente). "Data de criação" é o `criadoEm` de sempre, sem precisar de
+     uma segunda coluna. `src/lib/eventos.ts` tem a validação e as quatro
+     operações (criar, listar, marcar/desmarcar cumprido, excluir), todas
+     abrindo com `exigirEquipe` — **nenhuma função aceita sessão de perfil
+     CLIENTE**, porque isto é interno à equipe, nunca apareceu no Anexo I
+     como algo que o cliente vê.
+   - Tela: cartão "Eventos do caso", na ficha do caso, com o formulário de
+     criação e a lista (pendente antes de cumprido, pelo prazo mais próximo
+     primeiro; etiqueta "Prazo vencido" quando passou e ainda está pendente).
+     `src/app/painel/casos/[id]/formulario-de-evento.tsx` e
+     `lista-de-eventos.tsx`; ações em `acoes.ts` do mesmo caso.
+   - Auditoria (regra 6) em toda escrita — criação, marcar/desmarcar cumprido
+     e exclusão —, com o mesmo cuidado de `encerraOCaso` em `andamentos.ts`:
+     marcar de novo o que já está no mesmo estado não grava registro
+     repetido.
+   - **Verificado nesta sessão**: `tsc`, lint, `npm run build` e os 506
+     testes unitários (11 novos, em `testes/eventos.teste.ts`). **Não
+     verificado**: os testes de banco em `testes-de-banco/eventos.teste.ts`
+     (escritos no mesmo padrão dos demais) nem a migração contra um Postgres
+     de verdade — o Docker Desktop não estava disponível nesta máquina
+     durante a sessão. Antes de publicar: `npx prisma migrate dev` (ou
+     `migrate deploy` num ambiente com banco) para gerar/aplicar a migração
+     de verdade, e `npm run test:banco` para confirmar os novos testes.
 
 **Rodada de 25/09/2026** (cláusula 3.5, rodapé, advogados, anexos, D4Sign):
 

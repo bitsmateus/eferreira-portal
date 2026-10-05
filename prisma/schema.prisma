@@ -169,15 +169,15 @@ model Advogado {
   id String @id @default(cuid())
 
   /// Como sai no documento, com o tratamento: "Dr. Sergio Evangelista Ferreira".
-  nome         String
+  nome          String
   /// Concordância do texto: outorgada, inscrita, "sua bastante procuradora".
-  feminino     Boolean  @default(false)
+  feminino      Boolean @default(false)
   nacionalidade String
-  estadoCivil  String
+  estadoCivil   String
   /// Só o número, como se escreve: "378.532".
-  oab          String
+  oab           String
   /// Seção da OAB: "SP".
-  oabUf        String   @default("SP")
+  oabUf         String  @default("SP")
 
   /// O que vem escolhido ao gerar a procuração. Um só.
   padrao Boolean @default(false)
@@ -229,6 +229,8 @@ model Usuario {
   documentosEnviados         Documento[]                 @relation("DocumentoEnviadoPor")
   assinaturasPedidas         EnvioParaAssinatura[]       @relation("EnvioPedidoPor")
   partesCadastradas          Parte[]                     @relation("ParteCriadaPor")
+  eventosResponsavel         Evento[]                    @relation("EventoResponsavel")
+  eventosCriados             Evento[]                    @relation("EventoCriadoPor")
   registrosAuditoria         Auditoria[]
   tokensDeRedefinicaoDeSenha TokenDeRedefinicaoDeSenha[]
 
@@ -522,11 +524,63 @@ model Caso {
   andamentos Andamento[]
   documentos Documento[]
   parcelas   ParcelaDeHonorarios[]
+  eventos    Evento[]
 
   @@index([clienteId])
   @@index([empresaVinculadaId])
   @@index([situacao])
   @@map("caso")
+}
+
+// ---------------------------------------------------------------------------
+// Evento do caso — prazo e tarefa interna da equipe (05/10/2026).
+//
+// Pedido do escritório: "criar evento" com responsável, assunto/atividade,
+// data de criação e prazo de entrega. Na primeira resposta isto foi RECUSADO
+// por bater exatamente com "gestão de prazos, tarefas e agenda da equipe" do
+// Anexo II, item 2 (Fases futuras) — fora do contrato original (regra 12). O
+// escritório e o dono do sistema acordaram contratar isto separadamente como
+// módulo adicional; é por isso que existe aqui, e não uma reinterpretação da
+// regra 12. Ver CLAUDE.md, "Estado atual".
+//
+// É interno à equipe, não ao cliente: o Anexo I nunca previu isto na área de
+// consulta, e nenhuma função em `src/lib/eventos.ts` aceita sessão de perfil
+// CLIENTE. Também não é um documento dentro da pasta do caso — é registro
+// próprio, com responsável e prazo, como a recusa original já descrevia que
+// o módulo deveria ser.
+// ---------------------------------------------------------------------------
+
+model Evento {
+  id String @id @default(cuid())
+
+  casoId String
+  caso   Caso   @relation(fields: [casoId], references: [id], onDelete: Cascade)
+
+  responsavelId String
+  responsavel   Usuario @relation("EventoResponsavel", fields: [responsavelId], references: [id])
+
+  /// "Assunto/atividade", como o escritório pediu.
+  assunto String
+
+  /// Dia civil, ancorado ao meio-dia UTC (regra 11) — mesmo padrão da data do
+  /// andamento e do vencimento da parcela.
+  prazoDeEntrega DateTime
+
+  /// Nulo = pendente. Preenchido = cumprido, e quando.
+  cumpridoEm DateTime?
+
+  /// "Data de criação", pedida pelo escritório — é o `criadoEm` de sempre, sem
+  /// precisar de uma segunda coluna para a mesma informação.
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  criadoPorId String?
+  criadoPor   Usuario? @relation("EventoCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([casoId])
+  @@index([responsavelId])
+  @@index([prazoDeEntrega])
+  @@map("evento")
 }
 
 // ---------------------------------------------------------------------------
