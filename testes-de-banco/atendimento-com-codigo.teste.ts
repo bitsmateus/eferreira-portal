@@ -85,6 +85,9 @@ function codigoDoUltimoEmail(): string {
 /** A janela de pedidos é real (um por minuto); testes rodam em milissegundos. */
 async function pedirCodigoDe(documento: string, origem: string): Promise<string> {
   await prisma.codigoDeAcesso.deleteMany({ where: { cliente: { documento } } })
+  // O limite por origem (10 pedidos na janela) conta a auditoria; sem isto o
+  // teste passa a falhar sozinho depois de uma ou duas execuções seguidas.
+  await prisma.auditoria.deleteMany({ where: { enderecoIp: { startsWith: 'api:' } } })
   enviados.length = 0
 
   const resposta = await postCodigo(
@@ -256,6 +259,7 @@ describe('pedir o código tem sempre a mesma resposta', () => {
   it('o código vai para o e-mail do cadastro, nunca para um endereço informado', async () => {
     enviados.length = 0
     await prisma.codigoDeAcesso.deleteMany({ where: { clienteId } })
+    await prisma.auditoria.deleteMany({ where: { enderecoIp: { startsWith: 'api:' } } })
 
     await postCodigo(
       requisicao('/api/v1/atendimento/codigo', {

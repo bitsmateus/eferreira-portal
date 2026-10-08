@@ -38,6 +38,7 @@ import {
 } from '@/lib/formatos'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 import { obrigatoriosPara } from '@/lib/campos-do-cliente'
+import { sincronizarContatoNx } from '@/lib/contato-nx'
 
 // ---------------------------------------------------------------------------
 // Validação do cadastro
@@ -903,6 +904,7 @@ export async function criarCliente(
     throw erro
   }
 
+  await sincronizarContatoNx(clienteId, { usuarioId: sessao.usuarioId, usuarioEmail: emailDoAutor })
   return { situacao: 'criado', clienteId }
 }
 
@@ -1045,6 +1047,17 @@ export async function criarClienteComRepresentante(
     throw erro
   }
 
+  // A empresa não tem telefone próprio: quem tem número é o sócio, e é por
+  // ele que o contato existe na NX. Os dois entram; o que não tem número é
+  // simplesmente pulado.
+  const autorNx = { usuarioId: sessao.usuarioId, usuarioEmail: emailDoAutor }
+  await sincronizarContatoNx(clienteId, autorNx)
+  const socioDaEmpresa = await prisma.representanteLegal.findFirst({
+    where: { pessoaJuridicaId: clienteId },
+    select: { pessoaFisicaId: true },
+  })
+  if (socioDaEmpresa !== null) await sincronizarContatoNx(socioDaEmpresa.pessoaFisicaId, autorNx)
+
   return { situacao: 'criado', clienteId }
 }
 
@@ -1110,6 +1123,7 @@ export async function atualizarCliente(
     throw erro
   }
 
+  await sincronizarContatoNx(id, { usuarioId: sessao.usuarioId, usuarioEmail: emailDoAutor })
   return { situacao: 'atualizado' }
 }
 
