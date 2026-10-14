@@ -138,6 +138,7 @@ const RESUMO = {
   data: true,
   descricao: true,
   criadoEm: true,
+  atualizadoEm: true,
   status: { select: { id: true, nome: true } },
   autor: { select: { nome: true } },
   caso: {
@@ -314,4 +315,85 @@ export async function lancarAndamento(
   })
 
   return { situacao: 'lancado', andamentoId }
+}
+
+export type ResultadoDeEdicaoDeAndamento =
+  | { situacao: 'atualizado' }
+  | { situacao: 'nao_encontrado' }
+  | { situacao: 'status_invalido' }
+
+/**
+ * Corrige data, situação e descrição de um andamento já lançado (pedido do
+ * escritório, 14/10/2026: movimentação gravada com a data errada).
+ *
+ * O autor e o instante do lançamento NÃO mudam — continuam dizendo quem lançou
+ * e quando. O que muda fica na auditoria (regra 6) com o valor de antes e o de
+ * depois, e a linha do tempo marca o andamento como editado. Não mexe na
+ * situação do caso: arquivar é decisão do lançamento, não da correção.
+ * Corrigir sem mudar nada não grava nada.
+ */
+export async function editarAndamento(
+  sessao: SessaoServidor,
+  andamentoId: string,
+  dados: DadosDeAndamento,
+  emailDoAutor: string | null,
+): Promise<ResultadoDeEdicaoDeAndamento> {
+  exigirEquipe(sessao)
+
+  // Regra 2: só se edita andamento de caso que ESTA sessão enxerga.
+  const atual = await prisma.andamento.findFirst({
+    where: filtroDeAndamentos(sessao, { id: andamentoId }),
+    select: { id: true, casoId: true, data: true, descricao: true, statusId: true },
+  })
+  if (atual === null) return { situacao: 'nao_encontrado' }
+
+  // Manter a situação que já tem é sempre válido, mesmo que o escritório a
+  // tenha desativado depois; trocar exige uma situação ativa.
+  const status =
+    dados.statusId === atual.statusId
+      ? await prisma.statusAndamento.findFirst({
+          where: { id: dados.statusId },
+          select: { id: true, nome: true },
+        })
+      : await statusParaGravar(dados)
+  if (status === null) return { situacao: 'status_invalido' }
+
+  const mudou =
+    atual.data.getTime() !== dados.data.getTime() ||
+    atual.descricao !== dados.descricao ||
+    atual.statusId !== status.id
+  if (!mudou) return { situacao: 'atualizado' }
+
+  await prisma.$transaction(async (transacao) => {
+    await transacao.andamento.update({
+      where: { id: atual.id },
+      data: { data: dados.data, descricao: dados.descricao, statusId: status.id },
+    })
+
+    await registrarAuditoria(
+      {
+        usuarioId: sessao.usuarioId,
+        usuarioEmail: emailDoAutor,
+        acao: AcaoAuditoria.ATUALIZACAO,
+        entidade: 'andamento',
+        entidadeId: atual.id,
+        detalhes: {
+          casoId: atual.casoId,
+          antes: {
+            data: atual.data.toISOString(),
+            statusId: atual.statusId,
+            descricao: atual.descricao,
+          },
+          depois: {
+            data: dados.data.toISOString(),
+            statusId: status.id,
+            descricao: dados.descricao,
+          },
+        },
+      },
+      transacao,
+    )
+  })
+
+  return { situacao: 'atualizado' }
 }

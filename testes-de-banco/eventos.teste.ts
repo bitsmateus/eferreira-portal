@@ -47,11 +47,19 @@ function sessaoDoCliente() {
   }
 }
 
-function dados(troca: Partial<{ responsavelId: string; assunto: string; prazoDeEntrega: Date }> = {}) {
+function dados(
+  troca: Partial<{
+    responsavelId: string
+    assunto: string
+    prazoDeEntrega: Date
+    horario: string | null
+  }> = {},
+) {
   return {
     responsavelId: operadorId,
     assunto: 'Protocolar recurso',
     prazoDeEntrega: new Date('2026-12-01T12:00:00Z'),
+    horario: null as string | null,
     ...troca,
   }
 }

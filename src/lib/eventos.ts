@@ -23,6 +23,8 @@ import { exigirEquipe, filtroDeCasos, type SessaoServidor } from '@/lib/autoriza
 import { prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { diaCivilParaData } from '@/lib/datas'
+import { criarEventoNaAgenda, removerEventoDaAgenda } from '@/lib/google-agenda'
+import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { errosPorCampo, type ResultadoDeFormulario } from '@/lib/formulario'
 
 // ---------------------------------------------------------------------------
@@ -58,6 +60,13 @@ export const esquemaDeEvento = z.object({
     .min(3, 'Descreva o assunto ou a atividade.')
     .max(180, 'Assunto longo demais.'),
   prazoDeEntrega,
+  /** Opcional: vazio = evento do dia inteiro. "HH:MM", relógio de São Paulo. */
+  horario: z
+    .string()
+    .trim()
+    .default('')
+    .refine((valor) => valor === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(valor), 'Horário inválido.')
+    .transform((valor) => (valor === '' ? null : valor)),
 })
 
 export type DadosDeEvento = z.output<typeof esquemaDeEvento>
@@ -76,16 +85,16 @@ export function validarEvento(campos: CamposDeEvento): ResultadoDeFormulario<Dad
  * mesma conferência de `responsavelEhValido` em `src/lib/casos.ts`. O id vem
  * de um `<select>` do navegador, então nada aqui confia nele sem checar.
  */
-async function responsavelEhValido(responsavelId: string): Promise<boolean> {
+async function responsavelEhValido(responsavelId: string): Promise<string | null> {
   const encontrado = await prisma.usuario.findFirst({
     where: {
       id: responsavelId,
       perfil: { in: [PerfilUsuario.OPERADOR, PerfilUsuario.ADMINISTRADOR] },
       situacao: SituacaoUsuario.ATIVO,
     },
-    select: { id: true },
+    select: { nome: true },
   })
-  return encontrado !== null
+  return encontrado?.nome ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -96,6 +105,7 @@ const RESUMO = {
   id: true,
   assunto: true,
   prazoDeEntrega: true,
+  horario: true,
   cumpridoEm: true,
   criadoEm: true,
   responsavel: { select: { id: true, nome: true } },
@@ -114,7 +124,11 @@ export async function listarEventosDoCaso(
   return prisma.evento.findMany({
     where: { casoId, caso: filtroDeCasos(sessao) },
     select: RESUMO,
-    orderBy: [{ cumpridoEm: { sort: 'asc', nulls: 'first' } }, { prazoDeEntrega: 'asc' }],
+    orderBy: [
+      { cumpridoEm: { sort: 'asc', nulls: 'first' } },
+      { prazoDeEntrega: 'asc' },
+      { horario: { sort: 'asc', nulls: 'last' } },
+    ],
   })
 }
 
@@ -138,13 +152,12 @@ export async function criarEvento(
   // Regra 2: só se cria evento em caso que ESTA sessão enxerga.
   const caso = await prisma.caso.findFirst({
     where: filtroDeCasos(sessao, { id: casoId }),
-    select: { id: true, clienteId: true },
+    select: { id: true, clienteId: true, assunto: true, numeroProcesso: true },
   })
   if (caso === null) return { situacao: 'caso_nao_encontrado' }
 
-  if (!(await responsavelEhValido(dados.responsavelId))) {
-    return { situacao: 'responsavel_invalido' }
-  }
+  const nomeDoResponsavel = await responsavelEhValido(dados.responsavelId)
+  if (nomeDoResponsavel === null) return { situacao: 'responsavel_invalido' }
 
   const eventoId = await prisma.$transaction(async (transacao) => {
     const criado = await transacao.evento.create({
@@ -153,6 +166,7 @@ export async function criarEvento(
         responsavelId: dados.responsavelId,
         assunto: dados.assunto,
         prazoDeEntrega: dados.prazoDeEntrega,
+        horario: dados.horario,
         criadoPorId: sessao.usuarioId,
       },
       select: { id: true },
@@ -171,6 +185,7 @@ export async function criarEvento(
           responsavelId: dados.responsavelId,
           assunto: dados.assunto,
           prazoDeEntrega: dados.prazoDeEntrega.toISOString(),
+          horario: dados.horario,
         },
       },
       transacao,
@@ -178,6 +193,22 @@ export async function criarEvento(
 
     return criado.id
   })
+
+  // Google Agenda: depois da transação e sem poder derrubá-la — se a agenda
+  // estiver desligada ou fora do ar, o evento já existe no portal.
+  const googleEventoId = await criarEventoNaAgenda({
+    assunto: dados.assunto,
+    prazoDeEntrega: dados.prazoDeEntrega,
+    horario: dados.horario,
+    responsavelNome: nomeDoResponsavel,
+    tituloDoCaso:
+      caso.numeroProcesso === null
+        ? caso.assunto
+        : formatarNumeroDeProcesso(caso.numeroProcesso),
+  })
+  if (googleEventoId !== null) {
+    await prisma.evento.update({ where: { id: eventoId }, data: { googleEventoId } })
+  }
 
   return { situacao: 'criado', eventoId }
 }
@@ -243,7 +274,7 @@ export async function excluirEvento(
 
   const evento = await prisma.evento.findFirst({
     where: { id: eventoId, caso: filtroDeCasos(sessao) },
-    select: { id: true, casoId: true, assunto: true },
+    select: { id: true, casoId: true, assunto: true, googleEventoId: true },
   })
   if (evento === null) return { situacao: 'nao_encontrado' }
 
@@ -262,6 +293,8 @@ export async function excluirEvento(
       transacao,
     )
   })
+
+  if (evento.googleEventoId !== null) await removerEventoDaAgenda(evento.googleEventoId)
 
   return { situacao: 'excluido' }
 }

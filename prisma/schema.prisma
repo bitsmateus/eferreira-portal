@@ -566,6 +566,14 @@ model Evento {
   /// andamento e do vencimento da parcela.
   prazoDeEntrega DateTime
 
+  /// Horário opcional ("HH:MM", relógio de São Paulo). Nulo = evento do dia
+  /// inteiro. Pedido do escritório (14/10/2026): algumas tarefas têm hora.
+  horario String?
+
+  /// Id do evento correspondente na Google Agenda do escritório, quando a
+  /// integração está ligada e o envio deu certo. Nulo = não sincronizado.
+  googleEventoId String?
+
   /// Nulo = pendente. Preenchido = cumprido, e quando.
   cumpridoEm DateTime?
 

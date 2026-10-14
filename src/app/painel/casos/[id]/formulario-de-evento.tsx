@@ -46,11 +46,12 @@ export function FormularioDeEvento({
     responsavelId: '',
     assunto: '',
     prazoDeEntrega: '',
+    horario: '',
   })
 
   useEffect(() => {
     if (estado?.sucesso === true) {
-      setCampos({ responsavelId: '', assunto: '', prazoDeEntrega: '' })
+      setCampos({ responsavelId: '', assunto: '', prazoDeEntrega: '', horario: '' })
     }
   }, [estado])
 
@@ -138,6 +139,29 @@ export function FormularioDeEvento({
               <p className="dica dica-erro" role="alert">
                 {erros['prazoDeEntrega']}
               </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <div className="mb-3">
+            <label className="campo-rotulo" htmlFor="horario">
+              Horário (opcional)
+            </label>
+            <input
+              id="horario"
+              name="horario"
+              type="time"
+              className="campo-entrada mono"
+              value={campos.horario}
+              onChange={(evento) => definir('horario', evento.target.value)}
+            />
+            {erros['horario'] !== undefined ? (
+              <p className="dica dica-erro" role="alert">
+                {erros['horario']}
+              </p>
+            ) : (
+              <p className="dica">Em branco = o dia inteiro.</p>
             )}
           </div>
         </div>

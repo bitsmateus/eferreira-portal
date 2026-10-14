@@ -14,6 +14,7 @@ import { listarDocumentosDoCaso } from '@/lib/documentos'
 import { listarEventosDoCaso } from '@/lib/eventos'
 import { diaEmSaoPaulo, formatarData } from '@/lib/datas'
 import { FormularioDeAndamento } from './formulario-de-andamento'
+import { EditorDeAndamento } from './editor-de-andamento'
 import { FormularioDeEvento } from './formulario-de-evento'
 import { ListaDeEventos } from './lista-de-eventos'
 import { formatarDocumento } from '@/lib/documento'
@@ -129,7 +130,23 @@ export default async function PaginaDoCaso({
                 <div className="my-[22px] border-t border-borda" />
 
                 <h2 className="mb-4 text-[14px] font-semibold">Histórico do processo</h2>
-                <LinhaDoTempo andamentos={andamentos} />
+                <LinhaDoTempo
+                  andamentos={andamentos}
+                  renderizarEdicao={(andamento) => (
+                    <EditorDeAndamento
+                      key={`${andamento.id}-${andamento.atualizadoEm.getTime()}`}
+                      casoId={caso.id}
+                      andamento={{
+                        id: andamento.id,
+                        data: diaEmSaoPaulo(andamento.data),
+                        statusId: andamento.status?.id ?? null,
+                        descricao: andamento.descricao,
+                      }}
+                      status={status}
+                      hoje={hoje}
+                    />
+                  )}
+                />
               </div>
             </div>
 

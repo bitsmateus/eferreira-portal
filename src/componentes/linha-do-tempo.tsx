@@ -16,9 +16,12 @@ export function LinhaDoTempo({
   andamentos,
   /** No painel, cada item mostra de qual caso veio. Na ficha do caso, não. */
   mostrarCaso = false,
+  renderizarEdicao,
 }: {
   andamentos: readonly LinhaDeAndamento[]
   mostrarCaso?: boolean
+  /** Na ficha do caso, a equipe pode corrigir cada andamento (14/10/2026). */
+  renderizarEdicao?: (andamento: LinhaDeAndamento) => React.ReactNode
 }) {
   if (andamentos.length === 0) {
     return (
@@ -60,6 +63,13 @@ export function LinhaDoTempo({
           <div className="mt-1.5 text-[11.5px] text-texto-3">
             Lançado por {andamento.autor.nome} em{' '}
             <span className="mono">{formatarDataHora(andamento.criadoEm)}</span>
+            {andamento.atualizadoEm.getTime() - andamento.criadoEm.getTime() > 1000 && (
+              <>
+                {' · '}editado em{' '}
+                <span className="mono">{formatarDataHora(andamento.atualizadoEm)}</span>
+              </>
+            )}
+            {renderizarEdicao?.(andamento)}
             {mostrarCaso && (
               <>
                 {' · '}

@@ -5,6 +5,7 @@ import { useFormStatus } from 'react-dom'
 
 import { Etiqueta } from '@/componentes/etiqueta'
 import { diaEmSaoPaulo, formatarData } from '@/lib/datas'
+import { linkParaGoogleAgenda } from '@/lib/agenda-link'
 import type { LinhaDeEvento } from '@/lib/eventos'
 import { concluirEvento, excluirEventoDoCaso } from './acoes'
 
@@ -58,7 +59,10 @@ function LinhaDeEventoItem({
         <div className="text-[13px] font-medium">{evento.assunto}</div>
         <div className="mt-0.5 text-[11.5px] text-texto-3">
           Responsável: {evento.responsavel.nome} · Prazo:{' '}
-          <span className="mono">{formatarData(evento.prazoDeEntrega)}</span>
+          <span className="mono">
+            {formatarData(evento.prazoDeEntrega)}
+            {evento.horario !== null && <> às {evento.horario}</>}
+          </span>
           {cumprido && evento.criadoPor !== null && <> · criado por {evento.criadoPor.nome}</>}
         </div>
       </div>
@@ -71,6 +75,20 @@ function LinhaDeEventoItem({
         ) : (
           <Etiqueta tom="info">Pendente</Etiqueta>
         )}
+
+        <a
+          href={linkParaGoogleAgenda({
+            assunto: evento.assunto,
+            prazoDeEntrega: evento.prazoDeEntrega,
+            horario: evento.horario,
+            responsavelNome: evento.responsavel.nome,
+          })}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="botao botao-fantasma botao-pequeno"
+        >
+          Google Agenda
+        </a>
 
         <form action={alternar}>
           <BotaoDeAlternar rotulo={cumprido ? 'Reabrir' : 'Marcar como cumprido'} />

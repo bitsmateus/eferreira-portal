@@ -102,3 +102,21 @@ describe('validarEvento', () => {
     ])
   })
 })
+
+describe('validarEvento — horário (14/10/2026)', () => {
+  it('sem horário, evento do dia inteiro', () => {
+    const resultado = validarEvento(campos())
+    expect(resultado.ok && resultado.dados.horario).toBe(null)
+  })
+
+  it('aceita HH:MM', () => {
+    const resultado = validarEvento(campos({ horario: '14:30' }))
+    expect(resultado.ok && resultado.dados.horario).toBe('14:30')
+  })
+
+  it.each(['24:00', '9:30', '14:60', 'abc', '14h30'])('recusa %s', (horario) => {
+    const resultado = validarEvento(campos({ horario }))
+    expect(resultado.ok).toBe(false)
+    if (!resultado.ok) expect(resultado.erros['horario']).toMatch(/inválido/i)
+  })
+})

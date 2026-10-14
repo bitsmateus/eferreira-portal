@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import {
+  editarAndamento,
   lancarAndamento,
   validarAndamento,
   type CamposDeAndamento,
@@ -66,6 +67,45 @@ export async function registrarAndamento(
   return { sucesso: true }
 }
 
+/** Corrige data, situação e descrição de um andamento já lançado. */
+export async function corrigirAndamento(
+  casoId: string,
+  andamentoId: string,
+  _estado: EstadoDoAndamento,
+  dados: FormData,
+): Promise<EstadoDoAndamento> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  const conferido = validarAndamento({
+    data: texto(dados, 'data'),
+    statusId: texto(dados, 'statusId'),
+    statusPersonalizado: '',
+    descricao: texto(dados, 'descricao'),
+    encerraOCaso: '',
+  })
+  if (!conferido.ok) return { erros: conferido.erros }
+
+  const resultado = await editarAndamento(
+    sessao,
+    andamentoId,
+    conferido.dados,
+    await emailDaSessao(sessao),
+  )
+
+  if (resultado.situacao === 'nao_encontrado') {
+    return { mensagem: 'Andamento não encontrado.' }
+  }
+  if (resultado.situacao === 'status_invalido') {
+    return { erros: { statusId: 'Situação inválida. Escolha uma da lista.' } }
+  }
+
+  revalidatePath(`/painel/casos/${casoId}`)
+  revalidatePath('/painel')
+  revalidatePath('/painel/casos')
+
+  return { sucesso: true }
+}
+
 // ---------------------------------------------------------------------------
 // Eventos do caso — prazos e tarefas internas da equipe (05/10/2026). Ver o
 // comentário grande em `src/lib/eventos.ts` sobre por que isto existe.
@@ -86,6 +126,7 @@ export async function registrarEvento(
     responsavelId: texto(dados, 'responsavelId'),
     assunto: texto(dados, 'assunto'),
     prazoDeEntrega: texto(dados, 'prazoDeEntrega'),
+    horario: texto(dados, 'horario'),
   }
 
   const conferido = validarEvento(campos)
