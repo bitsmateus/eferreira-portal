@@ -23,6 +23,7 @@ export async function anexarNaPasta(
 
   const campos: CamposDeAnexo = {
     tipo: texto(dados, 'tipo'),
+    destino: texto(dados, 'destino'),
     casoId: texto(dados, 'casoId'),
   }
 

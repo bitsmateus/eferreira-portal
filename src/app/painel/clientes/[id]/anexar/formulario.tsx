@@ -41,6 +41,8 @@ export function FormularioDeAnexo({
   // depois de uma recusa ele precisa ser escolhido de novo. Por isso o aviso
   // abaixo do campo diz o limite ANTES de a pessoa tentar.
   const [tipo, setTipo] = useState<string>(TipoDocumento.ANEXO)
+  // Sem padrão de propósito: a pessoa precisa escolher onde o documento vai.
+  const [destino, setDestino] = useState<'' | 'CLIENTE' | 'CASO'>('')
 
   return (
     <form action={enviar} noValidate>
@@ -82,7 +84,7 @@ export function FormularioDeAnexo({
               ) : (
                 <p className="dica">
                   Pode escolher vários de uma vez (até {LIMITE_DE_ARQUIVOS_POR_ENVIO}, 25 MB
-                  cada e 100 MB no total). O tipo e o caso abaixo valem para todos.
+                  cada e 100 MB no total). O tipo e a pasta abaixo valem para todos.
                   Aceitos: {EXTENSOES_ACEITAS.join(', ')}.
                 </p>
               )}
@@ -112,28 +114,62 @@ export function FormularioDeAnexo({
               )}
             </div>
 
-            <div className="mb-[15px]">
-              <label className="campo-rotulo" htmlFor="casoId">
-                Vincular a um caso
-              </label>
-              <SeletorDeCaso
-                id="casoId"
-                name="casoId"
-                casos={casos}
-                opcaoEmBranco="Documento do cliente — nenhum caso específico"
-              />
-              {erros['casoId'] !== undefined ? (
+            <fieldset className="mb-[15px]">
+              <legend className="campo-rotulo">
+                Anexar em <span aria-hidden="true">*</span>
+              </legend>
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <label className="flex items-center gap-2 text-[13.5px]">
+                  <input
+                    type="radio"
+                    name="destino"
+                    value="CLIENTE"
+                    checked={destino === 'CLIENTE'}
+                    onChange={() => setDestino('CLIENTE')}
+                  />
+                  Pasta do Cliente
+                </label>
+                <label className="flex items-center gap-2 text-[13.5px]">
+                  <input
+                    type="radio"
+                    name="destino"
+                    value="CASO"
+                    checked={destino === 'CASO'}
+                    onChange={() => setDestino('CASO')}
+                  />
+                  Pasta do Caso
+                </label>
+              </div>
+              {erros['destino'] !== undefined ? (
                 <p className="dica dica-erro" role="alert">
-                  {erros['casoId']}
+                  {erros['destino']}
                 </p>
               ) : (
                 <p className="dica">
                   Contrato, procuração e declaração são do cliente. Documento de um
-                  processo específico fica melhor vinculado ao caso — a pasta mostra os
-                  dois do mesmo jeito.
+                  processo específico vai na pasta do caso.
                 </p>
               )}
-            </div>
+            </fieldset>
+
+            {destino === 'CASO' && (
+              <div className="mb-[15px]">
+                <label className="campo-rotulo" htmlFor="casoId">
+                  Caso <span aria-hidden="true">*</span>
+                </label>
+                <SeletorDeCaso
+                  id="casoId"
+                  name="casoId"
+                  casos={casos}
+                  opcaoEmBranco="Escolha um caso…"
+                />
+                {erros['casoId'] !== undefined && (
+                  <p className="dica dica-erro" role="alert">
+                    {erros['casoId']}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center gap-2.5">
               <BotaoAnexar />

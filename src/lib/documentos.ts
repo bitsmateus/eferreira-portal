@@ -48,16 +48,36 @@ import type { EnvioEmAndamento } from '@/lib/assinaturas'
 // Validação do formulário de anexo
 // ---------------------------------------------------------------------------
 
-export const esquemaDeAnexo = z.object({
-  tipo: z.nativeEnum(TipoDocumento, {
-    errorMap: () => ({ message: 'Tipo de documento inválido.' }),
-  }),
-  /** Vazio = documento do cliente, não de um caso específico. */
-  casoId: z
-    .string()
-    .trim()
-    .transform((valor) => (valor === '' ? null : valor)),
-})
+export const DESTINOS_DO_ANEXO = ['CLIENTE', 'CASO'] as const
+
+export const esquemaDeAnexo = z
+  .object({
+    tipo: z.nativeEnum(TipoDocumento, {
+      errorMap: () => ({ message: 'Tipo de documento inválido.' }),
+    }),
+    /**
+     * Escolha obrigatória (14/10/2026): anexos estavam indo para a pasta errada
+     * porque "nenhum caso" era o padrão silencioso. Agora a pessoa diz onde.
+     */
+    destino: z.enum(DESTINOS_DO_ANEXO, {
+      errorMap: () => ({ message: 'Escolha onde anexar: Pasta do Cliente ou Pasta do Caso.' }),
+    }),
+    casoId: z.string().trim(),
+  })
+  .superRefine((dados, contexto) => {
+    if (dados.destino === 'CASO' && dados.casoId === '') {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['casoId'],
+        message: 'Escolha o caso em que o documento será anexado.',
+      })
+    }
+  })
+  // Pasta do Cliente nunca carrega caso, mesmo que o navegador mande um.
+  .transform((dados) => ({
+    tipo: dados.tipo,
+    casoId: dados.destino === 'CASO' ? dados.casoId : null,
+  }))
 
 export type DadosDeAnexo = z.output<typeof esquemaDeAnexo>
 export type CamposDeAnexo = Record<keyof z.input<typeof esquemaDeAnexo>, string>

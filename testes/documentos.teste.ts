@@ -96,8 +96,12 @@ describe('validarArquivo', () => {
 })
 
 describe('validarAnexo', () => {
-  it('aceita tipo válido e caso em branco como documento do cliente', () => {
-    const resultado = validarAnexo({ tipo: TipoDocumento.CONTRATO, casoId: '' })
+  it('aceita Pasta do Cliente e descarta qualquer caso enviado', () => {
+    const resultado = validarAnexo({
+      tipo: TipoDocumento.CONTRATO,
+      destino: 'CLIENTE',
+      casoId: 'caso-qualquer',
+    })
 
     expect(resultado.ok).toBe(true)
     if (!resultado.ok) return
@@ -106,8 +110,38 @@ describe('validarAnexo', () => {
     expect(resultado.dados.casoId).toBeNull()
   })
 
+  it('aceita Pasta do Caso com o caso escolhido', () => {
+    const resultado = validarAnexo({
+      tipo: TipoDocumento.ANEXO,
+      destino: 'CASO',
+      casoId: 'caso-1',
+    })
+
+    expect(resultado.ok).toBe(true)
+    if (!resultado.ok) return
+    expect(resultado.dados.casoId).toBe('caso-1')
+  })
+
+  it('recusa quando o destino não foi escolhido', () => {
+    const resultado = validarAnexo({ tipo: TipoDocumento.ANEXO, destino: '', casoId: '' })
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+    expect(resultado.erros['destino']).toBe(
+      'Escolha onde anexar: Pasta do Cliente ou Pasta do Caso.',
+    )
+  })
+
+  it('recusa Pasta do Caso sem caso escolhido', () => {
+    const resultado = validarAnexo({ tipo: TipoDocumento.ANEXO, destino: 'CASO', casoId: '' })
+
+    expect(resultado.ok).toBe(false)
+    if (resultado.ok) return
+    expect(resultado.erros['casoId']).toBe('Escolha o caso em que o documento será anexado.')
+  })
+
   it('recusa tipo fora do domínio, com mensagem em português', () => {
-    const resultado = validarAnexo({ tipo: 'SENTENCA', casoId: '' })
+    const resultado = validarAnexo({ tipo: 'SENTENCA', destino: 'CLIENTE', casoId: '' })
 
     expect(resultado.ok).toBe(false)
     if (resultado.ok) return
