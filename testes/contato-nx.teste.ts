@@ -16,7 +16,7 @@ vi.mock('@/lib/prisma', () => ({
 }))
 vi.mock('@/lib/auditoria', () => ({ registrarAuditoria: async () => undefined }))
 
-import { numeroParaNx, sincronizarContatoNx } from '@/lib/contato-nx'
+import { numeroParaNx, sincronizarContatoNx, variantesDoNumero } from '@/lib/contato-nx'
 
 const AUTOR = { usuarioId: 'u1', usuarioEmail: 'op@exemplo.invalido' }
 
@@ -44,6 +44,17 @@ describe('numeroParaNx', () => {
   it('sem número utilizável, devolve null', () => {
     expect(numeroParaNx(null)).toBeNull()
     expect(numeroParaNx('123')).toBeNull()
+  })
+})
+
+describe('variantesDoNumero', () => {
+  it('celular com 9 devolve também a forma sem o 9, e o contrário', () => {
+    expect(variantesDoNumero('5511999998888')).toEqual(['5511999998888', '551199998888'])
+    expect(variantesDoNumero('551199998888')).toEqual(['5511999998888', '551199998888'])
+  })
+
+  it('fixo não ganha variante', () => {
+    expect(variantesDoNumero('551133334444')).toEqual(['551133334444'])
   })
 })
 
@@ -99,7 +110,38 @@ describe('sincronizarContatoNx', () => {
     const resultado = await sincronizarContatoNx('c1', AUTOR)
 
     expect(resultado).toEqual({ situacao: 'criado' })
-    expect(chamadas.map((c) => c.caminho)).toEqual(['showcontact', 'createContact'])
+    // Não achou nem com o 9 nem sem ele: só então cria, com o 9.
+    expect(chamadas.map((c) => c.caminho)).toEqual([
+      'showcontact',
+      'showcontact',
+      'createContact',
+    ])
+    expect(chamadas.map((c) => c.corpo['number'])).toEqual([
+      '5511999998888',
+      '551199998888',
+      '5511999998888',
+    ])
+  })
+
+  it('contato gravado na NX sem o 9: acha na segunda busca e ATUALIZA por ele', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init: RequestInit) => {
+        const caminho = url.split('/').pop() ?? ''
+        const corpo = JSON.parse(String(init.body)) as Record<string, unknown>
+        chamadas.push({ caminho, corpo, auth: '' })
+        const achou = caminho !== 'showcontact' || corpo['number'] === '551199998888'
+        return new Response('{}', { status: achou ? 200 : 404 })
+      }),
+    )
+
+    expect(await sincronizarContatoNx('c1', AUTOR)).toEqual({ situacao: 'atualizado' })
+    expect(chamadas.map((c) => c.caminho)).toEqual([
+      'showcontact',
+      'showcontact',
+      'updateContact',
+    ])
+    expect(chamadas[2]?.corpo['number']).toBe('551199998888')
   })
 
   it('sem telefone não fala com a NX', async () => {

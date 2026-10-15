@@ -22,6 +22,7 @@
     "test:banco": "vitest run --config vitest.banco.config.ts",
     "email:teste": "tsx scripts/teste-de-email.ts",
     "d4sign:conta": "tsx scripts/d4sign-conta.ts",
+    "nx:contato": "tsx scripts/nx-contato.ts",
     "d4sign:posicoes": "tsx scripts/d4sign-posicoes.ts"
   },
   "dependencies": {

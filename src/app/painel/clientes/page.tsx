@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { TipoPessoa } from '@prisma/client'
+import { PerfilUsuario, TipoPessoa } from '@prisma/client'
 
+import { EnviarTodosParaNxBotao } from '@/componentes/enviar-para-nx'
 import { MenuDoCliente } from '@/componentes/menu-do-cliente'
 import { EtiquetaDeAcesso, EtiquetaDeSituacaoDoCliente } from '@/componentes/situacoes'
 import { TopoDaPagina } from '@/componentes/topo-da-pagina'
@@ -60,9 +61,12 @@ export default async function PaginaDeClientes({
             : `${total} cadastrados · organizados por CPF ou CNPJ`
         }
         acoes={
-          <Link href="/painel/clientes/novo" className="botao">
-            + Novo cliente
-          </Link>
+          <>
+            {sessao.perfil === PerfilUsuario.ADMINISTRADOR && <EnviarTodosParaNxBotao />}
+            <Link href="/painel/clientes/novo" className="botao">
+              + Novo cliente
+            </Link>
+          </>
         }
       />
 

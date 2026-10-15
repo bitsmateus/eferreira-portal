@@ -5,6 +5,7 @@ import { TipoPessoa } from '@prisma/client'
 
 import { AcessoDoCliente } from '@/componentes/acesso-do-cliente'
 import { AlternarSituacaoDoClienteBotao } from '@/componentes/alternar-situacao-do-cliente-botao'
+import { EnviarParaNxBotao } from '@/componentes/enviar-para-nx'
 import { PastaDoCliente } from '@/componentes/pasta-do-cliente'
 import {
   EmpresasQueRepresenta,
@@ -83,6 +84,7 @@ export default async function PaginaDaFichaDoCliente({
               clienteId={cliente.id}
               situacao={cliente.situacao}
             />
+            <EnviarParaNxBotao clienteId={cliente.id} />
             <Link
               href={`/painel/clientes/${cliente.id}/editar`}
               className="botao botao-secundario"

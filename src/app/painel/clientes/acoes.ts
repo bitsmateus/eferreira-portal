@@ -21,6 +21,12 @@ import {
   type CamposDeCliente,
   type CamposDoRepresentante,
 } from '@/lib/clientes'
+import {
+  enviarClienteParaNx,
+  enviarTodosParaNx,
+  type ResultadoDaSincronizacaoNx,
+  type ResumoDoEnvioEmMassa,
+} from '@/lib/contato-nx'
 import { buscarEnderecoPorCep, type EnderecoDoCep } from '@/lib/cep'
 import { texto, type ErrosDeCampo } from '@/lib/formulario'
 import { emailDaSessao, exigirSessaoDaEquipe } from '@/lib/sessao'
@@ -396,4 +402,30 @@ export async function revogarAcessoDoCliente(
   revalidatePath('/painel/clientes')
   revalidatePath(`/painel/clientes/${clienteId}`)
   return undefined
+}
+
+// ---------------------------------------------------------------------------
+// Contato na NX
+// ---------------------------------------------------------------------------
+
+export type EstadoDoEnvioParaNx = { resultado: ResultadoDaSincronizacaoNx } | undefined
+
+export async function enviarClienteParaNxAcao(
+  clienteId: string,
+  _estado: EstadoDoEnvioParaNx,
+): Promise<EstadoDoEnvioParaNx> {
+  const sessao = await exigirSessaoDaEquipe()
+  const resultado = await enviarClienteParaNx(sessao, clienteId, await emailDaSessao(sessao))
+  revalidatePath(`/painel/clientes/${clienteId}`)
+  return { resultado }
+}
+
+export type EstadoDoEnvioEmMassa = { resumo: ResumoDoEnvioEmMassa } | undefined
+
+export async function enviarTodosParaNxAcao(
+  _estado: EstadoDoEnvioEmMassa,
+): Promise<EstadoDoEnvioEmMassa> {
+  const sessao = await exigirSessaoDaEquipe()
+  const resumo = await enviarTodosParaNx(sessao, await emailDaSessao(sessao))
+  return { resumo }
 }
