@@ -38,7 +38,9 @@ import {
   type FiltrosDeCliente,
 } from '@/lib/clientes'
 import { filtroDeCasos, filtroDeClientes, filtroDeDocumentos, type SessaoServidor } from '@/lib/autorizacao'
-import { formatarDiaPorExtensoComSemana } from '@/lib/datas'
+import { diaEmSaoPaulo, formatarData, formatarDiaPorExtensoComSemana } from '@/lib/datas'
+import { Etiqueta } from '@/componentes/etiqueta'
+import { contarEventosPendentes, listarEventosPendentes } from '@/lib/eventos'
 import { formatarDocumento } from '@/lib/documento'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { prisma } from '@/lib/prisma'
@@ -56,6 +58,94 @@ type Consulta = {
   situacao?: string
   responsavel?: string
   numero?: string
+}
+
+/** Eventos pendentes de todos os casos — o acesso rápido pedido em 15/10/2026. */
+async function TabelaDeEventosNoPainel({
+  sessao,
+  apenasMeus,
+}: {
+  sessao: SessaoServidor
+  apenasMeus: boolean
+}) {
+  const eventos = await listarEventosPendentes(sessao, { apenasMeus })
+  const hoje = diaEmSaoPaulo(new Date())
+
+  return (
+    <div className="cartao mb-4">
+      <div className="cartao-cabecalho">
+        <h2>Eventos pendentes</h2>
+        <span className="ml-auto flex items-center gap-3 text-[12px] text-texto-2">
+          {apenasMeus ? (
+            <Link href="/painel?secao=eventos" className="underline underline-offset-2">
+              ver de todos
+            </Link>
+          ) : (
+            <Link
+              href="/painel?secao=eventos&responsavel=meus"
+              className="underline underline-offset-2"
+            >
+              só os meus
+            </Link>
+          )}
+          <span>{apenasMeus ? 'sob sua responsabilidade' : 'de todos os casos'}</span>
+        </span>
+      </div>
+
+      {eventos.length === 0 ? (
+        <div className="px-[18px] py-9 text-center text-[13px] text-texto-2">
+          Nenhum evento pendente.
+        </div>
+      ) : (
+        <div className="tabela-rolavel">
+          <table className="tabela">
+            <thead>
+              <tr>
+                <th>Prazo</th>
+                <th>Assunto</th>
+                <th>Responsável</th>
+                <th>Caso</th>
+                <th aria-label="Situação" />
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {eventos.map((evento) => {
+                const vencido = diaEmSaoPaulo(evento.prazoDeEntrega) < hoje
+                return (
+                  <tr key={evento.id}>
+                    <td className="whitespace-nowrap">
+                      {formatarData(evento.prazoDeEntrega)}
+                      {evento.horario !== null && ` · ${evento.horario}`}
+                    </td>
+                    <td>{evento.assunto}</td>
+                    <td>{evento.responsavel.nome}</td>
+                    <td>
+                      <div>{evento.caso.cliente.nome}</div>
+                      <div className="text-[12px] text-texto-2">
+                        {evento.caso.numeroProcesso === null
+                          ? evento.caso.assunto
+                          : formatarNumeroDeProcesso(evento.caso.numeroProcesso)}
+                      </div>
+                    </td>
+                    <td>{vencido && <Etiqueta tom="erro">Prazo vencido</Etiqueta>}</td>
+                    <td className="text-right">
+                      <Link
+                        href={`/painel/casos/${evento.caso.id}`}
+                        className="botao botao-secundario botao-pequeno"
+                      >
+                        Abrir
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
 }
 
 /** Monta a query string só com os pares que têm valor — nada de "tipo=". */
@@ -378,7 +468,11 @@ export default async function PaginaDoPainel({
 
   const consulta = await searchParams
   const secao =
-    consulta.secao === 'clientes' || consulta.secao === 'casos' ? consulta.secao : null
+    consulta.secao === 'clientes' ||
+    consulta.secao === 'casos' ||
+    consulta.secao === 'eventos'
+      ? consulta.secao
+      : null
 
   const filtrosDeCliente = lerFiltrosDeCliente(consulta)
   const filtrosDeCaso = lerFiltrosDeCaso(consulta)
@@ -399,6 +493,7 @@ export default async function PaginaDoPainel({
     casosSemNumero,
     enviosAguardando,
     enviosAssinados,
+    eventos,
   ] = await Promise.all([
     contarClientes(sessao),
     contarCasos(sessao),
@@ -423,6 +518,7 @@ export default async function PaginaDoPainel({
     prisma.envioParaAssinatura.count({
       where: { documento: filtroDeDocumentos(sessao, {}), situacao: SituacaoDoEnvio.ASSINADO },
     }),
+    contarEventosPendentes(sessao, diaEmSaoPaulo(new Date())),
   ])
 
   return (
@@ -433,7 +529,19 @@ export default async function PaginaDoPainel({
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
-        <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <Indicador
+            rotulo="Eventos pendentes"
+            valor={eventos.pendentes}
+            pe={
+              eventos.vencidos === 0
+                ? 'nenhum com prazo vencido'
+                : eventos.vencidos === 1
+                  ? '1 com prazo vencido'
+                  : `${eventos.vencidos} com prazo vencido`
+            }
+            href="/painel?secao=eventos"
+          />
           <Indicador
             rotulo="Clientes cadastrados"
             valor={clientes}
@@ -542,6 +650,12 @@ export default async function PaginaDoPainel({
           />
         </div>
 
+        {secao === 'eventos' && (
+          <TabelaDeEventosNoPainel
+            sessao={sessao}
+            apenasMeus={consulta.responsavel === 'meus'}
+          />
+        )}
         {secao === 'clientes' && (
           <TabelaDeClientesNoPainel sessao={sessao} filtros={filtrosDeCliente} />
         )}

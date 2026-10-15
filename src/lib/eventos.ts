@@ -298,3 +298,60 @@ export async function excluirEvento(
 
   return { situacao: 'excluido' }
 }
+
+// ---------------------------------------------------------------------------
+// Visão geral (painel) — acesso rápido aos eventos de todos os casos
+// ---------------------------------------------------------------------------
+
+export type ContagemDeEventos = { pendentes: number; vencidos: number }
+
+/** `hoje` é o dia civil de São Paulo ("AAAA-MM-DD"), calculado por quem chama. */
+export async function contarEventosPendentes(
+  sessao: SessaoServidor,
+  hoje: string,
+): Promise<ContagemDeEventos> {
+  exigirEquipe(sessao)
+  const base = { cumpridoEm: null, caso: filtroDeCasos(sessao) }
+  const inicioDeHoje = diaCivilParaData(hoje)
+
+  const [pendentes, vencidos] = await Promise.all([
+    prisma.evento.count({ where: base }),
+    inicioDeHoje === null
+      ? 0
+      : prisma.evento.count({ where: { ...base, prazoDeEntrega: { lt: inicioDeHoje } } }),
+  ])
+  return { pendentes, vencidos }
+}
+
+const RESUMO_COM_CASO = {
+  ...RESUMO,
+  caso: {
+    select: {
+      id: true,
+      assunto: true,
+      numeroProcesso: true,
+      cliente: { select: { id: true, nome: true } },
+    },
+  },
+} satisfies Prisma.EventoSelect
+
+export type LinhaDeEventoComCaso = Prisma.EventoGetPayload<{ select: typeof RESUMO_COM_CASO }>
+
+/** Pendentes de todos os casos, pelo prazo mais próximo (os vencidos primeiro). */
+export async function listarEventosPendentes(
+  sessao: SessaoServidor,
+  opcoes: { apenasMeus?: boolean; limite?: number } = {},
+): Promise<LinhaDeEventoComCaso[]> {
+  exigirEquipe(sessao)
+
+  return prisma.evento.findMany({
+    where: {
+      cumpridoEm: null,
+      caso: filtroDeCasos(sessao),
+      ...(opcoes.apenasMeus === true ? { responsavelId: sessao.usuarioId } : {}),
+    },
+    select: RESUMO_COM_CASO,
+    orderBy: [{ prazoDeEntrega: 'asc' }, { horario: { sort: 'asc', nulls: 'last' } }],
+    take: opcoes.limite ?? 100,
+  })
+}
