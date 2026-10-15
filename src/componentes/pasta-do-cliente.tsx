@@ -104,8 +104,7 @@ export function PastaDoCliente({
             A pasta está vazia.
           </p>
           <p className="text-[12.5px] text-texto-3">
-            É aqui que contrato, procuração, declaração e os documentos de cada caso
-            ficam reunidos —{' '}
+            É aqui que ficam contrato, procuração, declaração e os anexos —{' '}
             <Link
               href={`/painel/clientes/${clienteId}/anexar`}
               className="text-info underline underline-offset-2"

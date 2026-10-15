@@ -214,7 +214,8 @@ const RESUMO = {
 export type LinhaDeDocumento = Prisma.DocumentoGetPayload<{ select: typeof RESUMO }>
 
 /**
- * A pasta única: tudo do cliente, inclusive o que está preso a um caso dele.
+ * A pasta do cliente: só o que é do cliente em si, sem caso. O que está preso
+ * a um caso fica na pasta do caso (`listarDocumentosDoCaso`).
  * O filtro da sessão entra sempre — o `clienteId` da URL só estreita.
  */
 export async function listarPastaDoCliente(
@@ -222,7 +223,9 @@ export async function listarPastaDoCliente(
   clienteId: string,
 ): Promise<LinhaDeDocumento[]> {
   return prisma.documento.findMany({
-    where: filtroDeDocumentos(sessao, { clienteId }),
+    // Só o que não é de caso: cliente com muitos casos ficava com tudo
+    // misturado (pedido do escritório, 15/10/2026). O resto está em cada caso.
+    where: filtroDeDocumentos(sessao, { clienteId, casoId: null }),
     select: RESUMO,
     orderBy: { criadoEm: 'desc' },
   })
