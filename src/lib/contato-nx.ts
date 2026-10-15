@@ -109,7 +109,7 @@ async function chamar(
   config: Configuracao,
   caminho: string,
   corpo: Contato | { number: string },
-): Promise<{ status: number }> {
+): Promise<{ status: number; detalhe: string }> {
   const resposta = await fetch(`${config.base}/${caminho}`, {
     method: 'POST',
     headers: {
@@ -119,7 +119,10 @@ async function chamar(
     body: JSON.stringify(corpo),
     signal: AbortSignal.timeout(ESPERA_MAXIMA_MS),
   })
-  return { status: resposta.status }
+  // O corpo da resposta explica o 400 (campo recusado). Vai só um trecho, e o
+  // token nunca está nele: é o servidor da NX falando, não eco do pedido.
+  const detalhe = (await resposta.text().catch(() => '')).replace(/s+/g, ' ').slice(0, 200)
+  return { status: resposta.status, detalhe }
 }
 
 async function sincronizar(clienteId: string): Promise<ResultadoDaSincronizacaoNx> {
@@ -156,18 +159,18 @@ async function sincronizar(clienteId: string): Promise<ResultadoDaSincronizacaoN
         const edicao = await chamar(config, 'updateContact', montarContato(cliente, candidato))
         return edicao.status >= 200 && edicao.status < 300
           ? { situacao: 'atualizado' }
-          : { situacao: 'falhou', motivo: `updateContact respondeu ${edicao.status}` }
+          : { situacao: 'falhou', motivo: `updateContact respondeu ${edicao.status} ${edicao.detalhe}`.trim() }
       }
 
       if (busca.status !== 404) {
-        return { situacao: 'falhou', motivo: `showcontact respondeu ${busca.status}` }
+        return { situacao: 'falhou', motivo: `showcontact respondeu ${busca.status} ${busca.detalhe}`.trim() }
       }
     }
 
     const criacao = await chamar(config, 'createContact', montarContato(cliente, numero))
     return criacao.status >= 200 && criacao.status < 300
       ? { situacao: 'criado' }
-      : { situacao: 'falhou', motivo: `createContact respondeu ${criacao.status}` }
+      : { situacao: 'falhou', motivo: `createContact respondeu ${criacao.status} ${criacao.detalhe}`.trim() }
   } catch (erro) {
     return {
       situacao: 'falhou',
