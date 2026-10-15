@@ -97,7 +97,7 @@ async function TabelaDeEventosNoPainel({
           Nenhum evento pendente.
         </div>
       ) : (
-        <div className="tabela-rolavel">
+        <div className="rolagem-lateral">
           <table className="tabela">
             <thead>
               <tr>
