@@ -12,6 +12,10 @@ const config: NextConfig = {
     // cada arquivo continua limitado a TAMANHO_MAXIMO_BYTES, 25 MB) em
     // src/lib/documentos.ts — se um mudar, o outro muda junto.
     serverActions: { bodySizeLimit: '100mb' },
+    // Há middleware (src/middleware.ts), e o Next copia o corpo de toda
+    // requisição que passa por ele — com teto padrão de 10 MB. Acima disso o
+    // anexo falhava com a tela genérica de erro, antes de chegar à ação.
+    middlewareClientMaxBodySize: '100mb',
   },
   // Regra 5: nenhum arquivo é público. Nada é servido a partir de /public
   // sem passar pela camada de autorização — os documentos saem por URL
