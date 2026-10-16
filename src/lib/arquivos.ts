@@ -36,12 +36,12 @@ export const EXTENSOES_ACEITAS = [
   '.docx',
 ] as const
 
-/** 25 MB. Acompanha o limite de corpo das ações em next.config.ts. */
-export const TAMANHO_MAXIMO_BYTES = 25 * 1024 * 1024
+/** 100 MB (era 25, até 16/10/2026). Acompanha o limite de corpo das ações em next.config.ts. */
+export const TAMANHO_MAXIMO_BYTES = 100 * 1024 * 1024
 
 /** Vários arquivos por envio (25/09/2026); ver validarArquivos em documentos.ts. */
 export const LIMITE_DE_ARQUIVOS_POR_ENVIO = 20
-export const TAMANHO_TOTAL_MAXIMO_BYTES = 100 * 1024 * 1024
+export const TAMANHO_TOTAL_MAXIMO_BYTES = 200 * 1024 * 1024
 
 export const ROTULO_DO_TIPO: Record<TipoDocumento, string> = {
   CONTRATO: 'Contrato',

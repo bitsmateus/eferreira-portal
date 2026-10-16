@@ -83,8 +83,8 @@ export function FormularioDeAnexo({
                 </p>
               ) : (
                 <p className="dica">
-                  Pode escolher vários de uma vez (até {LIMITE_DE_ARQUIVOS_POR_ENVIO}, 25 MB
-                  cada e 100 MB no total). O tipo e a pasta abaixo valem para todos.
+                  Pode escolher vários de uma vez (até {LIMITE_DE_ARQUIVOS_POR_ENVIO}, 100 MB
+                  cada e 200 MB no total). O tipo e a pasta abaixo valem para todos.
                   Aceitos: {EXTENSOES_ACEITAS.join(', ')}.
                 </p>
               )}

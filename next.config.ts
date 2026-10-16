@@ -9,13 +9,13 @@ const config: NextConfig = {
   experimental: {
     // O anexo da pasta do cliente sobe pela ação de servidor, e o limite
     // padrão do Next é 1 MB. Acompanha TAMANHO_TOTAL_MAXIMO_BYTES (vários arquivos por envio, 25/09/2026;
-    // cada arquivo continua limitado a TAMANHO_MAXIMO_BYTES, 25 MB) em
+    // cada arquivo continua limitado a TAMANHO_MAXIMO_BYTES, 100 MB) em
     // src/lib/documentos.ts — se um mudar, o outro muda junto.
-    serverActions: { bodySizeLimit: '100mb' },
+    serverActions: { bodySizeLimit: '200mb' },
     // Há middleware (src/middleware.ts), e o Next copia o corpo de toda
     // requisição que passa por ele — com teto padrão de 10 MB. Acima disso o
     // anexo falhava com a tela genérica de erro, antes de chegar à ação.
-    middlewareClientMaxBodySize: '100mb',
+    middlewareClientMaxBodySize: '200mb',
   },
   // Regra 5: nenhum arquivo é público. Nada é servido a partir de /public
   // sem passar pela camada de autorização — os documentos saem por URL
