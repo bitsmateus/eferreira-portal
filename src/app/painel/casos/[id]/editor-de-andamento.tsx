@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 
-import { corrigirAndamento } from './acoes'
+import { corrigirAndamento, excluirAndamentoDoCaso } from './acoes'
 
 type Status = { id: string; nome: string }
 
@@ -12,6 +12,15 @@ function BotaoSalvar() {
   return (
     <button type="submit" className="botao botao-pequeno" disabled={pending}>
       {pending ? 'Salvando…' : 'Salvar correção'}
+    </button>
+  )
+}
+
+function BotaoDeConfirmarExclusao() {
+  const { pending } = useFormStatus()
+  return (
+    <button type="submit" disabled={pending} className="text-[11.5px] text-erro underline underline-offset-2">
+      {pending ? 'Excluindo…' : 'Confirmar exclusão'}
     </button>
   )
 }
@@ -49,15 +58,49 @@ export function EditorDeAndamento({
   )
   const erros = estado?.erros ?? {}
 
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false)
+  const [estadoExcluir, excluir] = useActionState(
+    excluirAndamentoDoCaso.bind(null, casoId, andamento.id),
+    undefined,
+  )
+
   if (!aberto) {
     return (
-      <button
-        type="button"
-        onClick={() => setAberto(true)}
-        className="ml-2 text-[11.5px] text-texto-2 underline underline-offset-2"
-      >
-        Corrigir
-      </button>
+      <>
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          className="ml-2 text-[11.5px] text-texto-2 underline underline-offset-2"
+        >
+          Corrigir
+        </button>
+        {confirmandoExclusao ? (
+          <form action={excluir} className="ml-2 inline-flex items-center gap-1.5">
+            <span className="text-[11.5px] text-texto-2">Excluir este andamento?</span>
+            <BotaoDeConfirmarExclusao />
+            <button
+              type="button"
+              onClick={() => setConfirmandoExclusao(false)}
+              className="text-[11.5px] text-texto-2 underline underline-offset-2"
+            >
+              cancelar
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmandoExclusao(true)}
+            className="ml-2 text-[11.5px] text-erro underline underline-offset-2"
+          >
+            Excluir
+          </button>
+        )}
+        {estadoExcluir?.erro !== undefined && (
+          <p className="dica dica-erro" role="alert">
+            {estadoExcluir.erro}
+          </p>
+        )}
+      </>
     )
   }
 

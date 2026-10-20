@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { PerfilUsuario, TipoPessoa } from '@prisma/client'
 
-import { editarAndamento, lancarAndamento } from '@/lib/andamentos'
+import { editarAndamento, excluirAndamento, lancarAndamento } from '@/lib/andamentos'
 import { prisma } from '@/lib/prisma'
 
 const DOCUMENTO_DO_CLIENTE = '52998224725'
@@ -186,5 +186,41 @@ describe('editarAndamento', () => {
         null,
       ),
     ).rejects.toThrow()
+  })
+})
+
+describe('excluirAndamento', () => {
+  it('apaga o andamento e guarda o conteúdo na auditoria', async () => {
+    const { casoId, andamentoId } = await andamentoLancado()
+
+    const resultado = await excluirAndamento(sessaoDaEquipe(), andamentoId, EMAIL_DO_OPERADOR)
+    expect(resultado.situacao).toBe('excluido')
+
+    expect(await prisma.andamento.findUnique({ where: { id: andamentoId } })).toBeNull()
+    expect(await prisma.caso.findUnique({ where: { id: casoId } })).not.toBeNull()
+
+    const auditoria = await prisma.auditoria.findFirst({
+      where: { entidade: 'andamento', entidadeId: andamentoId, acao: 'EXCLUSAO' },
+    })
+    expect(auditoria?.usuarioId).toBe(operadorId)
+    expect(JSON.stringify(auditoria?.detalhes)).toContain('Descrição de teste')
+  })
+
+  it('andamento inexistente', async () => {
+    const resultado = await excluirAndamento(sessaoDaEquipe(), 'nao-existe', EMAIL_DO_OPERADOR)
+    expect(resultado.situacao).toBe('nao_encontrado')
+  })
+
+  it('recusa sessão de cliente', async () => {
+    const { andamentoId } = await andamentoLancado()
+
+    await expect(
+      excluirAndamento(
+        { usuarioId: operadorId, perfil: PerfilUsuario.CLIENTE, clienteId, contratoAssinado: true },
+        andamentoId,
+        null,
+      ),
+    ).rejects.toThrow()
+    expect(await prisma.andamento.findUnique({ where: { id: andamentoId } })).not.toBeNull()
   })
 })
