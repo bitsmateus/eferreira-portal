@@ -397,3 +397,66 @@ export async function editarAndamento(
 
   return { situacao: 'atualizado' }
 }
+
+export type ResultadoDeExclusaoDeAndamento =
+  | { situacao: 'excluido' }
+  | { situacao: 'nao_encontrado' }
+
+/**
+ * Exclui um andamento lançado por engano (pedido do escritório, 20/10/2026:
+ * andamento de uma pessoa anexado ao caso de outra).
+ *
+ * Andamento é prova de diligência (regra 6), então a exclusão não some sem
+ * rastro: a auditoria guarda o conteúdo inteiro do que foi apagado — data,
+ * situação, descrição, autor e quando foi lançado — e quem apagou. Não mexe na
+ * situação do caso, mesmo que o andamento tenha sido o que o arquivou.
+ */
+export async function excluirAndamento(
+  sessao: SessaoServidor,
+  andamentoId: string,
+  emailDoAutor: string | null,
+): Promise<ResultadoDeExclusaoDeAndamento> {
+  exigirEquipe(sessao)
+
+  // Regra 2: só se exclui andamento de caso que ESTA sessão enxerga.
+  const atual = await prisma.andamento.findFirst({
+    where: filtroDeAndamentos(sessao, { id: andamentoId }),
+    select: {
+      id: true,
+      casoId: true,
+      data: true,
+      descricao: true,
+      autorId: true,
+      criadoEm: true,
+      status: { select: { nome: true } },
+      caso: { select: { clienteId: true } },
+    },
+  })
+  if (atual === null) return { situacao: 'nao_encontrado' }
+
+  await prisma.$transaction(async (transacao) => {
+    await transacao.andamento.delete({ where: { id: atual.id } })
+
+    await registrarAuditoria(
+      {
+        usuarioId: sessao.usuarioId,
+        usuarioEmail: emailDoAutor,
+        acao: AcaoAuditoria.EXCLUSAO,
+        entidade: 'andamento',
+        entidadeId: atual.id,
+        detalhes: {
+          casoId: atual.casoId,
+          clienteId: atual.caso.clienteId,
+          data: atual.data.toISOString(),
+          status: atual.status?.nome ?? null,
+          descricao: atual.descricao,
+          autorId: atual.autorId,
+          lancadoEm: atual.criadoEm.toISOString(),
+        },
+      },
+      transacao,
+    )
+  })
+
+  return { situacao: 'excluido' }
+}

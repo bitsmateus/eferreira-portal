@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 
 import {
   editarAndamento,
+  excluirAndamento,
   lancarAndamento,
   validarAndamento,
   type CamposDeAndamento,
@@ -104,6 +105,26 @@ export async function corrigirAndamento(
   revalidatePath('/painel/casos')
 
   return { sucesso: true }
+}
+
+/** Exclui um andamento lançado por engano — a auditoria guarda o conteúdo. */
+export async function excluirAndamentoDoCaso(
+  casoId: string,
+  andamentoId: string,
+): Promise<{ erro?: string } | undefined> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  const resultado = await excluirAndamento(sessao, andamentoId, await emailDaSessao(sessao))
+  if (resultado.situacao === 'nao_encontrado') {
+    return { erro: 'Andamento não encontrado.' }
+  }
+
+  revalidatePath(`/painel/casos/${casoId}`)
+  revalidatePath('/painel')
+  revalidatePath('/painel/casos')
+  revalidatePath('/painel/clientes')
+
+  return undefined
 }
 
 // ---------------------------------------------------------------------------
