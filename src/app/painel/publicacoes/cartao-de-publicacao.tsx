@@ -325,8 +325,11 @@ export function CartaoDePublicacao({
         </div>
 
         {analise !== null ? (
-          <div className="rounded-md bg-fundo p-3 text-[12.5px]">
-            <div className="mb-1 text-[10.5px] uppercase tracking-[0.08em] text-texto-3">
+          // Roxo, de propósito fora da paleta grafite/prata (pedido de 09/11/2026):
+          // o que a IA escreveu tem de se distinguir à primeira vista do que é
+          // dado do diário ou da equipe.
+          <div className="rounded-md border border-[#DDD3FA] bg-[#F4F0FE] p-3 text-[12.5px] text-[#2E2152]">
+            <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#6B4FD3]">
               Análise da IA · {ROTULO_DO_TIPO_DE_ATO[analise.tipo]} · confira antes de agir
             </div>
             <p className="mb-1.5">{analise.resumo}</p>
