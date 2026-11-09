@@ -12,7 +12,10 @@
  *  - `IA_PROVEDOR`: `anthropic` (padrão) ou `openai`;
  *  - `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`: a chave da conta de
  *    desenvolvedor DO ESCRITÓRIO (cobrança por consumo, não a assinatura);
- *  - `IA_MODELO`: opcional para a Anthropic, obrigatório para a OpenAI.
+ *  - `IA_MODELO`: opcional para a Anthropic, obrigatório para a OpenAI;
+ *  - `ANTHROPIC_WORKSPACE_ID`: só para chave criada FORA de um workspace — a
+ *    Anthropic recusa essa chave (HTTP 400) sem o cabeçalho
+ *    `anthropic-workspace-id`. Chave criada dentro do workspace dispensa.
  *
  * Só `fetch`, sem SDK — mesma escolha de `d4sign.ts` e `google-agenda.ts`. A
  * chave nunca entra em mensagem de erro.
@@ -23,7 +26,7 @@ const MODELO_PADRAO_ANTHROPIC = 'claude-sonnet-5-5'
 
 export type ProvedorDeIa = 'anthropic' | 'openai'
 
-type Configuracao = { provedor: ProvedorDeIa; chave: string; modelo: string }
+type Configuracao = { provedor: ProvedorDeIa; chave: string; modelo: string; workspace: string }
 
 function variavel(nome: string): string {
   return (process.env[nome] ?? '').trim()
@@ -35,13 +38,18 @@ function configuracao(): Configuracao | null {
   if (provedor === 'anthropic') {
     const chave = variavel('ANTHROPIC_API_KEY')
     if (chave === '') return null
-    return { provedor, chave, modelo: variavel('IA_MODELO') || MODELO_PADRAO_ANTHROPIC }
+    return {
+      provedor,
+      chave,
+      modelo: variavel('IA_MODELO') || MODELO_PADRAO_ANTHROPIC,
+      workspace: variavel('ANTHROPIC_WORKSPACE_ID'),
+    }
   }
 
   const chave = variavel('OPENAI_API_KEY')
   const modelo = variavel('IA_MODELO')
   if (chave === '' || modelo === '') return null
-  return { provedor, chave, modelo }
+  return { provedor, chave, modelo, workspace: '' }
 }
 
 export function iaConfigurada(): boolean {
@@ -145,6 +153,7 @@ export async function pedirObjeto(pedido: PedidoEstruturado): Promise<RespostaDa
           'content-type': 'application/json',
           'x-api-key': config.chave,
           'anthropic-version': '2023-06-01',
+          ...(config.workspace === '' ? {} : { 'anthropic-workspace-id': config.workspace }),
         },
         body: JSON.stringify({
           model: config.modelo,

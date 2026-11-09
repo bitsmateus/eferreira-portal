@@ -253,6 +253,28 @@ describe('análise da IA', () => {
     ).not.toContain('sk-segredo')
   })
 
+  it('manda o workspace da Anthropic só quando configurado', async () => {
+    vi.stubEnv('IA_PROVEDOR', 'anthropic')
+    vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant-teste')
+    const cabecalhos: Record<string, string>[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        cabecalhos.push(init.headers as Record<string, string>)
+        return new Response('{}', { status: 500 })
+      }),
+    )
+    const pedido = { sistema: 's', usuario: 'u', nome: 'n', descricao: 'd', esquema: {} }
+
+    vi.stubEnv('ANTHROPIC_WORKSPACE_ID', '')
+    await pedirObjeto(pedido)
+    vi.stubEnv('ANTHROPIC_WORKSPACE_ID', 'wrkspc_123')
+    await pedirObjeto(pedido)
+
+    expect(cabecalhos[0]).not.toHaveProperty('anthropic-workspace-id')
+    expect(cabecalhos[1]).toHaveProperty('anthropic-workspace-id', 'wrkspc_123')
+  })
+
   it('a chave não aparece na mensagem de erro', async () => {
     vi.stubEnv('IA_PROVEDOR', 'anthropic')
     vi.stubEnv('ANTHROPIC_API_KEY', 'sk-ant-segredo-que-nao-pode-vazar')
