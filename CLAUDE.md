@@ -349,11 +349,22 @@ de movimentações), contratada; não é reinterpretação da regra 12. Detalhes
   partir dos documentos enviados no WhatsApp (IA da NX). A API já cadastra
   cliente (`POST /api/v1/clientes`), mas não recebe arquivo nem representante
   legal de PJ — é o que faltaria do lado do portal. **Não implementado.**
-- **Verificado:** `tsc`, lint, `npm run build` e 560 unitários (22 novos em
-  `testes/publicacoes.teste.ts`). Os testes de banco
-  (`testes-de-banco/publicacoes.teste.ts`) foram escritos mas **não rodaram**:
-  o Docker Desktop não subiu o motor nesta sessão. Também falta conferir a tela
-  no navegador e aplicar a migração em produção pelo EasyPanel.
+- **Verificado:** `tsc`, lint, `npm run build`, 560 unitários (22 novos em
+  `testes/publicacoes.teste.ts`), a migração aplicada no Postgres local e os
+  217 testes de banco (9 novos em `testes-de-banco/publicacoes.teste.ts`).
+  Tela conferida no navegador contra o DJEN de verdade: 18 publicações
+  importadas, inteiro teor, ligação a caso e conferência criando tarefa e
+  andamento — depois apagadas do banco local (dado de processo de terceiro).
+  **Falta:** aplicar a migração em produção pelo EasyPanel e criar o
+  agendamento.
+- **Defeito antigo achado pelos testes de banco e corrigido** (atendimento por
+  IA, 05/10): quem digitasse numa conversa o código pedido por OUTRA conversa
+  abria a consulta na conversa que o pediu. `conferirCodigo` ganhou
+  `exigirMesmaOrigem`, usado só pelo atendimento (o `/consultar` não, porque
+  o IP muda). O teste `atendimento-com-codigo` agora passa.
+- **Visto e não mexido:** a lista de "Responsável" (`listarResponsaveis`, a
+  mesma do formulário de caso) inclui os usuários das chaves de API ("API ·
+  …"), que não deveriam ser responsáveis por tarefa.
 
 **Atendimento por IA com código por e-mail** (05/10/2026). A IA do WhatsApp
 (agente "Léa", no n8n) só consulta processo depois de o dono do documento

@@ -337,7 +337,7 @@ export function CartaoDePublicacao({
                 ` — ${analise.prazoEmDias} dia(s) ${analise.contagem === 'corridos' ? 'corridos' : 'úteis'}`}
             </p>
           </div>
-        ) : (
+        ) : !pendente ? null : (
           <p className="text-[12px] text-texto-3">
             {!iaLigada
               ? 'IA desligada: leia o inteiro teor e defina o prazo na conferência.'
