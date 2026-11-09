@@ -450,13 +450,17 @@ export async function listarPublicacoes(
 
 export async function contarPublicacoes(
   sessao: SessaoServidor,
-): Promise<{ pendentes: number; semCaso: number }> {
+): Promise<{ pendentes: number; semCaso: number; aguardandoAnalise: number }> {
   exigirEquipe(sessao)
-  const [pendentes, semCaso] = await Promise.all([
+  const [pendentes, semCaso, aguardandoAnalise] = await Promise.all([
     prisma.publicacao.count({ where: condicaoDoFiltro('pendentes') }),
     prisma.publicacao.count({ where: condicaoDoFiltro('sem_caso') }),
+    // Só as nunca tentadas: as que falharam esperam a próxima rodada.
+    prisma.publicacao.count({
+      where: { situacao: SituacaoDaPublicacao.PENDENTE, analisadaEm: null, analiseErro: null },
+    }),
   ])
-  return { pendentes, semCaso }
+  return { pendentes, semCaso, aguardandoAnalise }
 }
 
 export async function ultimaConsulta(sessao: SessaoServidor) {

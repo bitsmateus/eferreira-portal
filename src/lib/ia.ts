@@ -111,15 +111,27 @@ export function descreverRecusa(provedor: string, status: number, corpo: unknown
   return `${base}: ${mensagem}`
 }
 
-/** Extrai o objeto da resposta da Anthropic (`tool_use` forçado). Exportado para teste. */
-export function lerRespostaDaAnthropic(corpo: unknown, nome: string): unknown {
+/**
+ * Extrai o objeto da resposta da Anthropic. O pedido usa saída estruturada
+ * (`output_config.format`): o JSON vem no bloco de texto, depois dos blocos
+ * de raciocínio. `tool_choice` forçado não serve mais — os modelos atuais o
+ * recusam com HTTP 400. Exportado para teste.
+ */
+export function lerRespostaDaAnthropic(corpo: unknown): unknown {
   const conteudo = objeto(corpo)?.['content']
   if (!Array.isArray(conteudo)) return null
-  for (const bloco of conteudo) {
-    const b = objeto(bloco)
-    if (b?.['type'] === 'tool_use' && b['name'] === nome) return b['input'] ?? null
+  const texto = conteudo
+    .map((bloco) => objeto(bloco))
+    .filter((b) => b?.['type'] === 'text' && typeof b['text'] === 'string')
+    .map((b) => b?.['text'] as string)
+    .join('')
+    .trim()
+  if (texto === '') return null
+  try {
+    return JSON.parse(texto) as unknown
+  } catch {
+    return null
   }
-  return null
 }
 
 /** Extrai o objeto da resposta da OpenAI (`json_schema`). Exportado para teste. */
@@ -157,17 +169,19 @@ export async function pedirObjeto(pedido: PedidoEstruturado): Promise<RespostaDa
         },
         body: JSON.stringify({
           model: config.modelo,
-          max_tokens: 4096,
-          system: pedido.sistema,
+          max_tokens: 16000,
+          system: `${pedido.sistema}\n\n${pedido.descricao}`,
           messages: [{ role: 'user', content: pedido.usuario }],
-          tools: [{ name: pedido.nome, description: pedido.descricao, input_schema: pedido.esquema }],
-          tool_choice: { type: 'tool', name: pedido.nome },
+          output_config: { format: { type: 'json_schema', schema: pedido.esquema } },
         }),
       })
       if (status !== 200) {
         return { ok: false, erro: descreverRecusa('Anthropic', status, corpo, config.chave) }
       }
-      const dados = lerRespostaDaAnthropic(corpo, pedido.nome)
+      const parada = objeto(corpo)?.['stop_reason']
+      if (parada === 'refusal') return { ok: false, erro: 'A Anthropic recusou analisar este texto.' }
+      if (parada === 'max_tokens') return { ok: false, erro: 'Resposta da Anthropic cortada no limite de tamanho.' }
+      const dados = lerRespostaDaAnthropic(corpo)
       if (dados === null) return { ok: false, erro: 'Resposta da Anthropic sem o objeto pedido.' }
       return { ok: true, dados, provedor }
     }

@@ -17,6 +17,7 @@ import {
 } from '@/lib/publicacoes'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
 
+import { AtualizacaoAutomatica } from './atualizacao-automatica'
 import { BotaoConsultar } from './botao-consultar'
 import { CartaoDePublicacao } from './cartao-de-publicacao'
 
@@ -66,7 +67,7 @@ export default async function PaginaDePublicacoes({
       <TopoDaPagina
         titulo="Publicações"
         subtitulo="O que chegou do Diário de Justiça Eletrônico Nacional (DJEN) para a equipe conferir"
-        acoes={<BotaoConsultar />}
+        acoes={<BotaoConsultar iaLigada={iaLigada} />}
       />
 
       <div className="flex-1 overflow-auto px-6 py-6">
@@ -76,7 +77,14 @@ export default async function PaginaDePublicacoes({
               ? 'Nenhuma consulta feita ainda.'
               : `Última consulta: ${formatarDataHora(consulta.iniciadaEm)} · ${consulta.novas} nova(s) de ${consulta.encontradas}`}
           </span>
-          <span>{iaLigada ? 'Análise por IA ligada' : 'Análise por IA desligada'}</span>
+          <span>
+            {!iaLigada
+              ? 'Análise por IA desligada'
+              : contagem.aguardandoAnalise > 0
+                ? `Analisando ${contagem.aguardandoAnalise} publicação(ões)… a tela se atualiza sozinha`
+                : 'Análise por IA ligada'}
+          </span>
+          <AtualizacaoAutomatica ativa={iaLigada && contagem.aguardandoAnalise > 0} />
           <span>Prazos são sugestões: feriados locais e suspensões do tribunal não entram na conta.</span>
         </div>
 

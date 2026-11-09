@@ -211,11 +211,11 @@ describe('análise da IA', () => {
 
   it('lê o objeto da Anthropic e da OpenAI', () => {
     expect(
-      lerRespostaDaAnthropic(
-        { content: [{ type: 'text', text: 'oi' }, { type: 'tool_use', name: 'registrar_analise', input: ANALISE }] },
-        'registrar_analise',
-      ),
+      lerRespostaDaAnthropic({
+        content: [{ type: 'thinking', thinking: '' }, { type: 'text', text: JSON.stringify(ANALISE) }],
+      }),
     ).toEqual(ANALISE)
+    expect(lerRespostaDaAnthropic({ content: [{ type: 'text', text: 'não é json' }] })).toBeNull()
     expect(lerRespostaDaOpenai({ choices: [{ message: { content: JSON.stringify(ANALISE) } }] })).toEqual(ANALISE)
     expect(lerRespostaDaOpenai({ choices: [{ message: { content: 'não é json' } }] })).toBeNull()
   })
