@@ -82,6 +82,27 @@ function objeto(valor: unknown): Record<string, unknown> | null {
   return typeof valor === 'object' && valor !== null ? (valor as Record<string, unknown>) : null
 }
 
+/**
+ * O motivo que o provedor deu para recusar — `{ error: { message } }` nos
+ * dois. Sem ele, "HTTP 400" não diz se é falta de saldo, modelo errado ou
+ * pedido malformado. A chave é apagada do texto por garantia (regra 8), e
+ * o caso mais comum ganha uma dica em português. Exportado para teste.
+ */
+export function descreverRecusa(provedor: string, status: number, corpo: unknown, chave: string): string {
+  const bruto = objeto(objeto(corpo)?.['error'])?.['message']
+  const mensagem =
+    typeof bruto === 'string' && bruto.trim() !== ''
+      ? bruto.split(chave).join('***').replace(/\s+/g, ' ').trim().slice(0, 300)
+      : null
+
+  const base = `${provedor} respondeu HTTP ${status}`
+  if (mensagem === null) return `${base}.`
+  if (/credit balance|insufficient_quota|exceeded your current quota/i.test(mensagem)) {
+    return `${base}: sem saldo na conta de IA do escritório (coloque crédito em Billing). Detalhe: ${mensagem}`
+  }
+  return `${base}: ${mensagem}`
+}
+
 /** Extrai o objeto da resposta da Anthropic (`tool_use` forçado). Exportado para teste. */
 export function lerRespostaDaAnthropic(corpo: unknown, nome: string): unknown {
   const conteudo = objeto(corpo)?.['content']
@@ -134,7 +155,9 @@ export async function pedirObjeto(pedido: PedidoEstruturado): Promise<RespostaDa
           tool_choice: { type: 'tool', name: pedido.nome },
         }),
       })
-      if (status !== 200) return { ok: false, erro: `Anthropic respondeu HTTP ${status}.` }
+      if (status !== 200) {
+        return { ok: false, erro: descreverRecusa('Anthropic', status, corpo, config.chave) }
+      }
       const dados = lerRespostaDaAnthropic(corpo, pedido.nome)
       if (dados === null) return { ok: false, erro: 'Resposta da Anthropic sem o objeto pedido.' }
       return { ok: true, dados, provedor }
@@ -155,7 +178,9 @@ export async function pedirObjeto(pedido: PedidoEstruturado): Promise<RespostaDa
         },
       }),
     })
-    if (status !== 200) return { ok: false, erro: `OpenAI respondeu HTTP ${status}.` }
+    if (status !== 200) {
+      return { ok: false, erro: descreverRecusa('OpenAI', status, corpo, config.chave) }
+    }
     const dados = lerRespostaDaOpenai(corpo)
     if (dados === null) return { ok: false, erro: 'Resposta da OpenAI sem o objeto pedido.' }
     return { ok: true, dados, provedor }

@@ -10,7 +10,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { lerAnalise, prazoSugerido, type AnaliseDaPublicacao } from '@/lib/analise-da-publicacao'
 import { consultarPorOab, lerPagina, limparTexto, type ComunicacaoDoDjen } from '@/lib/djen'
-import { iaConfigurada, lerRespostaDaAnthropic, lerRespostaDaOpenai, pedirObjeto } from '@/lib/ia'
+import {
+  descreverRecusa,
+  iaConfigurada,
+  lerRespostaDaAnthropic,
+  lerRespostaDaOpenai,
+  pedirObjeto,
+} from '@/lib/ia'
 import {
   diaDaPublicacao,
   ehDiaUtil,
@@ -230,6 +236,21 @@ describe('análise da IA', () => {
     vi.stubEnv('OPENAI_API_KEY', 'sk-teste')
     vi.stubEnv('IA_MODELO', '')
     expect(iaConfigurada()).toBe(false)
+  })
+
+  it('a recusa traz o motivo do provedor, e falta de saldo ganha dica', () => {
+    const semSaldo = {
+      type: 'error',
+      error: { type: 'invalid_request_error', message: 'Your credit balance is too low to access the Anthropic API.' },
+    }
+    expect(descreverRecusa('Anthropic', 400, semSaldo, 'sk-x')).toMatch(/^Anthropic respondeu HTTP 400: sem saldo/)
+    expect(
+      descreverRecusa('Anthropic', 404, { error: { message: 'model: claude-x not found' } }, 'sk-x'),
+    ).toBe('Anthropic respondeu HTTP 404: model: claude-x not found')
+    expect(descreverRecusa('OpenAI', 500, null, 'sk-x')).toBe('OpenAI respondeu HTTP 500.')
+    expect(
+      descreverRecusa('OpenAI', 401, { error: { message: 'Incorrect API key provided: sk-segredo' } }, 'sk-segredo'),
+    ).not.toContain('sk-segredo')
   })
 
   it('a chave não aparece na mensagem de erro', async () => {
