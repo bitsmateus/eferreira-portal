@@ -16,19 +16,12 @@
  *    revelar quais documentos existem.
  */
 
-import { createHash, timingSafeEqual } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 
 import { conferirAssinaturaPorRetorno } from '@/lib/assinaturas'
+import { segredoConfere } from '@/lib/segredo'
 
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-
-function chaveConfere(enviada: string, esperada: string): boolean {
-  // Hash dos dois lados: `timingSafeEqual` exige o mesmo tamanho.
-  const a = createHash('sha256').update(enviada).digest()
-  const b = createHash('sha256').update(esperada).digest()
-  return timingSafeEqual(a, b)
-}
 
 /** O UUID do documento, esteja o aviso em JSON, em formulário ou em texto. */
 async function uuidDoAviso(requisicao: NextRequest): Promise<string | null> {
@@ -42,7 +35,7 @@ export async function POST(requisicao: NextRequest) {
   if (esperada === '') return new NextResponse('Não encontrado.', { status: 404 })
 
   const enviada = requisicao.nextUrl.searchParams.get('chave') ?? ''
-  if (!chaveConfere(enviada, esperada)) {
+  if (!segredoConfere(enviada, esperada)) {
     return new NextResponse('Não autorizado.', { status: 401 })
   }
 

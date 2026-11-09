@@ -313,6 +313,48 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Esteira de acompanhamento: publicações do DJEN e fila de conferência**
+(09/11/2026). Frente contratada à parte — escopo "Esteira de automação jurídica
+com IA" enviado em 04/11 e aprovado pelo Dr. Sergio em 05/11/2026 ("é isso
+mesmo... o restante está ok"). É a fase futura do Anexo II (captura automática
+de movimentações), contratada; não é reinterpretação da regra 12. Detalhes em
+`docs/publicacoes.md`.
+
+- **O que está de pé:** consulta ao DJEN (API pública do CNJ, sem chave) pelas
+  OABs dos advogados ativos; publicação ligada ao caso pelo número do
+  processo, aba "Sem caso" para o resto; e-mail ao responsável; tela
+  `/painel/publicacoes` (menu "Publicações") onde a equipe confere, cria a
+  tarefa (evento → Google Agenda) e, se quiser, lança o andamento para o
+  cliente. Nada chega ao cliente sem conferência. Migração
+  `20261109120000_publicacoes_do_djen` (`Publicacao`, `ConsultaDePublicacoes`).
+- **IA trocável** (`src/lib/ia.ts`, Anthropic ou OpenAI, só `fetch`): trata a
+  publicação (tipo, resumo, providência, prazo em dias, texto para o cliente).
+  **Desligada sem chave** — a fila funciona sem ela. A DATA do prazo é do
+  portal (`src/lib/prazos.ts`: dias úteis, feriados nacionais e móveis,
+  recesso 20/12–20/01), não da IA; feriado local não entra, por isso
+  "sugerido".
+- **Rotina:** `POST /api/rotinas/publicacoes` com `x-chave` =
+  `PUBLICACOES_ROTINA_SEGREDO` (sem a variável, a rota não existe). Falta
+  criar o agendamento (n8n ou cron do EasyPanel) nos dias úteis às 7h. Botão
+  "Consultar agora" na tela faz a mesma rodada.
+- **Armadilha:** o DJEN limita a 20 requisições por minuto — por isso é por OAB,
+  não processo a processo. Conferido em 09/11/2026: a OAB/SP 378.532 tinha 47
+  comunicações de 26/10 a 07/11, de vários tribunais (TJSP, TJBA…).
+- **Falta do escritório (não inventar — regra 10):** modelos de petição
+  intermediária e inicial (para a minuta), acesso e estrutura de pastas do
+  Dropbox, conta de desenvolvedor da IA com cartão.
+- **Ponto levantado pelo Dr. Sergio na aprovação:** "o único ponto que está
+  fora é o cadastro do cliente PF/PJ que vamos fazer a partir do envio dos
+  documentos via WhatsApp no sistema da NX". Ou seja, cadastro automático a
+  partir dos documentos enviados no WhatsApp (IA da NX). A API já cadastra
+  cliente (`POST /api/v1/clientes`), mas não recebe arquivo nem representante
+  legal de PJ — é o que faltaria do lado do portal. **Não implementado.**
+- **Verificado:** `tsc`, lint, `npm run build` e 560 unitários (22 novos em
+  `testes/publicacoes.teste.ts`). Os testes de banco
+  (`testes-de-banco/publicacoes.teste.ts`) foram escritos mas **não rodaram**:
+  o Docker Desktop não subiu o motor nesta sessão. Também falta conferir a tela
+  no navegador e aplicar a migração em produção pelo EasyPanel.
+
 **Atendimento por IA com código por e-mail** (05/10/2026). A IA do WhatsApp
 (agente "Léa", no n8n) só consulta processo depois de o dono do documento
 acertar o mesmo código por e-mail da tela `/consultar`. Quatro rotas novas em

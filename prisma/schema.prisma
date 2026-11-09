@@ -231,6 +231,7 @@ model Usuario {
   partesCadastradas          Parte[]                     @relation("ParteCriadaPor")
   eventosResponsavel         Evento[]                    @relation("EventoResponsavel")
   eventosCriados             Evento[]                    @relation("EventoCriadoPor")
+  publicacoesConferidas      Publicacao[]                @relation("PublicacaoConferidaPor")
   registrosAuditoria         Auditoria[]
   tokensDeRedefinicaoDeSenha TokenDeRedefinicaoDeSenha[]
 
@@ -521,10 +522,11 @@ model Caso {
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  andamentos Andamento[]
-  documentos Documento[]
-  parcelas   ParcelaDeHonorarios[]
-  eventos    Evento[]
+  andamentos  Andamento[]
+  documentos  Documento[]
+  parcelas    ParcelaDeHonorarios[]
+  eventos     Evento[]
+  publicacoes Publicacao[]
 
   @@index([clienteId])
   @@index([empresaVinculadaId])
@@ -584,6 +586,8 @@ model Evento {
 
   criadoPorId String?
   criadoPor   Usuario? @relation("EventoCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+
+  publicacoes Publicacao[]
 
   @@index([casoId])
   @@index([responsavelId])
@@ -660,6 +664,8 @@ model Andamento {
 
   autorId String
   autor   Usuario @relation("AndamentoAutor", fields: [autorId], references: [id])
+
+  publicacoes Publicacao[]
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
@@ -921,4 +927,113 @@ model Auditoria {
   @@index([usuarioId])
   @@index([criadoEm])
   @@map("auditoria")
+}
+
+// ---------------------------------------------------------------------------
+// Publicação do DJEN — esteira de acompanhamento (09/11/2026).
+//
+// Frente contratada à parte (escopo "Esteira de automação jurídica com IA",
+// aprovado pelo escritório em 05/11/2026): o Anexo II deixava de fora a
+// captura automática de movimentações e a listava como fase futura. Não é
+// reinterpretação da regra 12 — é a fase futura, contratada. Ver
+// `docs/publicacoes.md`.
+//
+// É interno à equipe: nada aqui aparece para o cliente. O que chega a ele é o
+// andamento que a equipe decidir lançar na conferência (`andamentoId`).
+// ---------------------------------------------------------------------------
+
+enum SituacaoDaPublicacao {
+  /// Na fila de conferência.
+  PENDENTE
+  /// A equipe conferiu (com ou sem tarefa e andamento).
+  CONFERIDA
+  /// Não interessa (ex.: processo que não é do escritório).
+  DESCARTADA
+}
+
+model Publicacao {
+  id String @id @default(cuid())
+
+  /// O `id` da comunicação no DJEN — é ele que impede importar duas vezes a
+  /// mesma publicação (a janela de consulta se sobrepõe de propósito). Texto,
+  /// e não Int, porque o número já passa de 776 milhões.
+  idDjen   String  @unique
+  hashDjen String?
+
+  /// Dia civil da disponibilização no diário, meio-dia UTC (regra 11).
+  disponibilizadaEm DateTime
+
+  siglaTribunal   String
+  orgao           String?
+  tipoComunicacao String?
+  tipoDocumento   String?
+  classe          String?
+  /// Só dígitos, como `Caso.numeroProcesso` — é por ele que se liga ao caso.
+  numeroProcesso  String
+  texto           String   @db.Text
+  link            String?
+  /// OABs do escritório em que a comunicação apareceu ("SP378532").
+  oabs            String[]
+
+  /// Nulo = "sem caso": o processo não está cadastrado no portal.
+  casoId String?
+  caso   Caso?   @relation(fields: [casoId], references: [id], onDelete: SetNull)
+
+  situacao SituacaoDaPublicacao @default(PENDENTE)
+
+  /// O que a IA devolveu (`lerAnalise`, `src/lib/analise-da-publicacao.ts`).
+  /// Nulo = ainda não analisada, ou IA desligada.
+  analise         Json?
+  analisadaEm     DateTime?
+  /// "anthropic/claude-…" — qual provedor e modelo produziu a análise.
+  analiseProvedor String?
+  /// Última falha da análise, para a tela explicar por que não há análise.
+  analiseErro     String?
+  /// Dia sugerido para a tarefa, calculado por `prazoSugerido` (não pela IA).
+  prazoSugerido   DateTime?
+
+  conferidaEm    DateTime?
+  conferidaPorId String?
+  conferidaPor   Usuario?  @relation("PublicacaoConferidaPor", fields: [conferidaPorId], references: [id], onDelete: SetNull)
+
+  /// A tarefa e o andamento criados na conferência, quando a equipe quis.
+  eventoId    String?
+  evento      Evento?    @relation(fields: [eventoId], references: [id], onDelete: SetNull)
+  andamentoId String?
+  andamento   Andamento? @relation(fields: [andamentoId], references: [id], onDelete: SetNull)
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([situacao])
+  @@index([casoId])
+  @@index([disponibilizadaEm])
+  @@index([numeroProcesso])
+  @@map("publicacao")
+}
+
+/// Cada rodada da consulta ao DJEN — para a tela dizer "última consulta em…"
+/// e, quando falhar, por quê.
+model ConsultaDePublicacoes {
+  id String @id @default(cuid())
+
+  iniciadaEm  DateTime  @default(now())
+  terminadaEm DateTime?
+
+  /// Janela consultada, em dias civis ("AAAA-MM-DD").
+  inicioDaJanela String
+  fimDaJanela    String
+
+  encontradas Int @default(0)
+  novas       Int @default(0)
+  analisadas  Int @default(0)
+
+  /// Falhas da rodada, uma por linha (DJEN, IA). Nulo = tudo certo.
+  erro String? @db.Text
+
+  /// Quem clicou "Consultar agora". Nulo = rotina automática.
+  disparadaPorId String?
+
+  @@index([iniciadaEm])
+  @@map("consulta_de_publicacoes")
 }
