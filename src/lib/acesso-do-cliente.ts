@@ -137,6 +137,13 @@ export function gerarCodigo(): string {
 export type Origem = {
   enderecoIp?: string | null
   agenteUsuario?: string | null
+  /**
+   * Só aceita o código pedido pela MESMA origem (`enderecoIp`). Usado pelo
+   * atendimento do WhatsApp, onde a origem é a conversa: sem isto, quem
+   * digitasse o código numa conversa abriria a consulta na conversa que o
+   * pediu. O `/consultar` não usa — lá o IP pode mudar entre pedir e digitar.
+   */
+  exigirMesmaOrigem?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -358,6 +365,7 @@ export async function conferirCodigo(
       usadoEm: null,
       invalidadoEm: null,
       expiraEm: { gt: agora },
+      ...(origem.exigirMesmaOrigem === true ? { enderecoIp: origem.enderecoIp ?? '' } : {}),
     },
     orderBy: { criadoEm: 'desc' },
     select: { id: true, codigoHash: true, tentativas: true },

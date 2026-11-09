@@ -85,6 +85,7 @@ export async function conferirCodigoDoAtendimento(
   const resultado = await conferirCodigo(documento, codigo, {
     enderecoIp: chaveDaOrigem(identificador),
     agenteUsuario: AGENTE_DO_ATENDIMENTO,
+    exigirMesmaOrigem: true,
   })
 
   if (resultado.situacao !== 'confere') return { situacao: 'nao_confere' }
