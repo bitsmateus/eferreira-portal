@@ -71,9 +71,10 @@ export const ESQUEMA_DA_ANALISE = {
       type: ['integer', 'null'],
       description: 'Prazo fixado ou legal para a providência, em dias. Nulo se não houver.',
     },
+    // anyOf, e não `type: ['string','null']` + `enum`: a Anthropic recusa
+    // esse formato (HTTP 400, "Enum value 'uteis' does not match declared type").
     contagem: {
-      type: ['string', 'null'],
-      enum: ['uteis', 'corridos', null],
+      anyOf: [{ type: 'string', enum: ['uteis', 'corridos'] }, { type: 'null' }],
       description: 'Prazos processuais do CPC e dos Juizados são em dias úteis.',
     },
     dataDaAudiencia: {

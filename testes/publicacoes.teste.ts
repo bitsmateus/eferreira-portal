@@ -8,7 +8,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { lerAnalise, prazoSugerido, type AnaliseDaPublicacao } from '@/lib/analise-da-publicacao'
+import {
+  ESQUEMA_DA_ANALISE,
+  lerAnalise,
+  prazoSugerido,
+  type AnaliseDaPublicacao,
+} from '@/lib/analise-da-publicacao'
 import { consultarPorOab, lerPagina, limparTexto, type ComunicacaoDoDjen } from '@/lib/djen'
 import {
   descreverRecusa,
@@ -207,6 +212,21 @@ describe('análise da IA', () => {
     expect(lerAnalise({ ...ANALISE, tipo: 'qualquer' })).toBeNull()
     expect(lerAnalise({ ...ANALISE, prazoEmDias: -3 })).toBeNull()
     expect(lerAnalise('texto solto')).toBeNull()
+  })
+
+  it('o esquema não usa o que a Anthropic recusa', () => {
+    // HTTP 400 "Invalid schema" de 09/11/2026: enum dentro de tipo misto
+    // (`type: ['string', 'null']`). Toda propriedade com enum tem tipo único.
+    const problemas: string[] = []
+    const visitar = (no: unknown, caminho: string): void => {
+      if (typeof no !== 'object' || no === null) return
+      const n = no as Record<string, unknown>
+      if (Array.isArray(n['enum']) && Array.isArray(n['type'])) problemas.push(caminho)
+      if (n['type'] === 'object' && n['additionalProperties'] !== false) problemas.push(`${caminho} (additionalProperties)`)
+      for (const [chave, valor] of Object.entries(n)) visitar(valor, `${caminho}.${chave}`)
+    }
+    visitar(ESQUEMA_DA_ANALISE, 'esquema')
+    expect(problemas).toEqual([])
   })
 
   it('lê o objeto da Anthropic e da OpenAI', () => {
