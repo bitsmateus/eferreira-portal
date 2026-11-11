@@ -320,7 +320,7 @@ export async function analisarPublicacao(publicacaoId: string): Promise<Resultad
   return { situacao: 'analisada' }
 }
 
-/** As pendentes sem análise, das mais antigas para as mais novas (a ordem da tela), até o teto. */
+/** As pendentes sem análise, das mais novas para as mais antigas (a ordem da tela), até o teto. */
 export async function analisarPendentes(
   consultaId?: string,
 ): Promise<{ analisadas: number; erros: string[] }> {
@@ -329,7 +329,7 @@ export async function analisarPendentes(
   const fila = await prisma.publicacao.findMany({
     where: { situacao: SituacaoDaPublicacao.PENDENTE, analisadaEm: null },
     select: { id: true },
-    orderBy: [{ disponibilizadaEm: 'asc' }, { idDjen: 'asc' }],
+    orderBy: [{ disponibilizadaEm: 'desc' }, { idDjen: 'desc' }],
     take: ANALISES_POR_RODADA,
   })
 
@@ -439,11 +439,12 @@ export async function listarPublicacoes(
   const linhas = await prisma.publicacao.findMany({
     where: condicaoDoFiltro(filtro),
     select: LINHA,
-    // Pendente: ordem cronológica, da mais antiga para a mais recente (pedido
-    // do escritório, 10/11/2026 — antes era pelo prazo sugerido, e as datas
-    // saíam misturadas). Conferida: a conferida por último primeiro.
+    // Pendente: ordem cronológica, da mais recente para a mais antiga (pedido
+    // do escritório, 11/11/2026 — no dia 10 tinham pedido o contrário, e antes
+    // era pelo prazo sugerido, com as datas misturadas). Conferida: a
+    // conferida por último primeiro.
     orderBy: pendente
-      ? [{ disponibilizadaEm: 'asc' }, { idDjen: 'asc' }]
+      ? [{ disponibilizadaEm: 'desc' }, { idDjen: 'desc' }]
       : [{ conferidaEm: { sort: 'desc', nulls: 'last' } }, { disponibilizadaEm: 'desc' }],
     take: LIMITE_DA_FILA,
   })
