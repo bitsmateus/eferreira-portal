@@ -54,6 +54,7 @@ export function camposDeCasoDoCorpo(corpo: Record<string, unknown>): CamposDeCas
     prazoDePagamentoDaEconomia: '',
     tipoDeObjeto: '',
     descricaoDoObjeto: '',
+    area: '',
     honorariosPersonalizados: '',
     personalizadoServicos: '',
     personalizadoValorOuPercentual: '',

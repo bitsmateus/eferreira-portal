@@ -18,6 +18,7 @@ import {
   SituacaoCaso,
   SituacaoUsuario,
   TipoDeObjeto,
+  AreaDoCaso,
   TipoPessoa,
 } from '@prisma/client'
 import { z } from 'zod'
@@ -246,6 +247,8 @@ export const esquemaDeCaso = z.object({
   prazoDePagamentoDaEconomia: prazoEmDias,
   tipoDeObjeto: escolhaOpcional(TipoDeObjeto, 'Tipo de objeto inválido.'),
   descricaoDoObjeto: textoLongo,
+  // Área do caso: escolhe o agente da minuta (16/11/2026). Opcional.
+  area: escolhaOpcional(AreaDoCaso, 'Área inválida. Escolha uma da lista.'),
   // Caixinha do formulário: marcada chega como "on", desmarcada nem chega.
   honorariosPersonalizados: z.string().transform((valor) => valor === 'on'),
   personalizadoServicos: textoLongo,

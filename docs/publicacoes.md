@@ -61,11 +61,50 @@ Sem agendador, o botão **Consultar agora** da tela faz a mesma rodada.
 O DJEN limita a **20 requisições por minuto**. Por isso a consulta é por OAB
 (uma ou duas páginas por advogado), e não processo a processo.
 
+## Minuta por área (16/11/2026)
+
+O escritório mandou oito agentes, um por área (pasta "Agentes" do Dropbox):
+Trabalhista, Consumidor, Saúde/PcD, Bancário, Trânsito, Execuções, Cível e
+empresarial, Família. Cada um virou uma pasta em `src/agentes/`:
+
+- `instrucoes.txt` — o agente, sem mudar uma palavra (regra 10). Os oito têm
+  o mesmo núcleo; a área começa em "ESCOPO ESPECIALIZADO".
+- `modelo.txt` — a petição de exemplo da área, **sem dados pessoais**: nomes,
+  CPF, RG, endereços, e-mails, CTPS, Renavam, números de contrato e o médico
+  viraram marcadores entre colchetes. Decisão do escritório: "faça você
+  mesmo". O original com os dados reais não entra no repositório. Há teste
+  (`testes/minuta.teste.ts`) que recusa CPF, RG, e-mail e CNPJ nesses arquivos.
+
+Como funciona:
+
+1. O caso ganhou o campo **Área** (opcional, formulário do caso).
+2. A **análise** da publicação leva junto a parte especializada do agente da
+   área do caso, quando há área.
+3. Na fila, cada publicação tem **Gerar minuta**: escolhe-se a área (vem a do
+   caso) e a IA redige a peça com o agente inteiro, a petição de referência e
+   **pesquisa de jurisprudência na web** (busca e leitura de páginas, só na
+   Anthropic). Leva minutos; a tela se atualiza sozinha. Só gera quando alguém
+   clica — decisão do escritório, por custo.
+4. A minuta aparece em roxo, com a **nota de revisão** separada e a lista das
+   **fontes que a pesquisa encontrou**. É rascunho: o portal não protocola nem
+   manda nada a ninguém.
+
+Vai à IA: o agente, a petição sem dados pessoais, o inteiro teor (público, do
+DJEN) e do caso só assunto, número, vara, parte contrária e o nome do cliente.
+Nada de CPF, RG, endereço ou contato.
+
+Custo: cada minuta é uma chamada longa mais até 8 buscas e 6 leituras de
+página. Com a OpenAI não há pesquisa: a nota sai com a pesquisa pendente.
+
+Conferir de verdade, sem gravar nada: `npm run ia:teste -- minuta` (gasta uma
+minuta). A busca na web precisa estar permitida nas configurações da organização no
+Console da Anthropic; se não estiver, a minuta falha e a tela mostra o motivo
+que a Anthropic deu.
+
 ## O que ainda não está aqui
 
 Etapas do escopo que dependem de material do escritório:
 
-- **Minuta da petição intermediária e da inicial** — precisa dos modelos de
-  peça do escritório (regra 10: não se inventa texto jurídico).
-- **Salvar no Dropbox** — precisa do acesso e da estrutura de pastas atual.
-- **Chave da IA** — conta de desenvolvedor do escritório com cartão.
+- **Salvar no Dropbox** — estrutura informada (PASTA DO ESCRITÓRIO / TIPO DO
+  CLIENTE / EMPRESA / CLIENTE / CASO); falta o acesso.
+- **Minuta em Word com o timbre** — hoje a minuta é texto para copiar.

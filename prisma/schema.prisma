@@ -54,6 +54,21 @@ enum SituacaoCaso {
 /// Qual das cinco variações da cláusula de OBJETO do contrato vale para o caso —
 /// "Objeto do contrato.docx", enviado pelo escritório em 21/09/2026. O texto de
 /// cada uma vive em `src/modelos/contrato-objeto-*.html`.
+/// Área do caso — uma por agente de IA do escritório (pasta "Agentes" do
+/// Dropbox, enviada em 16/11/2026). Decide quais instruções e qual petição de
+/// referência a minuta usa (`src/agentes/<área>/`). Independe do tipo de
+/// objeto do contrato, que é escolha de cláusula, não de matéria.
+enum AreaDoCaso {
+  TRABALHISTA
+  CONSUMIDOR
+  SAUDE
+  BANCARIO
+  TRANSITO
+  EXECUCOES
+  CIVEL_EMPRESARIAL
+  FAMILIA
+}
+
 enum TipoDeObjeto {
   CONSUMIDOR_PLANO_DE_SAUDE
   TRABALHISTA
@@ -504,6 +519,10 @@ model Caso {
   /// Nulos em caso antigo: o contrato só sai com os dois preenchidos.
   tipoDeObjeto      TipoDeObjeto?
   descricaoDoObjeto String?       @db.Text
+
+  /// Área do caso, que escolhe o agente da minuta (16/11/2026). Nulo = ainda
+  /// não classificado: a minuta pergunta a área na hora de gerar.
+  area AreaDoCaso?
 
   /// Honorários personalizados (bloco 4). Quando verdadeiro, os oito campos
   /// abaixo preenchem os marcadores da cláusula. Texto livre porque o
@@ -1001,6 +1020,24 @@ model Publicacao {
   evento      Evento?    @relation(fields: [eventoId], references: [id], onDelete: SetNull)
   andamentoId String?
   andamento   Andamento? @relation(fields: [andamentoId], references: [id], onDelete: SetNull)
+
+  /// Minuta da peça, gerada pela IA com o agente da área (16/11/2026) — só
+  /// quando alguém clica em "Gerar minuta", nunca sozinha. É rascunho para a
+  /// equipe revisar: nada disso vai ao cliente nem ao tribunal pelo portal.
+  /// Ver `src/lib/minuta.ts`.
+  minuta            String?     @db.Text
+  /// A nota de revisão que o agente entrega separada da peça.
+  minutaNota        String?     @db.Text
+  /// Fontes que a pesquisa na web trouxe: `[{ url, titulo }]`.
+  minutaFontes      Json?
+  minutaArea        AreaDoCaso?
+  minutaBuscas      Int?
+  minutaProvedor    String?
+  minutaGeradaEm    DateTime?
+  /// Preenchido enquanto a minuta está sendo gerada; volta a nulo ao terminar.
+  minutaPedidaEm    DateTime?
+  minutaPedidaPorId String?
+  minutaErro        String?
 
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt

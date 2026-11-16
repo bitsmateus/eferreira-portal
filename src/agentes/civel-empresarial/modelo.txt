@@ -1,0 +1,160 @@
+EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE SUZANO – ESTADO DE SÃO PAULO
+
+[NOME DA AUTORA], [nacionalidade], [estado civil], [profissão], portadora do RG número: [RG], inscrita no CPF sob o número: [CPF], Residente e domiciliada à [ENDEREÇO], [CIDADE] – [UF], CEP: [CEP], por seu advogado que esta subscreve (procuração anexa), vem, respeitosamente, à presença de Vossa Excelência, propor a presente
+
+AÇÃO DECLARATÓRIA DE NULIDADE DE CLÁUSULA CONTRATUAL c/c CONSIGNAÇÃO EM PAGAMENTO E PEDIDO DE TUTELA DE URGÊNCIA
+
+em face de [RAZÃO SOCIAL DA RÉ], pessoa jurídica de direito privado, inscrita no CNPJ/MF sob o nº [CNPJ], com sede na [ENDEREÇO], [CIDADE]/[UF], CEP [CEP], pelos fatos e fundamentos jurídicos a seguir expostos.
+
+I - DOS FATOS
+
+Autora firmou com a Ré, em 03 de novembro de 2022, o "Instrumento Particular de Contrato de Locação Não Residencial e Outras Avenças", tendo como objeto o uso do espaço comercial (LUC) nº [NÚMEROS], no empreendimento [NOME DO EMPREENDIMENTO], pelo prazo de 60 (sessenta) meses.
+
+Por razões de estratégia comercial, a Autora optou por rescindir antecipadamente o contrato, notificando a Ré de sua intenção em 30 de novembro de 2025. Em resposta, a Ré apresentou um cálculo para o distrato que inclui o valor exorbitante de R$ 160.309,80 a título de multa rescisória, com base na Cláusula 18ª do contrato.
+
+Paralelamente, no último mês de locação, a Autora informou à Ré, em 15 de dezembro de 2025, que o imóvel estava desocupado e pronto para a vistoria e entrega das chaves. Contudo, a Ré, em clara manobra para onerar indevidamente a Autora, se manteve inerte, não comparecendo para a vistoria nem se manifestando para receber as chaves. Diante da recusa tácita, a Autora enviou fotos do local em 18 de dezembro de 2025 e, sem qualquer retorno, viu-se obrigada a entregar as chaves pessoalmente na administração do empreendimento em 05 de janeiro de 2026.
+
+Apesar de a desocupação ter ocorrido em meados de dezembro e a demora na entrega das chaves ter sido causada por culpa exclusiva da Ré, esta emitiu boleto cobrando o valor integral do aluguel referente ao último mês. A Autora, pautada pela boa-fé, realizou o pagamento para evitar maiores prejuízos, mas entende que a cobrança é indevida.
+
+É de suma importância destacar a exaustiva tentativa da Autora de resolver a questão de forma amigável. Foram trocados inúmeros e-mails e realizadas diversas reuniões na busca por um acordo justo, esforços estes que culminaram no envio de uma Notificação Extrajudicial, por meio do competente Cartório de Títulos e Documentos (documento anexo). Nesta notificação, a Autora detalhou, de forma pormenorizada, todas as ilegalidades e abusividades contidas no cálculo rescisório apresentado pela Ré.
+
+Contudo, mesmo diante de todo o esforço conciliatório, a Ré manteve-se irredutível, ignorou os argumentos legais e insistiu na cobrança do valor exorbitante. A intransigência da Ré, portanto, não deixou outra alternativa à Autora senão a propositura da presente demanda, demonstrando que a via judicial foi, de fato, o último recurso.
+
+II - DO DIREITO
+
+A. DA NULIDADE DA CLÁUSULA PENAL E DA NECESSÁRIA REDUÇÃO EQUITATIVA
+
+A Cláusula 18ª do contrato de locação, que estabelece uma multa rescisória fixa de 10 (dez) aluguéis, a ser paga "por inteiro, não importando o prazo de ocupação", é duplamente ilegal.
+
+Primeiro, a cláusula é nula de pleno direito por violar a norma de ordem pública do artigo 4º da Lei nº 8.245/91, que exige a proporcionalidade da multa ao tempo restante do contrato. Segundo, o valor de 10 aluguéis é manifestamente excessivo, o que impõe sua redução equitativa pelo Judiciário, conforme o poder-dever conferido pelo artigo 413 do Código Civil.
+
+A jurisprudência do Egrégio Tribunal de Justiça de São Paulo é pacífica em reconhecer a abusividade de tal patamar, determinando sua redução para 3 (três) aluguéis como base de cálculo.
+
+TJ-SP — Apelação Cível 1003615-63.2018.8.26.0482 — Publicado em 14/06/2022 APELAÇÃO CÍVEL. Contrato de locação comercial. Shopping Center. (...) Cláusula penal estabelecendo multa equivalente a 10 (dez) alugueis mínimos (...). Abusividade. Possibilidade de redução. Valor reduzido para o equivalente a 03 (três) alugueis, correspondentes a R$ 19.500,00, nos termos do art. 413, do CC e art. 4º da Lei nº 8.245/91 (...).
+
+TJ-SP — Apelação Cível 1003735-70.2019.8.26.0224 — Publicado em 06/06/2020 (...) Multa contratual pela rescisão antecipada do contrato. Previsão no equivalente a 10 (dez) aluguéis que é excessivo e desproporcional e deve ser reduzido, nos termos do art. 413 do CC. Multa reduzida para o equivalente três aluguéis. Precedentes deste Tribunal em hipóteses específicas de locação em shopping center.
+
+Dessa forma, a cláusula deve ser declarada nula e a multa reduzida a um patamar justo.
+
+B. DA BASE DE CÁLCULO ILEGAL – ALUGUEL MÍNIMO VS. CUSTO TOTAL DE OCUPAÇÃO (CTO)
+
+Além da flagrante desproporcionalidade no valor da multa, a Ré comete outra grave ilegalidade ao utilizar como base de cálculo o chamado "Custo Total de Ocupação (CTO)", no valor de R$ 16.030,98, em vez do valor do aluguel mínimo mensal, que é de R$ 5.268,42.
+
+A cláusula penal compensatória, por sua própria natureza, destina-se a indenizar o locador pela perda da remuneração principal decorrente da quebra do contrato, ou seja, a perda do aluguel. O aluguel é a contraprestação direta pelo uso e gozo do imóvel.
+
+O CTO, por outro lado, é um modelo de cobrança que engloba, em uma única parcela, não apenas o aluguel, mas também uma série de encargos acessórios que não se confundem com a remuneração do locador. Taxas de condomínio, fundo de promoção e propaganda, e outras despesas administrativas são obrigações acessórias, destinadas a custear a operação do empreendimento, e não o aluguel em si.
+Incluir tais encargos na base de cálculo da multa rescisória é manifestamente ilegal por duas razões principais:
+
+Ampliação Indevida da Penalidade: A multa acaba por incidir sobre valores que não correspondem à obrigação principal, onerando o locatário de forma desproporcional e gerando um enriquecimento sem causa para a locadora.
+Inexistência de Prejuízo Futuro: Com a desocupação do imóvel, a locadora deixa de ter que arcar com a maior parte desses encargos, que seriam repassados a um novo inquilino. O prejuízo real e direto da locadora é a perda do aluguel puro, e é sobre este valor que a multa deve incidir.
+
+O Egrégio Tribunal de Justiça de São Paulo, ao analisar a composição dos débitos em contratos de locação, tem o cuidado de diferenciar o que é aluguel e o que são encargos acessórios, determinando que estes últimos não são devidos após a efetiva desocupação do imóvel. Por analogia, se tais encargos não são devidos no curso normal após a desocupação, também não podem servir de base para o cálculo de uma multa que visa, justamente, compensar perdas futuras.
+
+Nesse sentido, o julgado abaixo, ao afastar a cobrança de condomínio após a entrega das chaves, reforça a tese de que os encargos acessórios não se confundem com o aluguel e não devem perpetuar os seus efeitos sobre a multa rescisória:
+
+TJ-SP — Apelação Cível 1004921-90.2021.8.26.0602 — Publicado em 25/01/2024 (...) Consta do instrumento contratual que o valor relativo ao condomínio é cobrado no mês correspondente. Como a entrega das chaves se deu em 29/05/2019, não é exigível o valor do condomínio com vencimento em 05/06/2019 (...). Multa rescisória de R$ 136.018,40 que não é exigível, vez que fixada de forma desrazoável e desproporcional.
+
+Portanto, a tentativa da Ré de inflar a base de cálculo da multa utilizando o CTO é uma prática abusiva que deve ser rechaçada por este Juízo, determinando-se que o cálculo seja feito exclusivamente sobre o valor do aluguel mínimo mensal, que reflete a real obrigação principal do contrato.
+
+C. DO CÁLCULO CORRETO DA MULTA PROPORCIONAL
+
+Aplicando-se a lei e o entendimento jurisprudencial, o cálculo correto da multa é:
+
+Base de Cálculo (Aluguel Mínimo): R$ 5.268,42
+
+Patamar Razoável (3 aluguéis): 3 x R$ 5.268,42 = R$ 15.805,26
+
+Proporcionalidade (23 meses restantes / 60 meses totais): (R$ 15.805,26 / 60) x 23
+
+Valor Devido da Multa: R$ 6.058,68
+
+Este é o valor que a Autora entende como devido e que pretende consignar em juízo.
+
+D. DA MORA EXCLUSIVA DO LOCADOR E DA COBRANÇA INDEVIDA DO ALUGUEL
+
+De forma independente, a Ré praticou outra ilegalidade ao se recusar a receber as chaves do imóvel, que estava desocupado e à sua disposição desde 15/12/2025. Essa conduta configura mora do credor (mora accipiendi).
+
+Ao se recusar a receber a prestação devida (a devolução do imóvel), o credor não pode exigir do devedor os encargos de um atraso que ele mesmo provocou. A jurisprudência é clara ao afirmar que a recusa injustificada do locador em receber as chaves cessa a obrigação do locatário de pagar os aluguéis.
+
+TJ-SP — 1000141-64.2015.8.26.0458 — Publicado em 26/06/2018 Inexistindo causa justa para a não recuperação da posse do imóvel locado por parte do senhorio, é de se reputá-lo em mora, a partir da data da devolução do imóvel, realizado mediante notificação regular ao locador, reconhecendo-se que a obrigação contratual da locatária cessa a partir de então.
+
+Portanto, a obrigação da Autora de pagar o aluguel cessou em 15/12/2025. A cobrança do mês integral foi indevida, e o valor pago a maior deve ser restituído.
+
+E. DA CONSIGNAÇÃO EM PAGAMENTO COMO EXPRESSÃO DA BOA-FÉ E MEIO DE EXTINÇÃO DA OBRIGAÇÃO
+
+O instituto da consignação em pagamento, previsto no artigo 335 do Código Civil, é a ferramenta jurídica posta à disposição do devedor de boa-fé que se vê impedido de cumprir sua obrigação por um ato injusto do credor ou por uma controvérsia fundada sobre o objeto do pagamento.
+
+No caso em tela, a aplicação do instituto é duplamente justificada:
+
+Pela recusa do credor (Art. 335, I, CC): A Autora tentou, por todos os meios, realizar o pagamento do valor que entende justo e legal. A Ré, ao insistir na cobrança de um montante manifestamente ilegal e se recusar a receber a quantia correta, caracteriza sua mora como credora (mora accipiendi).
+
+Pelo litígio sobre o objeto da obrigação (Art. 335, IV, CC): Há uma fundada e documentada controvérsia sobre o valor real da multa rescisória. Enquanto a Ré exige um valor exorbitante, a Autora, amparada pela lei e pela jurisprudência, apresenta um cálculo justo e proporcional.
+
+Dessa forma, diante da intransigência da Ré e da existência de uma disputa legítima sobre o quantum debeatur, não resta outra alternativa à Autora senão valer-se da presente ação de consignação, nos termos do artigo 539 e seguintes do Código de Processo Civil.
+
+O depósito do valor incontroverso de R$ 6.058,68 não é apenas um pedido, mas a materialização da boa-fé objetiva da Autora, que busca ativamente se desonerar da obrigação, afastando para si os efeitos da mora (mora debitoris) que a Ré tenta lhe imputar indevidamente. O objetivo é claro: obter a declaração de extinção da obrigação, com força de pagamento, e encerrar a relação contratual de forma justa e definitiva.
+
+III. DA NECESSÁRIA CONCESSÃO DA TUTELA DE URGÊNCIA
+
+Nos termos do artigo 300 do Código de Processo Civil, a tutela de urgência será concedida quando houver elementos que evidenciem a probabilidade do direito e o perigo de dano ou o risco ao resultado útil do processo. No presente caso, ambos os requisitos estão robusta e inequivocamente preenchidos.
+
+A. Da Probabilidade do Direito (Fumus Boni Iuris)
+
+A probabilidade do direito da Autora é cristalina e se assenta em três pilares incontroversos, já detalhados nesta peça e comprovados pelos documentos anexos:
+
+Violação Direta à Lei do Inquilinato: A Cláusula 18ª, ao fixar uma multa invariável, afronta diretamente a norma de ordem pública do art. 4º da Lei nº 8.245/91, que impõe a proporcionalidade da multa ao tempo restante do contrato.
+
+Abusividade e Excesso Evidente: A fixação da multa em 10 (dez) aluguéis é manifestamente excessiva, contrariando o art. 413 do Código Civil e a jurisprudência pacífica do TJSP, que reiteradamente reduz tal patamar.
+
+Confissão da Ré em Documento Próprio: A ilegalidade da base de cálculo (CTO) é confessada pela própria Ré, que em seus boletos de cobrança discrimina o que é "Aluguel Mínimo" e o que são "Encargos", provando que ela mesma não trata as verbas como uma coisa só.
+
+A robustez das provas documentais e a clareza da fundamentação jurídica tornam o direito da Autora não apenas provável, mas praticamente certo.
+
+B. Do Perigo de Dano (Periculum in Mora)
+
+O perigo de dano é iminente e de gravíssimas consequências. A Ré, na posse de um título com valor que sabe ser controverso e abusivo, pode, a qualquer momento, protestá-lo e inscrever o nome da Autora, uma pessoa jurídica, nos cadastros de inadimplentes (SPC/SERASA).
+
+Tal ato causaria um abalo de crédito imediato e de difícil reparação, com potencial para:
+
+Bloquear o acesso a linhas de crédito e financiamentos essenciais para a atividade empresarial;
+
+Macular a reputação comercial da Autora perante fornecedores, parceiros e clientes;
+
+Impedir a participação em licitações e outros certames que exijam certidões negativas de débito.
+
+A ameaça de negativação, neste contexto, não é um exercício regular de direito, mas sim um claro ato de coação para forçar a Autora a pagar uma quantia que é objeto de fundada disputa judicial. Permitir que tal ato se concretize antes da decisão de mérito seria impor à Autora um prejuízo desproporcional e, em grande parte, irreversível.
+Ademais, a medida é plenamente reversível, pois, caso a ação seja julgada improcedente ao final, a tutela pode ser revogada, permitindo à Ré buscar a cobrança integral do seu suposto crédito, acrescido dos encargos legais. O mesmo não se pode dizer do dano à imagem e ao crédito da Autora, que, uma vez maculados, são de complexa e demorada reparação.
+
+Diante do exposto, a concessão da tutela de urgência para impedir a negativação do nome da Autora é medida de rigor, justiça e prudência.
+
+IV. DOS PEDIDOS
+
+Ante o exposto, requer a Vossa Excelência:
+
+a) A concessão da tutela de urgência, inaudita altera pars, para determinar que a Ré se abstenha de negativar o nome da Autora nos órgãos de proteção ao crédito, sob pena de multa diária não inferior a R$ 1.000,00;
+
+b) A autorização para o depósito judicial do valor incontroverso de R$ 6.058,68, referente à multa rescisória;
+
+c) A citação da Ré para, querendo, apresentar contestação no prazo legal, sob pena de revelia;
+
+d) Ao final, a total procedência da ação para: 
+
+d.1) Declarar a nulidade da Cláusula 18ª do contrato, por sua manifesta abusividade, e reconhecer como correta a base de cálculo da multa o valor do aluguel mínimo; 
+
+d.2) Declarar extinta a obrigação referente à multa rescisória, mediante a confirmação do depósito do valor de R$ 6.058,68; 
+
+d.3) Condenar a Ré a restituir à Autora o valor pago a maior a título de aluguel no último mês de ocupação, a ser apurado em liquidação de sentença, com juros e correção monetária;
+
+e) A condenação da Ré ao pagamento das custas processuais e honorários advocatícios de sucumbência, a serem fixados em 20% sobre o valor da condenação.
+
+Protesta provar o alegado por todos os meios de prova em direito admitidos, em especial a documental já acostada aos autos.
+
+Dá-se à causa o valor de R$ 162.525,20 (cento e sessenta e dois mil, quinhentos e vinte e cinco reais e vinte centavos), para todos os efeitos legais.
+
+Nestes Termos, 
+Pede deferimento.
+
+São Paulo, 08 de janeiro de 2026
+
+[ADVOGADO]
+OAB/SP [NÚMERO]

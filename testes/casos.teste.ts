@@ -67,6 +67,19 @@ describe('objeto e honorários do contrato (21/09/2026)', () => {
     expect(invalido.erros['tipoDeObjeto']).toBe('Tipo de objeto inválido.')
   })
 
+  it('área do caso é opcional e só aceita as oito do escritório (16/11/2026)', () => {
+    const sem = validarCaso(campos())
+    expect(sem.ok && sem.dados.area).toBeNull()
+
+    const com = validarCaso(campos({ area: 'BANCARIO' }))
+    expect(com.ok && com.dados.area).toBe('BANCARIO')
+
+    const invalida = validarCaso(campos({ area: 'PENAL' }))
+    expect(invalida.ok).toBe(false)
+    if (invalida.ok) return
+    expect(invalida.erros['area']).toBe('Área inválida. Escolha uma da lista.')
+  })
+
   it('guarda a descrição do objeto sem os espaços das pontas', () => {
     const resultado = validarCaso(campos({ descricaoDoObjeto: '  Plano cancelado.  ' }))
 

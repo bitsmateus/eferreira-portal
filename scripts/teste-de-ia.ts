@@ -16,7 +16,11 @@ import {
   lerAnalise,
   mensagemDoUsuario,
 } from '../src/lib/analise-da-publicacao'
-import { descricaoDoProvedor, iaConfigurada, pedirObjeto } from '../src/lib/ia'
+import { AreaDoCaso } from '@prisma/client'
+
+import { lerAgente } from '../src/lib/agentes'
+import { descricaoDoProvedor, iaConfigurada, pedirObjeto, pedirTexto } from '../src/lib/ia'
+import { montarPedidoDaMinuta, separarMinutaENota } from '../src/lib/minuta'
 
 const DESPACHO_INVENTADO = [
   'Processo de teste. Vistos.',
@@ -24,12 +28,50 @@ const DESPACHO_INVENTADO = [
   'Designo audiência de conciliação para o dia 10/12/2026, às 14h00. Intimem-se.',
 ].join(' ')
 
+/**
+ * `npm run ia:teste -- minuta`: a minuta de verdade, com pesquisa na web, pelo
+ * agente trabalhista e o mesmo despacho inventado. Custa mais (buscas e texto
+ * longo) e leva alguns minutos.
+ */
+async function provaDaMinuta(): Promise<number> {
+  const agente = await lerAgente(AreaDoCaso.TRABALHISTA)
+  const { sistema, usuario } = montarPedidoDaMinuta(agente, {
+    area: AreaDoCaso.TRABALHISTA,
+    hoje: new Date().toISOString().slice(0, 10),
+    pesquisaNaWeb: true,
+    publicacao: {
+      siglaTribunal: 'TRT2',
+      orgao: 'Vara de teste',
+      classe: 'Ação Trabalhista - Rito Ordinário',
+      tipoComunicacao: 'Intimação',
+      tipoDocumento: 'Despacho',
+      numeroProcesso: '00000000020265020000',
+      disponibilizacao: '2026-11-05',
+      texto: DESPACHO_INVENTADO,
+    },
+    caso: null,
+    analise: null,
+  })
+  const inicio = Date.now()
+  const resposta = await pedirTexto({ sistema, usuario, pesquisaNaWeb: true })
+  if (!resposta.ok) {
+    console.log(`FALHOU: ${resposta.erro}`)
+    return 1
+  }
+  const { minuta, nota } = separarMinutaENota(resposta.texto)
+  console.log(`OK em ${Math.round((Date.now() - inicio) / 1000)}s — ${resposta.buscas} busca(s), ${resposta.fontes.length} fonte(s).`)
+  console.log(`Minuta: ${minuta.length} caracteres. Nota: ${nota === null ? 'AUSENTE' : `${nota.length} caracteres`}.`)
+  console.log(minuta.slice(0, 600))
+  return 0
+}
+
 async function principal(): Promise<number> {
   if (!iaConfigurada()) {
     console.log('IA não configurada nesta máquina: falta a chave do provedor no .env.')
     return 1
   }
   console.log(`Provedor: ${descricaoDoProvedor() ?? '?'}`)
+  if (process.argv.includes('minuta')) return provaDaMinuta()
 
   const resposta = await pedirObjeto({
     sistema: INSTRUCOES_DO_SISTEMA,

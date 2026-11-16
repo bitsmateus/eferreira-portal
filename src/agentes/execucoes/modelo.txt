@@ -1,0 +1,91 @@
+AO JUÍZO DO JUIZADO ESPECIAL CÍVEL DA COMARCA DE SÃO PAULO/SP
+
+[NOME DO EXEQUENTE], [nacionalidade], [estado civil], [profissão], portador do RG nº [RG], inscrito no CPF sob nº [CPF], residente e domiciliado na [ENDEREÇO], [CIDADE]/[UF], CEP [CEP], e-mail [E-MAIL], por seu advogado [ADVOGADO], inscrito na OAB/SP sob nº [NÚMERO], com endereço profissional na [ENDEREÇO DO ESCRITÓRIO], e-mail [E-MAIL DO ESCRITÓRIO], conforme procuração anexa, vem, com fundamento nos arts. 3º, § 1º, II, e 53 da Lei nº 9.099/1995 e nos arts. 783, 784, III e § 4º, 786, 798 e 829 do Código de Processo Civil, propor a presente
+
+EXECUÇÃO DE TÍTULO EXECUTIVO EXTRAJUDICIAL
+
+em face de [RAZÃO SOCIAL DA EXECUTADA], pessoa jurídica de direito privado, inscrita no CNPJ sob nº [CNPJ], com sede estatutária na [ENDEREÇO], [CIDADE]/[UF], CEP [CEP], pelos fundamentos a seguir expostos.
+
+I. DA COMPETÊNCIA E DO CABIMENTO
+
+O exequente é consumidor dos serviços financeiros da executada, utilizados como destinatário final, nos termos dos arts. 2º e 3º, § 2º, do Código de Defesa do Consumidor. O acordo de pagamento formaliza o crédito decorrente dessa relação e expressamente preserva as obrigações originárias, sem novação. Por isso, o exequente opta pelo foro de seu domicílio em São Paulo/SP, indicado no próprio título, com fundamento nos arts. 6º, VIII, e 101, I, do CDC.
+
+A execução do acordo é admitida pelos arts. 3º, § 1º, II, e 53 da Lei nº 9.099/1995. O exequente é pessoa física capaz e titular do crédito, atendendo ao art. 8º, § 1º, I. O débito de R$ 63.959,26, apurado para 14/10/2026, é inferior ao teto de R$ 64.840,00, correspondente a quarenta salários mínimos de R$ 1.621,00, conforme o Decreto nº 12.797/2025.
+
+II. DO ACORDO DESCUMPRIDO E DO SALDO DEVEDOR
+
+A executada reconheceu expressamente sua dívida perante o exequente no Termo de Acordo de Pagamento, firmado eletronicamente em 28/08/2026, referente à CCB nº [NÚMERO DA CCB]. O instrumento discrimina o principal de R$ 58.129,63 e a mora anterior de R$ 1.433,86, totalizando R$ 59.563,49.
+
+O pagamento foi ajustado em dez parcelas mensais: a primeira de R$ 7.246,85 e as nove seguintes de R$ 5.812,96, entre setembro de 2026 e junho de 2027. A mora anterior foi incorporada apenas à primeira parcela, sem incidência de juros remuneratórios sobre o parcelamento.
+
+Em 31/08/2026, a executada transferiu ao exequente R$ 1.978,86 por Pix. O comprovante identifica a própria executada como pagadora e o exequente como destinatário, com documentos em anexo. Esse recebimento é integralmente reconhecido e abatido da cobrança, restando R$ 5.267,99 da primeira parcela e R$ 57.584,63 de saldo nominal global.
+O pagamento parcial não extinguiu a obrigação. A cláusula de quitação estabelece que cada pagamento libera exclusivamente o valor efetivamente recebido e reserva a quitação plena à satisfação integral do acordo. A mesma regra impede que o recebimento de quantia inferior à devida seja interpretado como renúncia ao restante da dívida.
+
+III. DA FORÇA EXECUTIVA E DA EXIGIBILIDADE DO SALDO
+
+O termo contém a identificação das partes, o reconhecimento da dívida, os valores, os vencimentos e as consequências do inadimplemento. O relatório Clicksign que o integra, referente ao documento nº [NÚMERO DO DOCUMENTO], registra as assinaturas de [NOME DO EXEQUENTE] e de [NOME DO SIGNATÁRIO], signatário pela executada, com autenticação, registros temporais e hash do instrumento.
+
+O instrumento possui força executiva nos termos do art. 784, III e § 4º, do CPC. A assinatura eletrônica e a integridade conferida pelo provedor dispensam a assinatura de testemunhas. A pretensão executiva tem por objeto o saldo do acordo descumprido, com os encargos pactuados e o abatimento do pagamento recebido.
+
+Quanto ao vencimento, o acordo indica 30/09/2026 para a primeira parcela e, na disciplina geral, admite pagamento até o sétimo dia útil subsequente ao vencimento mensal. Para afastar cobrança prematura, adota-se o prazo mais favorável à executada: pagamento até 09/10/2026 e mora a partir de 10/10/2026. Mesmo considerado esse prazo adicional, o saldo da primeira parcela permaneceu inadimplido.
+
+A consequência foi expressamente convencionada: o inadimplemento de qualquer parcela implica o vencimento antecipado das vincendas, independentemente de aviso, interpelação ou notificação. Assim, desde 10/10/2026, tornou-se exigível todo o saldo remanescente, acrescido dos encargos de mora previstos no instrumento.
+
+A obrigação é certa pelo reconhecimento expresso, líquida pelos valores e critérios definidos e exigível pelo inadimplemento que acionou o vencimento antecipado. A necessidade de subtrair o pagamento recebido e calcular os encargos não afasta a liquidez, conforme o art. 786, parágrafo único, do CPC.
+
+IV. DO DEMONSTRATIVO DO DÉBITO
+
+A memória de cálculo anexa apura o saldo para 14/10/2026 (doc. 5), com abatimento único do pagamento de R$ 1.978,86 e discriminação dos encargos, em atendimento ao art. 798, I, b, e parágrafo único, do CPC:
+
+Composição
+Valor
+Total pactuado, incluindo mora anterior
+R$ 59.563,49
+Pagamento de 31/08/2026
+(R$ 1.978,86)
+Saldo nominal remanescente
+R$ 57.584,63
+Correção pelo índice de setembro de 2026 de 0,82%
+R$ 472,19
+Saldo corrigido
+R$ 58.056,82
+Multa contratual de 10%
+R$ 5.805,68
+Juros simples de 1% ao mês por 5 dias
+R$ 96,76
+TOTAL EM 14/10/2026
+R$ 63.959,26
+
+O demonstrativo aplica o fator integral de 1,0082, correspondente ao IPCA de setembro de 2026, uma única vez sobre o saldo nominal. A multa é calculada em 10% sobre o saldo corrigido. Os juros são simples, à razão de 1% ao mês, com divisor de trinta dias e período de 10 a 14/10/2026, totalizando cinco dias, sem incidência sobre a multa e sem capitalização.
+
+A mora anterior já integra o montante pactuado e não é reaplicada. Não foram acrescentadas despesas de cobrança sem comprovação. Qualquer pagamento superveniente deverá ser abatido, preservando-se a cobrança exclusivamente do saldo efetivamente devido.
+
+V. DOS PEDIDOS
+
+Diante do exposto, requer:
+
+a) o reconhecimento da competência do foro do domicílio do exequente consumidor e o recebimento da execução pelo procedimento do art. 53 da Lei nº 9.099/1995, para satisfação do crédito de R$ 63.959,26, apurado em 14/10/2026;
+
+b) a citação da [RAZÃO SOCIAL DA EXECUTADA], CNPJ nº [CNPJ], na [ENDEREÇO], [CIDADE]/[UF], CEP [CEP], por correspondência com aviso de recebimento entregue ao encarregado da recepção devidamente identificado, ou, se necessário, por oficial de justiça, nos termos do art. 18, II e III, da Lei nº 9.099/1995, para pagar o débito no prazo de três dias, contado da citação, conforme o art. 829 do CPC;
+
+c) não realizado o pagamento, a pesquisa e a indisponibilidade de ativos financeiros pelo SISBAJUD em nome da executada, limitadas ao débito atualizado, com observância dos arts. 835, I, e 854 do CPC, posterior conversão em penhora e liberação de eventual excesso;
+
+d) sendo insuficientes os ativos financeiros, a pesquisa de veículos pelo RENAJUD e a penhora de bens da executada suficientes à satisfação do crédito, com avaliação e demais atos executivos cabíveis;
+
+e) efetuada a penhora, a intimação da executada para comparecer à audiência de conciliação, na qual poderá oferecer embargos, observando-se o art. 53, § 1º, da Lei nº 9.099/1995;
+
+f) o prosseguimento da execução até a satisfação do crédito, com correção monetária pelo IPCA e juros simples de 1% ao mês, pro rata die, sobre o saldo remanescente, sem duplicação dos períodos de atualização ou nova incidência da multa já computada e com abatimento de pagamentos supervenientes;
+
+g) que todas as intimações e publicações sejam feitas exclusivamente em nome de [ADVOGADO], OAB/SP nº [NÚMERO], nos termos do art. 272, § 5º, do CPC, observando-se, quanto às custas e aos honorários processuais, o regime dos arts. 54 e 55 da Lei nº 9.099/1995.
+
+A execução é instruída com a prova documental do crédito, do pagamento parcial e do saldo, sem prejuízo da apresentação de documentos relativos a fatos supervenientes.
+
+Dá-se à causa o valor de R$ 63.959,26 (sessenta e três mil, novecentos e cinquenta e nove reais e vinte e seis centavos).
+
+Termos em que,
+Pede deferimento.
+
+São Paulo/SP, 14 de outubro de 2026.
+
+[ADVOGADO]
+OAB/SP [NÚMERO]

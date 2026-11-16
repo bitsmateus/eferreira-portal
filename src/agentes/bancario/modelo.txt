@@ -1,0 +1,273 @@
+EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA VARA CÍVEL REGIONAL XV – BUTANTÃ – COMARCA DE SÃO PAULO/SP
+
+[NOME DO AUTOR], [nacionalidade], [estado civil], [profissão], portador do RG nº [RG], inscrito no CPF nº [CPF], residente e domiciliado na [ENDEREÇO], [CIDADE]/[UF], CEP [CEP], por seu advogado infra-assinado, vem, respeitosamente, à presença de Vossa Excelência, com fundamento nos artigos 6º, incisos III, V e VIII, 39, inciso I, 42, parágrafo único, 46 e 51 do Código de Defesa do Consumidor, artigos 373, § 1º, 396 a 400 e 464 do Código de Processo Civil, propor a presente
+
+AÇÃO REVISIONAL DE CONTRATO DE EMPRÉSTIMO COM GARANTIA IMOBILIÁRIA C/C EXIBIÇÃO DE DOCUMENTOS, RECÁLCULO DO SALDO DEVEDOR E REPETIÇÃO DE INDÉBITO, COM PEDIDO DE INVERSÃO DO ÔNUS DA PROVA
+
+em face de [RAZÃO SOCIAL DA RÉ], pessoa jurídica de direito privado, inscrita no CNPJ nº [CNPJ], com sede na [ENDEREÇO], [CIDADE]/[UF], CEP [CEP], pelos fatos e fundamentos a seguir expostos.
+
+I – DA RELAÇÃO CONTRATUAL E DA DELIMITAÇÃO DA CONTROVÉRSIA
+
+Em 07 de novembro de 2025, o Autor celebrou com a Ré o Contrato de Empréstimo com Pacto Adjeto de Alienação Fiduciária em Garantia de Bem Imóvel e Emissão de Cédula de Crédito Imobiliário nº [NÚMERO DO CONTRATO], mediante constituição de garantia fiduciária sobre o imóvel objeto da matrícula nº [MATRÍCULA] do [Nº] Oficial de Registro de Imóveis da Comarca de São Paulo/SP.
+
+A operação foi formalizada pelo valor total de R$ 293.938,38, com prazo de 240 meses, taxa remuneratória de 1,21% ao mês, equivalente a 15,53% efetivos ao ano, custo efetivo total informado de 17,18% ao ano, utilização do Sistema de Amortização Constante – SAC e atualização monetária mensal pelo IPCA. A primeira prestação foi estabelecida em R$ 5.102,25, com vencimento em 07/01/2026, incluindo amortização e juros, seguros MIP e DFI e tarifa mensal de gestão de crédito.
+
+Embora o instrumento tenha natureza de empréstimo com garantia imobiliária, e não de financiamento destinado à aquisição do próprio imóvel, a relação contratual permanece submetida ao controle de legalidade das cobranças, à observância dos deveres de informação e à adequada demonstração da formação e evolução do saldo devedor.
+
+A presente demanda não pretende afastar a obrigação de restituição do capital efetivamente disponibilizado, declarar a ilegalidade abstrata do sistema SAC ou substituir a metodologia contratada por outra simplesmente mais econômica. Seu objeto consiste na verificação da legitimidade das cobranças individualizadas, da regularidade da incorporação de despesas ao principal, da efetiva execução das condições pactuadas e da correta imputação dos pagamentos realizados.
+
+A controvérsia decorre, sobretudo, da ausência de disponibilização ao Autor do fluxo financeiro completo da operação, incluindo o histórico analítico das prestações, os valores efetivamente pagos, a composição dos encargos, a atualização monetária, as amortizações e a evolução do saldo devedor, documentação indispensável à conferência da obrigação exigida.
+A apresentação do instrumento contratual, isoladamente, permite conhecer as condições inicialmente estabelecidas, mas não demonstra como elas foram efetivamente executadas. É precisamente essa distinção que fundamenta a necessidade de exibição documental e de posterior conferência técnica.
+
+II – DA COMPOSIÇÃO DA OPERAÇÃO E DO REFINANCIAMENTO DE OBRIGAÇÃO ANTERIOR
+
+O quadro-resumo contratual informa que, do valor total financiado de R$ 293.938,38, R$ 283.900,00 correspondem aos desembolsos previstos, enquanto R$ 4.785,46 se referem ao IOF e R$ 5.252,92 às despesas cartorárias incorporadas à dívida.
+
+A operação apresenta particularidade relevante: parte substancial do crédito não se destinou à disponibilização direta de novos recursos ao Autor, mas à quitação de obrigação anteriormente originada pela própria [RÉ] e posteriormente cedida.
+
+A cláusula 11.1.1 estabelece que a primeira parcela de desembolso, de R$ 187.729,24, seria utilizada para quitação de obrigação anterior, indicando aproximadamente R$ 187.499,24 para liquidação do empréstimo preexistente e R$ 230,00 para pagamento de IPTU. A segunda parcela de desembolso foi prevista em R$ 96.170,76.
+
+Portanto, a nova dívida foi constituída mediante combinação de quitação de obrigação anterior, disponibilização de recursos e incorporação de despesas financeiras e cartorárias ao principal.
+
+Não se afirma que o refinanciamento seja ilícito, tampouco que a incorporação de despesas expressamente contratadas configure, por si só, abusividade. A questão consiste na necessidade de verificar se o saldo anterior foi corretamente apurado e liquidado, se os desembolsos ocorreram nos valores previstos e se as despesas incorporadas correspondem a obrigações efetivamente existentes.
+A ausência de demonstração analítica da liquidação anterior impede conferir se houve encerramento integral da obrigação precedente, quais encargos compuseram o saldo quitado e se os valores utilizados na nova operação correspondem aos efetivamente devidos.
+
+A documentação necessária à conferência encontra-se predominantemente sob disponibilidade da Ré ou dos agentes responsáveis pela administração dos créditos envolvidos. Assim, mostra-se necessária a apresentação do contrato anterior, da evolução financeira da obrigação refinanciada, do demonstrativo de quitação, do comprovante de pagamento ao credor então titular e da prestação de contas das liberações previstas no novo instrumento.
+
+A providência não busca revisão indiscriminada de contrato anterior, mas a identificação e comprovação da origem dos valores que passaram a integrar o principal da obrigação atualmente discutida.
+
+III – DA TARIFA MENSAL DE GESTÃO DE CRÉDITO E DA NECESSIDADE DE CONTROLE CONCRETO DA COBRANÇA
+
+O contrato prevê tarifa mensal de gestão de crédito no valor inicial de R$ 25,00, sujeita a reajuste anual.
+
+A cláusula 2.9 atribui à administração do crédito atividades relacionadas à emissão de documentos para pagamento, elaboração de cálculos para amortizações, emissão de extratos, prestação de informações contratuais e recebimento de pagamentos. A cláusula 2.10 relaciona a tarifa à guarda, manutenção e atualização de dados cadastrais, bem como à disponibilidade ou prestação de informações.
+
+Considerado o prazo contratual de 240 meses, a cobrança inicial de R$ 25,00 representa projeção nominal de R$ 6.000,00, sem considerar os reajustes previstos.
+
+A questão submetida à apreciação judicial não é a impossibilidade genérica de cobrança de tarifa de administração ou gestão de crédito. O que se questiona é a legitimidade da cobrança autônoma e periódica nas condições concretamente estabelecidas, especialmente diante da natureza das atividades descritas e da necessidade de identificação de seu fundamento regulatório e de sua efetiva contraprestação.
+
+A mera descrição contratual de atividades administrativas não resolve, isoladamente, a controvérsia sobre a possibilidade de sua remuneração separada dos encargos próprios da operação financeira. Por outro lado, eventual autorização normativa específica e a natureza efetiva do serviço deverão ser consideradas, não sendo juridicamente adequado presumir a abusividade apenas pela denominação da rubrica.
+
+Requer-se, portanto, que a Ré demonstre o fundamento normativo aplicável à tarifa, sua forma de cálculo, a identificação dos serviços remunerados, os valores efetivamente cobrados e a eventual participação de terceiros na execução dessas atividades.
+
+Caso constatada a ausência de fundamento legítimo ou a cobrança de serviço não passível de remuneração autônoma, requer-se a declaração de inexigibilidade da tarifa, com exclusão das parcelas futuras e restituição dos valores indevidamente pagos, observada a apuração contábil.
+
+IV – DOS SEGUROS MIP E DFI E DA LIBERDADE DE ESCOLHA DA SEGURADORA
+
+O quadro-resumo contratual estabelece cobrança inicial de R$ 238,00 por mês a título de seguros MIP – Morte e Invalidez Permanente – e DFI – Danos Físicos ao Imóvel.
+
+A contratação securitária representa componente relevante do custo da operação, pois os prêmios são exigidos juntamente com as prestações mensais e permanecem vinculados à manutenção do financiamento.
+
+A cláusula 2.11 prevê a manutenção das coberturas durante a vigência contratual, enquanto a cláusula 2.11.1 contém declaração de que teriam sido apresentadas ao devedor opções de seguros de sociedades seguradoras diferentes, com escolha realizada por sua liberalidade.
+
+O Autor não desconsidera a existência dessa declaração contratual, tampouco sustenta que os seguros MIP e DFI sejam necessariamente ilícitos ou incompatíveis com operações garantidas por imóvel.
+
+A controvérsia reside na necessidade de verificar a regularidade da contratação concreta, a efetiva disponibilização das alternativas declaradas, a correspondência entre os prêmios cobrados e as coberturas contratadas, bem como a identificação da seguradora, dos beneficiários, das condições de cobertura e da evolução dos valores exigidos.
+
+O Superior Tribunal de Justiça, no julgamento do Tema Repetitivo 972, firmou entendimento contrário à imposição de contratação de seguro com a instituição financeira ou seguradora por ela indicada, sendo necessária, para aplicação desse entendimento ao caso concreto, a demonstração das condições efetivas de contratação.
+
+Assim, a declaração contratual de liberdade de escolha constitui elemento probatório relevante, mas não afasta a pertinência da apresentação dos documentos securitários que permitam verificar a contratação e as alternativas disponibilizadas.
+
+Requer-se a exibição das propostas de contratação, certificados individuais, apólices, condições gerais e particulares, demonstrativos de cálculo dos prêmios, identificação das seguradoras e, caso existentes, documentos relativos às propostas alternativas apresentadas ao Autor.
+
+Comprovada a regularidade da contratação e dos valores exigidos, não haverá fundamento para afastamento das coberturas. Diversamente, caso a instrução demonstre imposição indevida de seguradora, cobrança sem cobertura correspondente ou divergência entre o prêmio exigido e as condições contratadas, requer-se a revisão das cobranças especificamente irregulares, com apuração dos respectivos efeitos financeiros.
+
+A pretensão não compreende exclusão automática da proteção securitária, mas controle de sua contratação e execução, preservada a possibilidade de manutenção de cobertura válida mediante condições juridicamente adequadas.
+
+V – DAS DESPESAS CARTORÁRIAS INCORPORADAS AO FINANCIAMENTO
+
+O instrumento contratual incorporou R$ 5.252,92 ao principal a título de despesas cartorárias, valor que passou a integrar a base financeira da obrigação.
+
+A previsão de despesas relacionadas à constituição e ao registro da garantia não implica, por si, irregularidade. Entretanto, o financiamento desses valores exige correspondência com os custos efetivamente incorridos.
+
+A cláusula 6.16 prevê providências e despesas relacionadas à formalização da operação, enquanto a cláusula 6.16.1 contempla prestação de contas e tratamento de eventual diferença entre valores estimados e efetivamente despendidos.
+
+Desse modo, a própria disciplina contratual demonstra a pertinência da apuração do custo efetivo dos serviços.
+
+Requer-se a apresentação das guias, recibos, comprovantes de recolhimento, discriminação dos emolumentos, prestação de contas e documentos relativos à aplicação dos R$ 5.252,92 incorporados à dívida.
+
+Na hipótese de identificação de diferença não utilizada, despesa não realizada ou cobrança sem correspondente prestação, requer-se a exclusão do respectivo valor do saldo devedor, com recálculo dos encargos financeiros incidentes e restituição ou compensação do que houver sido indevidamente pago.
+VI – DA CARÊNCIA CONTRATUAL, DA CAPITALIZAÇÃO E DA EVOLUÇÃO FINANCEIRA
+
+O contrato estabeleceu carência de 60 dias para vencimento da primeira prestação, fixada em 07/01/2026.
+
+A cláusula 10.2 prevê que, durante o período de carência, os juros incidentes sobre o principal seriam incorporados ao saldo devedor, além de disciplinar o tratamento da tarifa mensal de administração e dos seguros MIP e DFI.
+
+A operação também foi estruturada com atualização monetária mensal pelo IPCA e amortização pelo sistema SAC, circunstâncias que exigem observar as datas efetivas de liberação dos recursos, a formação do saldo inicial, o período de carência e a metodologia contratualmente prevista para incidência dos encargos.
+
+A previsão expressa de capitalização não constitui, isoladamente, demonstração de ilegalidade. A questão relevante consiste em verificar se sua aplicação observou a periodicidade pactuada, se os juros foram calculados sobre bases corretas e se houve incorporação de valores não previstos ou exigidos em duplicidade.
+
+O cálculo técnico apresentado pelo Autor contém simulações comparativas de sistemas de amortização e taxas alternativas. Esses cenários, entretanto, não substituem a reconstrução da evolução financeira efetivamente praticada, especialmente porque a operação é pós-fixada pelo IPCA e contempla regras próprias de carência e desembolso.
+
+Por essa razão, o Autor não pretende que a simples existência de método matematicamente menos oneroso autorize substituição judicial do sistema SAC. Pretende verificar a correspondência entre o contrato e sua execução, afastando apenas os encargos que venham a ser demonstrados como indevidos.
+
+Requer-se que a perícia contábil, após apresentação dos documentos necessários, examine a formação do saldo inicial, a capitalização durante a carência, a incidência mensal do IPCA, os juros remuneratórios, a imputação dos pagamentos, a amortização do principal e os demais encargos, identificando eventual divergência entre os valores efetivamente cobrados e aqueles decorrentes da aplicação regular das condições pactuadas.
+
+VII – DA REVISÃO SUBSIDIÁRIA DOS JUROS REMUNERATÓRIOS
+
+A taxa contratada foi estabelecida em 1,21% ao mês e 15,53% efetivos ao ano, acrescida da atualização monetária pelo IPCA, conforme a modalidade pós-fixada escolhida.
+
+O Autor reconhece que a taxa contratada não pode ser considerada abusiva apenas por sua expressão numérica, tampouco pela circunstância de superar determinado índice econômico isoladamente considerado.
+
+A comparação com taxas médias de mercado exige correspondência entre a data da contratação, a natureza da operação, o tipo de garantia, a modalidade de crédito e as condições efetivamente praticadas.
+
+O estudo técnico apresentado utiliza referência estatística que demanda validação quanto à sua adequação a empréstimos com garantia imobiliária, não sendo suficiente, neste estágio, para afirmar a existência de abusividade dos juros remuneratórios.
+
+A pretensão revisional relativa à taxa possui, portanto, caráter subsidiário e condicionado à demonstração de discrepância juridicamente relevante, considerada a modalidade efetiva da operação e as circunstâncias concretas da contratação.
+
+Requer-se que a questão seja apreciada mediante documentação e parâmetros estatísticos pertinentes, afastando-se eventual excesso somente se comprovada abusividade concreta, sem presunção de que a taxa média de mercado constitua limite obrigatório para toda operação.
+VIII – DO DIREITO À INFORMAÇÃO, DA EXIBIÇÃO DOCUMENTAL E DA RECONSTRUÇÃO DO FLUXO FINANCEIRO
+
+A questão central desta demanda é a impossibilidade de o Autor conferir integralmente a execução de obrigação financeira de longa duração, garantida por imóvel e composta por principal, juros, atualização monetária, seguros, tarifas e despesas incorporadas ao saldo.
+
+O consumidor possui direito à informação adequada e clara sobre os serviços contratados e os valores exigidos, nos termos do artigo 6º, inciso III, do Código de Defesa do Consumidor.
+
+Esse dever assume especial relevância em operações financeiras pós-fixadas, nas quais a evolução do saldo depende de múltiplas variáveis e não pode ser integralmente compreendida apenas pela leitura do quadro-resumo contratual.
+
+A ausência de disponibilização do extrato analítico e do fluxo financeiro completo impede verificar quais valores foram efetivamente pagos, qual parcela de cada pagamento foi destinada à amortização, quanto correspondeu a juros, IPCA, seguros e tarifas e qual o saldo remanescente após cada vencimento.
+
+O requerimento de exibição não possui finalidade exploratória indiscriminada. Os documentos solicitados estão diretamente relacionados à operação identificada, são necessários à verificação das cobranças individualmente questionadas e encontram fundamento nos artigos 396 a 400 do Código de Processo Civil.
+
+Dessa forma, requer-se que a Ré apresente:
+
+a) extrato analítico integral do contrato nº [NÚMERO DO CONTRATO], desde sua formalização até a data da apresentação, com atualização posterior, se necessária;
+b) histórico completo das prestações vencidas e vincendas, identificando vencimento, valor originalmente previsto, atualização, valor exigido, pagamento realizado e saldo remanescente;
+
+c) fluxo financeiro de todos os pagamentos recebidos, com data, valor, forma de pagamento e discriminação da imputação a amortização, juros, correção monetária, seguros, tarifas e encargos de mora;
+
+d) memória de cálculo da evolução do saldo devedor, com indicação dos índices mensais de IPCA utilizados, taxas efetivamente aplicadas, bases de cálculo e metodologia de amortização;
+
+e) demonstrativo da capitalização dos juros durante a carência contratual e da formação do saldo utilizado para cálculo da primeira prestação;
+
+f) comprovantes dos desembolsos realizados, identificação dos respectivos destinatários e prestação de contas da aplicação dos recursos;
+
+g) contrato anterior refinanciado, demonstrativo de evolução e quitação, comprovantes da liquidação e documentos necessários à conciliação dos valores incorporados à nova operação;
+
+h) documentos comprobatórios das despesas cartorárias financiadas, inclusive guias, recibos e prestação de contas;
+
+i) histórico da tarifa mensal de gestão, valores cobrados, reajustes aplicados e identificação de sua contraprestação;
+
+j) propostas, apólices, certificados, condições securitárias e demonstrativos de evolução dos prêmios MIP e DFI;
+k) identificação do atual titular do crédito, caso tenha ocorrido cessão, acompanhada dos documentos necessários à comprovação da transferência e à identificação do responsável pela administração e disponibilização dos registros financeiros.
+
+A exibição deverá ocorrer em formato legível e suficientemente analítico para permitir a conferência das operações, preferencialmente acompanhada das memórias de cálculo utilizadas pela instituição financeira.
+
+Na hipótese de recusa injustificada, requer-se a aplicação das consequências processuais previstas nos artigos 400 e seguintes do CPC, observados seus pressupostos e a pertinência dos fatos cuja comprovação dependa dos documentos não apresentados.
+
+IX – DA INVERSÃO DO ÔNUS DA PROVA E DA DISTRIBUIÇÃO DINÂMICA
+
+A relação jurídica discutida envolve fornecimento de crédito por instituição financeira a consumidor pessoa física, incidindo as normas do Código de Defesa do Consumidor, conforme entendimento consolidado na Súmula 297 do Superior Tribunal de Justiça.
+
+A inversão do ônus da prova, prevista no artigo 6º, inciso VIII, do CDC, mostra-se adequada diante da assimetria informacional e técnica existente entre as partes, especialmente quanto aos registros financeiros produzidos e mantidos pela instituição responsável pela operação.
+
+O Autor dispõe do instrumento contratual e de estudo técnico comparativo, mas não possui a integralidade dos registros necessários à reconstrução da execução financeira, particularmente o histórico de pagamentos, as respectivas imputações, a memória de atualização do saldo e a documentação da quitação da obrigação anterior.
+
+Não se pretende transferir à Ré o ônus de demonstrar genericamente a inexistência de qualquer irregularidade. Busca-se atribuir a quem detém os registros o encargo de comprovar os fatos relacionados à formação e execução do crédito, à realização das despesas financiadas e à regularidade das cobranças especificamente questionadas.
+Também se mostra pertinente a aplicação do artigo 373, § 1º, do CPC, mediante distribuição dinâmica do ônus probatório, considerando a maior facilidade da Ré para apresentar a documentação operacional e financeira.
+
+Requer-se, portanto, a inversão do ônus da prova quanto aos fatos cuja demonstração dependa dos registros sob disponibilidade da instituição financeira ou, subsidiariamente, a distribuição dinâmica dos encargos probatórios, mediante decisão fundamentada e com oportunidade efetiva de cumprimento.
+
+A providência deverá ser definida em momento processual que permita às partes conhecer previamente os encargos atribuídos e produzir as provas correspondentes.
+
+X – DA NECESSIDADE DE PROVA PERICIAL CONTÁBIL
+
+A perícia contábil constitui providência necessária caso os documentos apresentados revelem divergências cuja solução dependa de conhecimento técnico especializado.
+
+Seu objeto não será substituir o sistema de amortização contratado por metodologia alternativa, mas reconstruir a operação a partir dos documentos efetivos e verificar a correção da aplicação dos encargos.
+
+A análise deverá compreender a composição do principal, os desembolsos, a quitação da obrigação anterior, a capitalização durante a carência, a aplicação do IPCA, os juros remuneratórios, a evolução do saldo, os pagamentos e sua imputação, as tarifas e os seguros.
+
+Deverá também quantificar, em cenários específicos, os efeitos financeiros da eventual exclusão das cobranças reconhecidas como indevidas, permitindo que a decisão judicial identifique o saldo contratual correto e os valores eventualmente sujeitos à restituição ou compensação.
+O estudo técnico apresentado com a inicial deverá ser considerado como elemento informativo sujeito ao contraditório, sem presunção de que suas simulações alternativas constituam prova conclusiva de ilegalidade.
+
+Requer-se o deferimento da perícia após a exibição documental, com oportunidade para apresentação de quesitos complementares e indicação de assistentes técnicos.
+
+XI – DA RESTITUIÇÃO OU COMPENSAÇÃO DOS VALORES INDEVIDAMENTE COBRADOS
+
+Reconhecida a irregularidade de determinada cobrança, os valores efetivamente pagos deverão ser apurados, observando-se sua natureza, data de pagamento e reflexos sobre a evolução do saldo devedor.
+
+A restituição não poderá ser baseada exclusivamente em projeções de pagamentos futuros ou em comparações hipotéticas entre sistemas de amortização.
+
+Deverá corresponder aos valores concretamente exigidos e pagos em desacordo com o regime contratual e legal aplicável, incluindo os encargos financeiros incidentes sobre quantias indevidamente incorporadas ao principal.
+
+Quanto à forma de restituição, requer-se a aplicação do artigo 42, parágrafo único, do CDC, quando demonstrados seus pressupostos, observada a orientação do Superior Tribunal de Justiça acerca da cobrança contrária à boa-fé objetiva e da possibilidade de engano justificável.
+
+Subsidiariamente, caso não reconhecidos os requisitos da repetição em dobro, requer-se a restituição simples dos valores indevidos, admitida a compensação com eventual saldo contratual legítimo, após sua correta apuração.
+
+XII – DA PRESERVAÇÃO DA RELAÇÃO CONTRATUAL E DOS LIMITES DA PRETENSÃO REVISIONAL
+
+A presente demanda não tem por finalidade desconstituir integralmente a operação, afastar a garantia fiduciária ou impedir o exercício regular de direitos decorrentes de inadimplemento contratual.
+
+Busca-se a preservação da relação jurídica em condições compatíveis com os encargos legitimamente pactuados e efetivamente devidos.
+
+A revisão de cobranças específicas não implica, automaticamente, descaracterização da mora, suspensão da exigibilidade das prestações ou impedimento dos procedimentos previstos na Lei nº 9.514/1997.
+
+Diante da ausência, neste estágio documental, de comprovação de procedimento extrajudicial de consolidação, leilão ou outra medida concreta de excussão da garantia, o Autor não formula pedido genérico de suspensão dos efeitos da alienação fiduciária.
+
+Ressalva-se, contudo, a possibilidade de requerimento de tutela específica diante de fato superveniente comprovado que justifique providência urgente, observados os requisitos legais aplicáveis.
+
+XIII – DA GRATUIDADE DA JUSTIÇA
+
+O Autor requer a concessão dos benefícios da gratuidade da justiça, nos termos dos artigos 98 e 99 do Código de Processo Civil, por não possuir condições de suportar as custas, despesas processuais e demais encargos decorrentes da demanda sem prejuízo de seu sustento e de suas obrigações essenciais.
+
+A circunstância de figurar como contratante de operação financeira garantida por imóvel não constitui, isoladamente, demonstração de capacidade econômica para suportar os custos do processo, devendo a análise considerar sua efetiva disponibilidade financeira.
+Nos termos do artigo 99, § 3º, do CPC, a alegação de insuficiência econômica formulada por pessoa natural goza de presunção relativa de veracidade, sem prejuízo da possibilidade de exigência de documentação complementar, caso existam elementos concretos que justifiquem sua apresentação.
+
+Diante disso, requer-se o deferimento da gratuidade da justiça, abrangendo as custas, despesas processuais e honorários periciais, nos limites previstos no artigo 98 do CPC. Subsidiariamente, caso Vossa Excelência entenda insuficientes os elementos apresentados, requer-se a prévia intimação do Autor para comprovação complementar de sua condição econômica, nos termos do artigo 99, § 2º, do CPC.
+
+XIII – DOS PEDIDOS
+
+Diante do exposto, requer:
+
+a) A concessão dos benefícios da gratuidade da justiça ao Autor, nos termos dos artigos 98 e 99 do Código de Processo Civil, abrangendo as custas e despesas processuais, inclusive aquelas relacionadas à produção de prova pericial, observadas as disposições legais aplicáveis; subsidiariamente, caso necessário, seja oportunizada a apresentação de documentação complementar antes de eventual indeferimento.
+
+b) o recebimento e regular processamento da presente ação, com a citação da Ré para apresentar contestação, sob as consequências processuais legalmente previstas;
+
+c) o reconhecimento da incidência das normas do Código de Defesa do Consumidor à relação contratual discutida;
+
+d) a inversão do ônus da prova, nos termos do artigo 6º, inciso VIII, do CDC, especialmente quanto aos registros de execução financeira, pagamentos, despesas e serviços cuja documentação esteja sob disponibilidade da Ré ou, subsidiariamente, a distribuição dinâmica do ônus probatório prevista no artigo 373, § 1º, do CPC;
+
+e) a determinação para que a Ré apresente os documentos individualizados no item VIII desta petição, especialmente o extrato analítico integral, o fluxo de pagamentos, as memórias de cálculo, a evolução do saldo devedor e a documentação da quitação da obrigação anterior, em prazo a ser fixado por Vossa Excelência;
+
+f) em caso de recusa injustificada de exibição, a aplicação das consequências previstas nos artigos 400 e seguintes do CPC, observados os respectivos pressupostos;
+
+g) o reconhecimento da necessidade de controle concreto da tarifa mensal de gestão de crédito, declarando-se sua inexigibilidade caso demonstrada ausência de fundamento jurídico ou de contraprestação legitimamente remunerável, com exclusão das cobranças futuras e apuração dos valores indevidamente pagos;
+
+h) a determinação de apresentação das propostas, apólices, certificados, condições securitárias, demonstrativos dos prêmios MIP e DFI e documentos relativos às alternativas de seguradoras disponibilizadas ao Autor;
+
+i) caso demonstrada imposição indevida de seguradora, ausência de cobertura correspondente ou cobrança incompatível com as condições efetivamente contratadas, a revisão das cobranças securitárias especificamente irregulares, com restituição ou compensação dos valores indevidos, sem exclusão automática de cobertura legitimamente contratada;
+
+j) a apresentação da prestação de contas das despesas cartorárias de R$ 5.252,92 e, constatada cobrança superior ao custo efetivo ou despesa não realizada, a exclusão da diferença do saldo devedor, com recálculo dos encargos incidentes;
+
+l) a apuração da regularidade da formação do principal financiado, especialmente quanto à quitação da dívida anterior, aos desembolsos previstos e às despesas incorporadas, determinando-se a correção de eventual divergência comprovada;
+
+m) o deferimento de prova pericial contábil, após a apresentação dos documentos necessários, destinada à reconstrução da evolução financeira efetiva do contrato, com exame dos juros, IPCA, carência, capitalização, amortização, seguros, tarifas e imputação dos pagamentos;
+
+n) subsidiariamente, caso a instrução demonstre abusividade concreta da taxa remuneratória em comparação com parâmetros adequados à modalidade e às circunstâncias da contratação, sua revisão na extensão juridicamente cabível, com o correspondente recálculo do saldo devedor;
+
+o) igualmente de forma subsidiária, caso identificada aplicação de capitalização, atualização monetária ou metodologia de amortização em desconformidade com as condições contratadas ou com o regime legal aplicável, o afastamento do excesso efetivamente comprovado, preservando-se as demais disposições válidas;
+
+p) a determinação de recálculo do saldo contratual, excluindo-se apenas os valores reconhecidos como indevidos e seus respectivos reflexos financeiros;
+
+q) a condenação da Ré à restituição dos valores indevidamente pagos, em dobro quando demonstrados os pressupostos do artigo 42, parágrafo único, do CDC, ou subsidiariamente de forma simples, admitida a compensação com saldo contratual legítimo após sua apuração;
+
+r) a produção de todos os meios de prova admitidos em direito, especialmente prova documental complementar, exibição de documentos e prova pericial contábil;
+
+s) a condenação da Ré ao pagamento das custas processuais e honorários advocatícios, observada a sucumbência efetivamente verificada.
+
+Requer, ainda, que as intimações sejam realizadas em nome de [ADVOGADO], OAB/SP nº [NÚMERO], sob pena de nulidade, nos termos do artigo 272, § 5º, do CPC.
+DO VALOR DA CAUSA
+
+Considerando que a presente demanda não objetiva a desconstituição integral do contrato, mas a revisão de encargos específicos e seus reflexos na evolução do saldo devedor, o proveito econômico pretendido não corresponde ao valor total do financiamento.
+
+Diante da ausência dos demonstrativos financeiros completos, cuja apresentação é requerida nesta ação, adota-se como parâmetro estimativo a projeção dos encargos securitários identificados no estudo técnico apresentado, sem que isso implique reconhecimento de sua integral abusividade.
+
+Assim, atribui-se à causa o valor de R$ 38.633,35 (trinta e oito mil, seiscentos e trinta e três reais e trinta e cinco centavos), nos termos do artigo 292, inciso II, do Código de Processo Civil, sem prejuízo de eventual adequação após a apresentação dos documentos necessários à apuração do efetivo proveito econômico.
+
+Termos em que,
+Pede deferimento.
+
+São Paulo/SP, 05 de novembro de 2026.
+
+[ADVOGADO]
+OAB/SP [NÚMERO]

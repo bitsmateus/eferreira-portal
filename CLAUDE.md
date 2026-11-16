@@ -313,6 +313,21 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Minuta por área com os agentes do escritório** (16/11/2026). O Dr. Sergio
+mandou oito agentes (pasta "Agentes" do Dropbox), um por área, cada um com a
+petição de exemplo. Viraram `src/agentes/<área>/instrucoes.txt` (sem mudar
+palavra) e `modelo.txt` (a petição **anonimizada** — "faça você mesmo"; o
+original com dados reais não entrou no repositório). O caso ganhou **Área**
+(migração `20261116120000_area_do_caso_e_minuta`); a análise usa a parte
+especializada do agente; e a fila ganhou **Gerar minuta**, sob demanda, com
+pesquisa de jurisprudência na web (decidido: "faça, mesmo que mais caro").
+Ver `docs/publicacoes.md` § Minuta por área e `src/lib/minuta.ts`.
+Verificado: `tsc`, lint, `npm run build`, 578 unitários (15 novos). **Não
+verificado:** a chamada real à Anthropic com busca na web (sem chave aqui —
+`npm run ia:teste -- minuta` em produção), os testes de banco (Docker não
+subiu) e a tela no navegador. **Falta:** aplicar a migração pelo deploy no
+EasyPanel; conferir que a busca na web está permitida no Console da Anthropic.
+
 **Esteira de acompanhamento: publicações do DJEN e fila de conferência**
 (09/11/2026). Frente contratada à parte — escopo "Esteira de automação jurídica
 com IA" enviado em 04/11 e aprovado pelo Dr. Sergio em 05/11/2026 ("é isso

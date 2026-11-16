@@ -30,6 +30,7 @@ import {
   prazoSugerido,
   type AnaliseDaPublicacao,
 } from '@/lib/analise-da-publicacao'
+import { lerAgente } from '@/lib/agentes'
 import { lancarAndamento, type DadosDeAndamento } from '@/lib/andamentos'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { exigirEquipe, filtroDeCasos, type SessaoServidor } from '@/lib/autorizacao'
@@ -38,7 +39,8 @@ import { consultarPorOab, type ComunicacaoDoDjen } from '@/lib/djen'
 import { enviarEmail } from '@/lib/email'
 import { criarEvento, type DadosDeEvento } from '@/lib/eventos'
 import { formatarNumeroDeProcesso, somenteDigitos } from '@/lib/formatos'
-import { iaConfigurada, pedirObjeto } from '@/lib/ia'
+import { iaConfigurada, pedirObjeto, type FonteDaWeb } from '@/lib/ia'
+import { MINUTA_TRAVADA_MS, lerFontes, minutaEmAndamento } from '@/lib/minuta'
 import { somarDias } from '@/lib/prazos'
 import { prisma } from '@/lib/prisma'
 
@@ -274,12 +276,23 @@ export type ResultadoDaAnalise =
 export async function analisarPublicacao(publicacaoId: string): Promise<ResultadoDaAnalise> {
   if (!iaConfigurada()) return { situacao: 'ia_desligada' }
 
-  const publicacao = await prisma.publicacao.findUnique({ where: { id: publicacaoId } })
+  const publicacao = await prisma.publicacao.findUnique({
+    where: { id: publicacaoId },
+    include: { caso: { select: { area: true } } },
+  })
   if (publicacao === null) return { situacao: 'nao_encontrada' }
+
+  // Caso com área: a triagem leva junto a parte especializada do agente do
+  // escritório (16/11/2026). Só ela — o agente inteiro fica para a minuta.
+  const area = publicacao.caso?.area ?? null
+  const especializacao = area === null ? null : await lerAgente(area).then((a) => a.especializacao, () => null)
 
   const disponibilizacao = diaEmSaoPaulo(publicacao.disponibilizadaEm)
   const resposta = await pedirObjeto({
-    sistema: INSTRUCOES_DO_SISTEMA,
+    sistema:
+      especializacao === null
+        ? INSTRUCOES_DO_SISTEMA
+        : `${INSTRUCOES_DO_SISTEMA}\n\nOrientação do escritório para esta área (use para identificar a providência; não redija peça):\n${especializacao}`,
     usuario: mensagemDoUsuario({ ...publicacao, disponibilizacao }),
     nome: 'registrar_analise',
     descricao: 'Registra a análise da publicação para a equipe do escritório conferir.',
@@ -413,11 +426,21 @@ const LINHA = {
   conferidaPor: { select: { nome: true } },
   eventoId: true,
   andamentoId: true,
+  minuta: true,
+  minutaNota: true,
+  minutaFontes: true,
+  minutaArea: true,
+  minutaBuscas: true,
+  minutaProvedor: true,
+  minutaGeradaEm: true,
+  minutaPedidaEm: true,
+  minutaErro: true,
   caso: {
     select: {
       id: true,
       assunto: true,
       numeroProcesso: true,
+      area: true,
       responsavelId: true,
       cliente: { select: { id: true, nome: true } },
     },
@@ -425,7 +448,12 @@ const LINHA = {
 } satisfies Prisma.PublicacaoSelect
 
 type LinhaDoBanco = Prisma.PublicacaoGetPayload<{ select: typeof LINHA }>
-export type LinhaDePublicacao = Omit<LinhaDoBanco, 'analise'> & { analise: AnaliseDaPublicacao | null }
+export type LinhaDePublicacao = Omit<LinhaDoBanco, 'analise' | 'minutaFontes'> & {
+  analise: AnaliseDaPublicacao | null
+  minutaFontes: FonteDaWeb[]
+  /** Calculado no servidor: há minuta sendo gerada agora (e não um pedido perdido). */
+  gerandoMinuta: boolean
+}
 
 export const LIMITE_DA_FILA = 100
 
@@ -448,22 +476,30 @@ export async function listarPublicacoes(
       : [{ conferidaEm: { sort: 'desc', nulls: 'last' } }, { disponibilizadaEm: 'desc' }],
     take: LIMITE_DA_FILA,
   })
-  return linhas.map((linha) => ({ ...linha, analise: lerAnalise(linha.analise) }))
+  return linhas.map((linha) => ({
+    ...linha,
+    analise: lerAnalise(linha.analise),
+    minutaFontes: lerFontes(linha.minutaFontes),
+    gerandoMinuta: minutaEmAndamento(linha.minutaPedidaEm),
+  }))
 }
 
 export async function contarPublicacoes(
   sessao: SessaoServidor,
-): Promise<{ pendentes: number; semCaso: number; aguardandoAnalise: number }> {
+): Promise<{ pendentes: number; semCaso: number; aguardandoAnalise: number; gerandoMinuta: number }> {
   exigirEquipe(sessao)
-  const [pendentes, semCaso, aguardandoAnalise] = await Promise.all([
+  const [pendentes, semCaso, aguardandoAnalise, gerandoMinuta] = await Promise.all([
     prisma.publicacao.count({ where: condicaoDoFiltro('pendentes') }),
     prisma.publicacao.count({ where: condicaoDoFiltro('sem_caso') }),
     // Só as nunca tentadas: as que falharam esperam a próxima rodada.
     prisma.publicacao.count({
       where: { situacao: SituacaoDaPublicacao.PENDENTE, analisadaEm: null, analiseErro: null },
     }),
+    prisma.publicacao.count({
+      where: { minutaPedidaEm: { gt: new Date(Date.now() - MINUTA_TRAVADA_MS) } },
+    }),
   ])
-  return { pendentes, semCaso, aguardandoAnalise }
+  return { pendentes, semCaso, aguardandoAnalise, gerandoMinuta }
 }
 
 export async function ultimaConsulta(sessao: SessaoServidor) {

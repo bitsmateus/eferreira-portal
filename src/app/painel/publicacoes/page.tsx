@@ -84,7 +84,10 @@ export default async function PaginaDePublicacoes({
                 ? `Analisando ${contagem.aguardandoAnalise} publicação(ões)… a tela se atualiza sozinha`
                 : 'Análise por IA ligada'}
           </span>
-          <AtualizacaoAutomatica ativa={iaLigada && contagem.aguardandoAnalise > 0} />
+          {contagem.gerandoMinuta > 0 && <span>Gerando {contagem.gerandoMinuta} minuta(s)…</span>}
+          <AtualizacaoAutomatica
+            ativa={iaLigada && (contagem.aguardandoAnalise > 0 || contagem.gerandoMinuta > 0)}
+          />
           <span>Prazos são sugestões: feriados locais e suspensões do tribunal não entram na conta.</span>
         </div>
 

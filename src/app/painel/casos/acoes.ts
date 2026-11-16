@@ -44,6 +44,7 @@ function lerCampos(dados: FormData): CamposDeCaso {
     prazoDePagamentoDaEconomia: texto(dados, 'prazoDePagamentoDaEconomia'),
     tipoDeObjeto: texto(dados, 'tipoDeObjeto'),
     descricaoDoObjeto: texto(dados, 'descricaoDoObjeto'),
+    area: texto(dados, 'area'),
     honorariosPersonalizados: texto(dados, 'honorariosPersonalizados'),
     personalizadoServicos: texto(dados, 'personalizadoServicos'),
     personalizadoValorOuPercentual: texto(dados, 'personalizadoValorOuPercentual'),

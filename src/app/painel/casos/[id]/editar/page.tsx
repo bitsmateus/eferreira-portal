@@ -56,6 +56,7 @@ export default async function PaginaDeEdicaoDeCaso({
         : String(caso.prazoDePagamentoDaEconomia),
     tipoDeObjeto: caso.tipoDeObjeto ?? '',
     descricaoDoObjeto: caso.descricaoDoObjeto ?? '',
+    area: caso.area ?? '',
     honorariosPersonalizados: caso.honorariosPersonalizados,
     personalizadoServicos: caso.personalizadoServicos ?? '',
     personalizadoValorOuPercentual: caso.personalizadoValorOuPercentual ?? '',

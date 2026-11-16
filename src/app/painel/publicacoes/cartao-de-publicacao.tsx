@@ -19,6 +19,7 @@ import {
   reanalisar,
   type EstadoDaPublicacao,
 } from './acoes'
+import { MinutaDaPublicacao } from './minuta-da-publicacao'
 
 type Opcao = { id: string; nome: string }
 
@@ -373,6 +374,8 @@ export function CartaoDePublicacao({
             {publicacao.texto}
           </pre>
         )}
+
+        {iaLigada && (pendente || publicacao.minuta !== null) && <MinutaDaPublicacao publicacao={publicacao} />}
 
         {pendente && publicacao.caso !== null && (
           <FormularioDeConferencia publicacao={publicacao} responsaveis={responsaveis} status={status} />

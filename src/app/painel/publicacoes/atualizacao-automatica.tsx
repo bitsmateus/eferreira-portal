@@ -4,13 +4,15 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 const INTERVALO_MS = 5_000
-const LIMITE_MS = 3 * 60_000
+// A minuta com pesquisa na web leva minutos (16/11/2026): o teto acompanha
+// `MINUTA_TRAVADA_MS` (src/lib/minuta.ts), depois do qual o pedido é dado por perdido.
+const LIMITE_MS = 20 * 60_000
 
 /**
- * A análise da IA roda depois da resposta (`after`), então a tela não fica
- * sabendo quando ela termina. Enquanto `ativa`, a página se recarrega sozinha
- * a cada poucos segundos — e desiste depois de três minutos, para uma
- * análise que nunca termina não deixar a aba recarregando para sempre.
+ * A análise e a minuta da IA rodam depois da resposta (`after`), então a tela
+ * não fica sabendo quando terminam. Enquanto `ativa`, a página se recarrega
+ * sozinha a cada poucos segundos — e desiste depois de vinte minutos, para um
+ * pedido que nunca termina não deixar a aba recarregando para sempre.
  * `chave` reinicia a contagem (ex.: a cada clique em "Consultar agora").
  */
 export function useAtualizacaoAutomatica(ativa: boolean, chave: unknown = null): void {

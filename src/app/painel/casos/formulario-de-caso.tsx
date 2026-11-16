@@ -12,6 +12,7 @@ import {
 
 import { SeletorDeCliente } from '@/componentes/seletor-de-cliente'
 import { ROTULO_DA_SITUACAO } from '@/componentes/situacoes'
+import { AREAS, ROTULO_DA_AREA } from '@/lib/areas'
 import { formatarNumeroDeProcesso } from '@/lib/formatos'
 import { LINHAS_DE_PARCELA } from '@/lib/casos'
 import {
@@ -38,6 +39,7 @@ export type ValoresDoCaso = {
   prazoDePagamentoDaEconomia: string
   tipoDeObjeto: string
   descricaoDoObjeto: string
+  area: string
   honorariosPersonalizados: boolean
   personalizadoServicos: string
   personalizadoValorOuPercentual: string
@@ -66,6 +68,7 @@ export const VALORES_VAZIOS: ValoresDoCaso = {
   prazoDePagamentoDaEconomia: '',
   tipoDeObjeto: '',
   descricaoDoObjeto: '',
+  area: '',
   honorariosPersonalizados: false,
   personalizadoServicos: '',
   personalizadoValorOuPercentual: '',
@@ -187,6 +190,7 @@ export function FormularioDeCaso({
     prazoDePagamentoDaEconomia: valores.prazoDePagamentoDaEconomia,
     tipoDeObjeto: valores.tipoDeObjeto,
     descricaoDoObjeto: valores.descricaoDoObjeto,
+    area: valores.area,
     personalizadoServicos: valores.personalizadoServicos,
     personalizadoValorOuPercentual: valores.personalizadoValorOuPercentual,
     personalizadoBaseDeCalculo: valores.personalizadoBaseDeCalculo,
@@ -370,6 +374,28 @@ export function FormularioDeCaso({
                 </Campo>
               </div>
             </div>
+
+            <Campo
+              nome="area"
+              rotulo="Área"
+              erro={erros['area']}
+              dica="Escolhe o agente de IA que analisa as publicações deste caso e redige a minuta."
+            >
+              <select
+                id="area"
+                name="area"
+                className="campo-entrada"
+                value={campos.area}
+                onChange={(evento) => definir('area', evento.target.value)}
+              >
+                <option value="">Não classificada</option>
+                {AREAS.map((area) => (
+                  <option key={area} value={area}>
+                    {ROTULO_DA_AREA[area]}
+                  </option>
+                ))}
+              </select>
+            </Campo>
 
             <div className="flex flex-col gap-0 sm:flex-row sm:gap-3.5">
               <div className="flex-1">

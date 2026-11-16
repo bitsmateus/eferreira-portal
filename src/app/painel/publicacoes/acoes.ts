@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { validarAndamento } from '@/lib/andamentos'
 import { validarEvento } from '@/lib/eventos'
 import { texto, type ErrosDeCampo } from '@/lib/formulario'
+import { gerarMinuta, pedirMinuta } from '@/lib/minuta'
 import {
   analisarPendentes,
   conferirPublicacao,
@@ -116,6 +117,34 @@ export async function reanalisar(publicacaoId: string): Promise<EstadoDaPublicac
   atualizarTelas()
   if (resultado.situacao === 'falhou') return { mensagem: `A análise falhou: ${resultado.erro}` }
   if (resultado.situacao === 'ia_desligada') return { mensagem: 'A IA não está configurada.' }
+  return { sucesso: true }
+}
+
+const MENSAGEM_DA_MINUTA = {
+  ia_desligada: 'A IA não está configurada.',
+  nao_encontrada: 'Publicação não encontrada.',
+  area_invalida: 'Escolha a área da minuta.',
+  em_andamento: 'Já há uma minuta sendo gerada para esta publicação.',
+} as const
+
+/**
+ * "Gerar minuta": marca o pedido e gera depois da resposta — com pesquisa na
+ * web leva minutos, e a tela se atualiza sozinha enquanto isso.
+ */
+export async function pedirMinutaDaPublicacao(
+  publicacaoId: string,
+  _estado: EstadoDaPublicacao,
+  dados: FormData,
+): Promise<EstadoDaPublicacao> {
+  const sessao = await exigirSessaoDaEquipe()
+  const resultado = await pedirMinuta(sessao, publicacaoId, texto(dados, 'area'), await emailDaSessao(sessao))
+  if (resultado.situacao !== 'ok') return { mensagem: MENSAGEM_DA_MINUTA[resultado.situacao] }
+  const area = resultado.area
+  after(async () => {
+    await gerarMinuta(publicacaoId, area)
+    revalidatePath('/painel/publicacoes')
+  })
+  revalidatePath('/painel/publicacoes')
   return { sucesso: true }
 }
 
