@@ -104,6 +104,9 @@ export function MinutaDaPublicacao({ publicacao }: { publicacao: LinhaDePublicac
             <button type="button" className="botao botao-fantasma botao-pequeno" onClick={() => setAberta((v) => !v)}>
               {aberta ? 'Esconder minuta' : 'Ver minuta'}
             </button>
+            <a href={`/painel/publicacoes/${publicacao.id}/minuta`} className="botao botao-secundario botao-pequeno" download>
+              Baixar em Word
+            </a>
             {publicacao.minuta !== null && <BotaoCopiar texto={publicacao.minuta} />}
           </div>
 

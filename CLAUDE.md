@@ -327,6 +327,11 @@ verificado:** a chamada real à Anthropic com busca na web (sem chave aqui —
 `npm run ia:teste -- minuta` em produção), os testes de banco (Docker não
 subiu) e a tela no navegador. **Falta:** aplicar a migração pelo deploy no
 EasyPanel; conferir que a busca na web está permitida no Console da Anthropic.
+No mesmo dia, a pedido do escritório, a minuta ganhou **Baixar em Word** com o
+timbre (`src/lib/minuta-em-word.ts`, dependência nova `docx` 9.15.0, MIT): a
+imagem da página inteira atrás do texto, margens e fonte dos PDFs. Testado
+gerando o arquivo e lendo o XML; **não aberto no Word** (sem Word nem
+LibreOffice nesta máquina).
 
 **Esteira de acompanhamento: publicações do DJEN e fila de conferência**
 (09/11/2026). Frente contratada à parte — escopo "Esteira de automação jurídica

@@ -88,6 +88,11 @@ Como funciona:
 4. A minuta aparece em roxo, com a **nota de revisão** separada e a lista das
    **fontes que a pesquisa encontrou**. É rascunho: o portal não protocola nem
    manda nada a ninguém.
+5. **Baixar em Word** (16/11/2026): `/painel/publicacoes/<id>/minuta` monta o
+   `.docx` na hora (`src/lib/minuta-em-word.ts`, biblioteca `docx`), com o
+   papel timbrado da página inteira atrás do texto, como no Word do
+   escritório, e as margens e a fonte dos PDFs. Só a peça; a nota de revisão
+   fica na tela. Não é gravado; o acesso vai para a auditoria.
 
 Vai à IA: o agente, a petição sem dados pessoais, o inteiro teor (público, do
 DJEN) e do caso só assunto, número, vara, parte contrária e o nome do cliente.
@@ -107,4 +112,3 @@ Etapas do escopo que dependem de material do escritório:
 
 - **Salvar no Dropbox** — estrutura informada (PASTA DO ESCRITÓRIO / TIPO DO
   CLIENTE / EMPRESA / CLIENTE / CASO); falta o acesso.
-- **Minuta em Word com o timbre** — hoje a minuta é texto para copiar.

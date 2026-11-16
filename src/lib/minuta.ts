@@ -207,6 +207,37 @@ export async function pedirMinuta(
   return { situacao: 'ok', area }
 }
 
+/**
+ * A minuta pronta para virar Word, com o nome do arquivo. `null` se a
+ * publicação não existe ou ainda não tem minuta. Registra o acesso (a peça
+ * carrega dado de processo). O arquivo não é gravado: sai na hora, como a
+ * prévia dos documentos.
+ */
+export async function minutaParaBaixar(
+  sessao: SessaoServidor,
+  publicacaoId: string,
+  emailDoAutor: string | null,
+): Promise<{ texto: string; nomeDoArquivo: string } | null> {
+  exigirEquipe(sessao)
+  const publicacao = await prisma.publicacao.findUnique({
+    where: { id: publicacaoId },
+    select: { id: true, minuta: true, numeroProcesso: true, minutaGeradaEm: true },
+  })
+  if (publicacao === null || publicacao.minuta === null) return null
+
+  await registrarAuditoria({
+    usuarioId: sessao.usuarioId,
+    usuarioEmail: emailDoAutor,
+    acao: AcaoAuditoria.ACESSO,
+    entidade: 'publicacao',
+    entidadeId: publicacao.id,
+    detalhes: { motivo: 'minuta_baixada_em_word' },
+  })
+
+  const dia = publicacao.minutaGeradaEm === null ? diaEmSaoPaulo(new Date()) : diaEmSaoPaulo(publicacao.minutaGeradaEm)
+  return { texto: publicacao.minuta, nomeDoArquivo: `minuta-${publicacao.numeroProcesso}-${dia}.docx` }
+}
+
 /** Gera e grava a minuta. Sem sessão: roda depois da resposta de `pedirMinuta`. */
 export async function gerarMinuta(publicacaoId: string, area: AreaDoCaso): Promise<void> {
   const publicacao = await prisma.publicacao.findUnique({
