@@ -177,14 +177,14 @@ export function lerAvulsos(json: string): SignatarioAvulso[] {
 /**
  * O endereço que assina pelo escritório.
  *
- * Fica em variável de ambiente porque não é o mesmo e-mail do SMTP: o portal
- * *manda* mensagens por `contato@`, e quem *assina* pelo escritório é o
- * advogado. Sem a variável, vale o e-mail do advogado que já consta na
- * procuração.
+ * Sem a variável `D4SIGN_EMAIL_DO_ESCRITORIO`, vale o e-mail do escritório
+ * (`contato@`) — pedido do escritório em 18/11/2026: "alterar o e-mail que
+ * aparece como do escritório nos contratos, de sergioferreira@ para
+ * contato@". Antes o padrão era o e-mail pessoal do advogado.
  */
 export function emailDoEscritorio(): string {
   const configurado = (process.env['D4SIGN_EMAIL_DO_ESCRITORIO'] ?? '').trim()
-  return configurado === '' ? ESCRITORIO.emailDoAdvogado : configurado
+  return configurado === '' ? ESCRITORIO.email : configurado
 }
 
 export type ClienteQueAssina = {

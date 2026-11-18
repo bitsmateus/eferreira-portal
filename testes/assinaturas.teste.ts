@@ -162,9 +162,9 @@ describe('emailDoEscritorio', () => {
     delete process.env['D4SIGN_EMAIL_DO_ESCRITORIO']
   })
 
-  // Quem MANDA e-mail é contato@; quem ASSINA pelo escritório é o advogado.
-  it('sem configuração, é o e-mail do advogado da procuração', () => {
-    expect(emailDoEscritorio()).toBe(ESCRITORIO.emailDoAdvogado)
+  // Pedido de 18/11/2026: o escritório assina pelo contato@, não pelo e-mail pessoal.
+  it('sem configuração, é o e-mail do escritório (contato@)', () => {
+    expect(emailDoEscritorio()).toBe('contato@eferreira.adv.br')
   })
 
   it('a variável de ambiente manda', () => {
@@ -174,7 +174,7 @@ describe('emailDoEscritorio', () => {
 
   it('variável em branco não vira remetente vazio', () => {
     process.env['D4SIGN_EMAIL_DO_ESCRITORIO'] = '   '
-    expect(emailDoEscritorio()).toBe(ESCRITORIO.emailDoAdvogado)
+    expect(emailDoEscritorio()).toBe(ESCRITORIO.email)
   })
 })
 

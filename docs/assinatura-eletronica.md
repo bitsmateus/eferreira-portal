@@ -69,9 +69,9 @@ vai para o endereço do sócio; se ele não tiver um no cadastro, vale o da
 empresa. Mandar o documento para a empresa em vez do sócio seria pedir
 assinatura de quem não pode dar.
 
-**Quem assina pelo escritório** é o advogado, e não a conta que manda os
-e-mails do portal. São dois endereços diferentes e é de propósito — ver
-`D4SIGN_EMAIL_DO_ESCRITORIO` no `.env.example`.
+**Quem assina pelo escritório** recebe o e-mail em `contato@eferreira.adv.br`
+(pedido do escritório em 18/11/2026; antes era o e-mail pessoal do advogado).
+Outro endereço só pela variável `D4SIGN_EMAIL_DO_ESCRITORIO` — ver o `.env.example`.
 
 **As testemunhas do contrato ficam no papel.** O modelo do escritório tem as
 linhas delas, e elas não entram na assinatura eletrônica: cada testemunha
@@ -200,7 +200,7 @@ D4SIGN_URL="https://secure.d4sign.com.br/api/v1"
 D4SIGN_TOKEN_API=          # secreto no EasyPanel
 D4SIGN_CRYPT_KEY=          # secreto no EasyPanel
 D4SIGN_COFRE=              # UUID do cofre "Escritorio"
-D4SIGN_EMAIL_DO_ESCRITORIO=  # em branco = o advogado da procuração
+D4SIGN_EMAIL_DO_ESCRITORIO=  # em branco = contato@eferreira.adv.br
 ```
 
 Sem token, a instalação simplesmente **não assina**: a tela explica e o cartão
