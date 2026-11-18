@@ -214,6 +214,39 @@ export async function saldo(configuracao: ConfiguracaoD4Sign): Promise<Saldo> {
   }
 }
 
+/**
+ * O saldo guardado por alguns minutos (18/11/2026). A tela de envio pedia o
+ * saldo à D4Sign a cada abertura, a cada revisão de signatários e de novo no
+ * clique de enviar — três chamadas por contrato, mais as recargas da página.
+ * A chave de API do escritório tem limite mensal de chamadas (a D4Sign
+ * recusou com "atingiu o tempo limite para este mês"), e o saldo muda pouco:
+ * guardar 10 minutos poupa quase todas. Falha também é guardada (5 minutos),
+ * para uma D4Sign fora do ar não ser martelada a cada recarga. Depois de um
+ * envio de verdade, `esquecerSaldo()` força a próxima leitura.
+ */
+const SALDO_VALE_MS = 10 * 60_000
+const FALHA_DO_SALDO_VALE_MS = 5 * 60_000
+let saldoMemorizado: { valor: Saldo | null; ate: number } | null = null
+
+export async function saldoGuardado(
+  configuracao: ConfiguracaoD4Sign,
+  agora: number = Date.now(),
+): Promise<Saldo | null> {
+  if (saldoMemorizado !== null && agora < saldoMemorizado.ate) return saldoMemorizado.valor
+  try {
+    const valor = await saldo(configuracao)
+    saldoMemorizado = { valor, ate: agora + SALDO_VALE_MS }
+    return valor
+  } catch {
+    saldoMemorizado = { valor: null, ate: agora + FALHA_DO_SALDO_VALE_MS }
+    return null
+  }
+}
+
+export function esquecerSaldo(): void {
+  saldoMemorizado = null
+}
+
 /** Situações que a D4Sign devolve, traduzidas para o que o painel mostra. */
 export type SituacaoNaD4Sign =
   | 'aguardando'

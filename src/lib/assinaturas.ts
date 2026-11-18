@@ -86,8 +86,9 @@ import {
   definirSignatarios,
   descreverFalhaDaD4Sign,
   mandarAssinar,
+  esquecerSaldo,
   posicionarAssinaturas,
-  saldo,
+  saldoGuardado,
   subirDocumento,
   type ConfiguracaoD4Sign,
 } from '@/lib/d4sign'
@@ -581,14 +582,11 @@ export async function prepararEnvio(
     }
   }
 
-  // Leitura pura: não consome crédito. Se a D4Sign não responder, a tela
-  // mostra "não foi possível consultar" em vez de um número inventado.
-  let creditosRestantes: number | null = null
-  try {
-    creditosRestantes = (await saldo(configuracao)).restantes
-  } catch {
-    creditosRestantes = null
-  }
+  // Leitura pura: não consome crédito, mas consome chamada da chave de API —
+  // por isso vem guardada por alguns minutos (`saldoGuardado`). Se a D4Sign
+  // não responder, a tela mostra "não foi possível consultar" em vez de um
+  // número inventado.
+  const creditosRestantes = (await saldoGuardado(configuracao))?.restantes ?? null
 
   if (creditosRestantes !== null && creditosRestantes <= 0) {
     return { situacao: 'sem_creditos' }
@@ -782,6 +780,8 @@ export async function enviarParaAssinatura(
   }
 
   const agora = new Date()
+  // Um crédito acabou de ser gasto: o saldo guardado ficou velho.
+  esquecerSaldo()
 
   await prisma.envioParaAssinatura.update({
     where: { id: envioId },
@@ -866,6 +866,7 @@ export async function conferirAssinatura(
       id: true,
       uuidDocumento: true,
       documentoAssinadoId: true,
+      situacao: true,
       documento: {
         select: {
           id: true,
@@ -889,6 +890,11 @@ export async function conferirAssinatura(
       acessoLiberado: false,
     }
   }
+
+  // Cancelado não volta a andar: não gasta chamada da chave de API perguntando
+  // de novo (18/11/2026). NO_COFRE continua perguntando — um envio pode ter
+  // saído na D4Sign mesmo com a resposta perdida no caminho.
+  if (envio.situacao === SituacaoDoEnvio.CANCELADO) return { situacao: 'cancelado' }
 
   let naD4Sign: Awaited<ReturnType<typeof consultarDocumento>>
   try {
