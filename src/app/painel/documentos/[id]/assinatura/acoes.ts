@@ -62,6 +62,10 @@ export async function enviarDocumentoParaAssinatura(
     }
   }
 
+  if (resultado.situacao === 'falha_na_d4sign') {
+    return { erro: `${resultado.motivo} Nada foi enviado e nenhum crédito foi gasto.` }
+  }
+
   if (resultado.situacao === 'sem_email') {
     return {
       erro: 'Falta e-mail de quem assina.',
@@ -198,6 +202,10 @@ export async function conferirAssinaturaDoEnvio(
 
   if (resultado.situacao === 'sem_integracao') {
     return { erro: 'Esta instalação não tem a assinatura eletrônica configurada.' }
+  }
+
+  if (resultado.situacao === 'falha_na_d4sign') {
+    return { erro: resultado.motivo }
   }
 
   return { erro: 'Envio não encontrado.' }

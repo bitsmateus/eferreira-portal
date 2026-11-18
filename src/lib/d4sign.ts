@@ -92,6 +92,39 @@ export class FalhaNaD4Sign extends Error {
   }
 }
 
+/**
+ * A recusa da D4Sign em português, para a tela — em vez do erro genérico.
+ *
+ * Caso registrado em 18/11/2026: a D4Sign responde HTTP 401 com
+ * `{"status":false,"error":"Esta chave da API já atingiu o tempo limite para
+ * este mês"}` quando o PLANO da conta do escritório esgota as chamadas de API
+ * do mês. Não é defeito do portal nem senha errada; só a D4Sign (ou a virada
+ * do mês) resolve. Exportado para teste.
+ */
+export function descreverFalhaDaD4Sign(erro: unknown): string {
+  if (!(erro instanceof FalhaNaD4Sign)) {
+    return 'A D4Sign não respondeu. Tente de novo em alguns minutos.'
+  }
+  let texto = erro.message
+  try {
+    const corpo = JSON.parse(erro.message) as { error?: unknown; message?: unknown }
+    const dito = typeof corpo.error === 'string' ? corpo.error : corpo.message
+    if (typeof dito === 'string' && dito.trim() !== '') texto = dito.trim()
+  } catch {
+    // Não era JSON: fica o texto como veio.
+  }
+  if (/limite\s+para\s+este\s+m[eê]s|atingiu o tempo limite/i.test(texto)) {
+    return (
+      'A D4Sign recusou: a chave de API do escritório atingiu o limite de uso deste mês ' +
+      'no plano da D4Sign. É preciso falar com a D4Sign (ou esperar a virada do mês).'
+    )
+  }
+  if (erro.situacao === 401) {
+    return `A D4Sign recusou a chave de API do escritório (HTTP 401): ${texto}`
+  }
+  return `A D4Sign recusou (HTTP ${erro.situacao}): ${texto}`
+}
+
 function endereco(
   configuracao: ConfiguracaoD4Sign,
   caminho: string,

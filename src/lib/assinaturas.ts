@@ -84,6 +84,7 @@ import {
   configuracaoD4Sign,
   consultarDocumento,
   definirSignatarios,
+  descreverFalhaDaD4Sign,
   mandarAssinar,
   posicionarAssinaturas,
   saldo,
@@ -619,6 +620,8 @@ export type ResultadoDoEnvio =
   | { situacao: 'enviado'; envioId: string }
   /** Subiu ao cofre e parou no caminho. O PDF ficou lá, e a tela diz isso. */
   | { situacao: 'parou_no_cofre'; envioId: string; motivo: string }
+  /** A D4Sign recusou ANTES de o PDF subir: nada ficou no cofre, nenhum crédito gasto. */
+  | { situacao: 'falha_na_d4sign'; motivo: string }
   | Exclude<ResultadoDoPreparo, { situacao: 'pronto' }>
 
 export async function enviarParaAssinatura(
@@ -670,7 +673,13 @@ export async function enviarParaAssinatura(
     posicoesJaDefinidas = anterior.posicoesDefinidasEm !== null
   } else {
     const pdf = await lerArquivo(documento.chaveArquivo)
-    uuid = await subirDocumento(configuracao, configuracao.cofre, documento.nome, pdf)
+    // Recusa aqui (ex.: limite mensal da chave de API, 18/11/2026) não pode
+    // virar a tela de erro genérico: nada subiu, e a pessoa precisa saber por quê.
+    try {
+      uuid = await subirDocumento(configuracao, configuracao.cofre, documento.nome, pdf)
+    } catch (erro) {
+      return { situacao: 'falha_na_d4sign', motivo: descreverFalhaDaD4Sign(erro) }
+    }
 
     // Gravado ANTES do envio, de propósito: se o passo seguinte falhar, o
     // documento já está no cofre do escritório e precisa ter dono no sistema.
@@ -748,7 +757,7 @@ export async function enviarParaAssinatura(
       mensagemDoEnvio(documento.tipo, preparo.documento.clienteNome),
     )
   } catch (erro) {
-    const motivo = erro instanceof Error ? erro.message : 'Falha desconhecida.'
+    const motivo = descreverFalhaDaD4Sign(erro)
 
     await prisma.envioParaAssinatura.update({
       where: { id: envioId },
@@ -823,6 +832,7 @@ export type ResultadoDaConferencia =
   | { situacao: 'nao_encontrado' }
   | { situacao: 'sem_integracao' }
   | { situacao: 'desconhecida'; situacaoNaD4Sign: string }
+  | { situacao: 'falha_na_d4sign'; motivo: string }
 
 /**
  * Pergunta à D4Sign como está o documento e, se já estiver assinado, traz o
@@ -880,7 +890,12 @@ export async function conferirAssinatura(
     }
   }
 
-  const naD4Sign = await consultarDocumento(configuracao, envio.uuidDocumento)
+  let naD4Sign: Awaited<ReturnType<typeof consultarDocumento>>
+  try {
+    naD4Sign = await consultarDocumento(configuracao, envio.uuidDocumento)
+  } catch (erro) {
+    return { situacao: 'falha_na_d4sign', motivo: descreverFalhaDaD4Sign(erro) }
+  }
   const agora = new Date()
 
   if (naD4Sign === null) {
