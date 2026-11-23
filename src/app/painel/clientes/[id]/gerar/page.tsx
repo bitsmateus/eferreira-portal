@@ -27,7 +27,7 @@ export default async function PaginaDeGeracao({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tipo?: string; casoId?: string; advogadoId?: string }>
+  searchParams: Promise<{ tipo?: string; casoId?: string; advogadoId?: string | string[] }>
 }) {
   const sessao = await exigirSessaoDaEquipe()
   const { id } = await params
@@ -39,14 +39,14 @@ export default async function PaginaDeGeracao({
   const naQuery = tipoBruto ?? ''
   const tipo: TipoGeravel | null = ehTipoGeravel(naQuery) ? naQuery : null
   const casoId = casoBruto === undefined || casoBruto === '' ? null : casoBruto
-  // Id desconhecido cai no padrão na tela; o servidor recusa de verdade em
-  // `montarPrevia` (regra 2), a tela só evita mostrar um seletor quebrado.
+  // Desde 23/11/2026 a procuração leva um ou mais advogados. Sem escolha na
+  // URL, vêm marcados todos os ativos — como no modelo do escritório, que
+  // lista a equipe. Id desconhecido é ignorado aqui; o servidor recusa de
+  // verdade em `montarPrevia` (regra 2).
   const advogados = await listarAdvogadosAtivos(sessao)
-  const advogadoId =
-    advogados.find((advogado) => advogado.id === advogadoBruto)?.id ??
-    advogados.find((advogado) => advogado.padrao)?.id ??
-    advogados[0]?.id ??
-    ''
+  const pedidos = advogadoBruto === undefined ? [] : Array.isArray(advogadoBruto) ? advogadoBruto : [advogadoBruto]
+  const conhecidos = advogados.filter((advogado) => pedidos.includes(advogado.id)).map((advogado) => advogado.id)
+  const advogadoIds = conhecidos.length > 0 ? conhecidos : advogados.map((advogado) => advogado.id)
 
   // A prévia é montada pelo mesmo caminho que a geração usa, então o que
   // aparece aqui é o que sai no PDF — não há um "renderizador de prévia"
@@ -54,14 +54,14 @@ export default async function PaginaDeGeracao({
   const previa =
     tipo === null
       ? null
-      : await montarPrevia(sessao, cliente.id, tipo, casoId, advogadoId)
+      : await montarPrevia(sessao, cliente.id, tipo, casoId, advogadoIds)
 
   // A prévia é o PDF de verdade, gerado pela mesma função e pelo mesmo
   // Chromium — inclusive as quebras de página. Se um dia aparecer um segundo
   // caminho que desenha o documento de outro jeito, ele vai mentir; não crie.
   const enderecoDaPrevia =
     previa?.situacao === 'pronto'
-      ? `/painel/clientes/${cliente.id}/gerar/previa?tipo=${tipo}&casoId=${casoId ?? ''}&advogadoId=${advogadoId}`
+      ? `/painel/clientes/${cliente.id}/gerar/previa?tipo=${tipo}&casoId=${casoId ?? ''}${advogadoIds.map((advogadoId) => `&advogadoId=${encodeURIComponent(advogadoId)}`).join('')}`
       : null
 
   return (
@@ -136,31 +136,31 @@ export default async function PaginaDeGeracao({
                     </p>
                   </div>
 
-                  <div className="mb-[15px]">
-                    <label className="campo-rotulo" htmlFor="advogadoId">
-                      Outorgado (advogado da procuração)
-                    </label>
-                    <select
-                      id="advogadoId"
-                      name="advogadoId"
-                      className="campo-entrada"
-                      defaultValue={advogadoId}
-                    >
+                  <fieldset className="mb-[15px]">
+                    <legend className="campo-rotulo">Outorgados (advogados da procuração)</legend>
+                    <div className="flex flex-col gap-1.5">
                       {advogados.map((advogado) => (
-                        <option key={advogado.id} value={advogado.id}>
+                        <label key={advogado.id} className="flex items-center gap-2 text-[13px]">
+                          <input
+                            type="checkbox"
+                            name="advogadoId"
+                            value={advogado.id}
+                            defaultChecked={advogadoIds.includes(advogado.id)}
+                          />
                           {advogado.nome} — OAB/{advogado.oabUf} {advogado.oab}
-                        </option>
+                        </label>
                       ))}
-                    </select>
+                    </div>
                     <p className="dica">
-                      Vale só para a procuração. O endereço profissional é o do
-                      escritório, para qualquer advogado.{' '}
+                      Vale só para a procuração; marque um ou mais. Sem nenhum
+                      marcado, sai o advogado padrão. O endereço profissional é o
+                      do escritório, para qualquer advogado.{' '}
                       <Link href="/painel/advogados" className="underline underline-offset-2">
                         Cadastrar ou editar advogados
                       </Link>
                       .
                     </p>
-                  </div>
+                  </fieldset>
 
                   <button type="submit" className="botao botao-secundario">
                     Ver prévia
@@ -174,7 +174,7 @@ export default async function PaginaDeGeracao({
                       clienteId={cliente.id}
                       tipo={tipo}
                       casoId={casoId}
-                      advogadoId={advogadoId}
+                      advogadoIds={advogadoIds}
                     />
                   </>
                 )}

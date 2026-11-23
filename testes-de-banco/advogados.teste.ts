@@ -137,16 +137,15 @@ describe('incluir um advogado', () => {
       clienteId,
       TipoDocumento.PROCURACAO,
       null,
-      resultado.id,
+      [resultado.id],
     )
     expect(previa.situacao).toBe('pronto')
     if (previa.situacao !== 'pronto') return
 
     const texto = previa.html.replace(/\s+/g, ' ')
     expect(texto).toContain('Dr. Advogado do Teste')
-    expect(texto).toContain('brasileiro, casado, advogado, inscrito na OAB/SP sob o nº 999.001')
-    // O contato citado continua sendo o do escritório.
-    expect(texto).toContain('e-mail: contato@eferreira.adv.br')
+    // Procuração de 23/11/2026: o outorgado entra com nome e OAB, no formato do escritório.
+    expect(texto).toContain('<strong>Dr. Advogado do Teste</strong>, OAB/SP nº 999.001, com endereço profissional')
   })
 
   it('a mesma OAB duas vezes é recusada; editar o próprio cadastro passa', async () => {
@@ -182,7 +181,7 @@ describe('desativar e padrão', () => {
       clienteId,
       TipoDocumento.PROCURACAO,
       null,
-      existente.id,
+      [existente.id],
     )
     expect(previa.situacao).toBe('nao_encontrado')
 

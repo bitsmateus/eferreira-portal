@@ -40,7 +40,7 @@ export async function GET(
       id,
       tipoBruto,
       casoBruto === '' ? null : casoBruto,
-      requisicao.nextUrl.searchParams.get('advogadoId'),
+      requisicao.nextUrl.searchParams.getAll('advogadoId'),
     )
 
     // A tela já mostra o que falta, com o link para completar o cadastro. Aqui

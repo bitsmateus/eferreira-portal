@@ -61,14 +61,35 @@ vale saber que nenhum documento depende dela.
 
 ## Procuração
 
-Além do bloco de qualificação:
+**Modelo de 23/11/2026** ("1.Procuração ad judicia et extra.docx", pedido do
+Dr. Sergio: "subir a nova procuração, incluir a sociedade de advogados e a
+possibilidade de colocar mais de um advogado"). Substitui os de 14/09 e 24/09.
 
 | Trecho | Origem |
 |---|---|
-| Dados do outorgado (advogado, OAB, endereço profissional) | fixo do escritório |
-| Cláusula de poderes (*ad judicia et extra*) | texto fixo, **não alterar** |
-| Cidade e data por extenso | gerado (regra 11) |
-| Linha de assinatura com o nome do outorgante | `cliente.nome` |
+| OUTORGANTE (nome, qualificação, CPF/CNPJ, endereço, cláusula de representação) | `procuracao-outorgante-{pf,pj,assistida}.html` |
+| OUTORGADOS – um ou mais advogados, "Dr. Fulano, OAB/SP nº X", "todos com endereço profissional na…" | escolhidos em "Gerar documento" (cadastro Advogados); `listaDeOutorgados` em `src/lib/modelos.ts` |
+| SOCIEDADE DE ADVOCACIA, PODERES GERAIS, PODERES ESPECIAIS, SUBSTABELECIMENTO E VIGÊNCIA | texto fixo do escritório, **não alterar** |
+| Cidade e data por extenso | cidade do cliente; data gerada (regra 11) |
+| Assinatura: nome do signatário em negrito e a qualidade embaixo | `procuracao-signatario-{pf,pj,assistida}.html` (só da procuração; contrato e declaração seguem com `procuracao-assinatura-*`) |
+
+Os marcadores do arquivo do escritório viraram dados do cadastro assim:
+
+- **Pessoa física:** qualificação = nacionalidade, estado civil, profissão e
+  RG; documento = CPF; sem cláusula de representação; signatário = o cliente,
+  qualidade "Outorgante".
+- **Pessoa jurídica:** qualificação = "pessoa jurídica de direito privado";
+  documento = CNPJ; cláusula = "Neste ato representada por seu representante
+  legal …, conforme atos constitutivos da sociedade" (palavras do modelo de
+  PJ de 24/09); signatário = o representante, "Representante legal de <empresa>".
+- **Representada/assistida:** endereço de quem assiste; cláusula = "Neste ato
+  assistido(a) por …"; signatário = quem assiste, "Assistente de <cliente>".
+
+A procuração nova **não cita e-mail nem telefone** do outorgante.
+
+Na tela, todos os advogados ativos vêm marcados; desmarque quem não entra.
+`npx tsx scripts/amostra-de-procuracao.ts <pasta>` gera PDFs de amostra sem
+banco, pelo mesmo caminho da geração.
 
 ## Declaração de hipossuficiência
 

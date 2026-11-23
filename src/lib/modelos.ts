@@ -199,6 +199,7 @@ export function montarModeloComArquivos(
   tipo: TipoDocumento,
   variante: VarianteDoDocumento,
   caso: CasoParaDocumento | null,
+  quantidadeDeOutorgados = 1,
 ): string {
   const modelo = ler(MODELO_DO_TIPO[tipo] ?? '')
   const assinatura = ler(`procuracao-assinatura-${variante}`)
@@ -224,10 +225,42 @@ export function montarModeloComArquivos(
 
   if (tipo !== TipoDocumento.PROCURACAO) return modelo
 
+  // A procuração de 23/11/2026 tem assinatura própria ("nome do signatário" e
+  // "qualidade do signatário"); contrato e declaração seguem com a de antes.
   return aplicarPartes(modelo, {
     outorgante: ler(`procuracao-outorgante-${variante}`),
-    assinatura,
+    outorgados: listaDeOutorgados(quantidadeDeOutorgados),
+    assinatura: ler(`procuracao-signatario-${variante}`),
   })
+}
+
+/**
+ * O parágrafo "OUTORGADOS –" da procuração de 23/11/2026, para quantos
+ * advogados tiverem sido escolhidos. O formato é o do arquivo do escritório
+ * ("Dr. Fulano, OAB/SP nº X, Dr. Beltrano, OAB/SP nº Y, e Dra. Sicrana, OAB/SP
+ * nº Z, todos com endereço profissional na ..."); com um advogado só, o rótulo
+ * e o "todos" vão para o singular. Exportado para teste.
+ */
+export function listaDeOutorgados(quantidade: number): string {
+  const n = Math.max(1, Math.floor(quantidade))
+  const itens = Array.from(
+    { length: n },
+    (_, i) =>
+      `<strong>{{outorgados.${i}.nome}}</strong>, OAB/{{outorgados.${i}.oabUf}} nº {{outorgados.${i}.oab}}`,
+  )
+  const lista =
+    n === 1
+      ? itens[0]
+      : n === 2
+        ? `${itens[0]} e ${itens[1]}`
+        : `${itens.slice(0, -1).join(', ')}, e ${itens[n - 1]}`
+  return [
+    '<p class="qualificacao">',
+    `  <strong>{{outorgados.rotulo}} –</strong> ${lista}, ${n === 1 ? '' : 'todos '}com`,
+    '  endereço profissional na Rua Olegário Paiva, nº 180, 4º andar, sala 411,',
+    '  Centro, Mogi das Cruzes/SP, CEP 08780-040.',
+    '</p>',
+  ].join('\n')
 }
 
 /** O mesmo, para quem só consegue ler arquivo de forma assíncrona. */
@@ -236,6 +269,7 @@ export async function montarModelo(
   tipo: TipoDocumento,
   variante: VarianteDoDocumento,
   caso: CasoParaDocumento | null,
+  quantidadeDeOutorgados = 1,
 ): Promise<string> {
   // Ensaio para descobrir quais arquivos entram; depois, lê todos e monta.
   const nomes = new Set<string>()
@@ -247,11 +281,18 @@ export async function montarModelo(
     tipo,
     variante,
     caso,
+    quantidadeDeOutorgados,
   )
   const lidos = new Map<string, string>()
   await Promise.all([...nomes].map(async (nome) => lidos.set(nome, await ler(nome))))
 
-  return montarModeloComArquivos((nome) => lidos.get(nome) ?? '', tipo, variante, caso)
+  return montarModeloComArquivos(
+    (nome) => lidos.get(nome) ?? '',
+    tipo,
+    variante,
+    caso,
+    quantidadeDeOutorgados,
+  )
 }
 
 /**
@@ -413,8 +454,12 @@ export function valoresDoDocumento(
   representante: RepresentanteParaDocumento | null,
   caso: CasoParaDocumento | null,
   emitidoEm: Date,
-  advogado: AdvogadoOutorgado = ADVOGADO_PADRAO,
+  advogados: AdvogadoOutorgado | readonly AdvogadoOutorgado[] = [ADVOGADO_PADRAO],
 ): Record<string, string | null> {
+  const outorgados: readonly AdvogadoOutorgado[] = Array.isArray(advogados)
+    ? advogados
+    : [advogados as AdvogadoOutorgado]
+  const advogado = outorgados[0] ?? ADVOGADO_PADRAO
   const valores: Record<string, string | null> = {
     'cliente.nome': ouNulo(cliente.nome),
     'cliente.nacionalidade': ouNulo(cliente.nacionalidade),
@@ -476,6 +521,15 @@ export function valoresDoDocumento(
   }
 
   Object.assign(valores, valoresDoOutorgado(advogado))
+
+  // A lista de outorgados da procuração de 23/11/2026 (`listaDeOutorgados`).
+  const umaSo = outorgados.length <= 1
+  valores['outorgados.rotulo'] = umaSo ? (advogado.feminino ? 'OUTORGADA' : 'OUTORGADO') : 'OUTORGADOS'
+  outorgados.forEach((outorgado, indice) => {
+    valores[`outorgados.${indice}.nome`] = outorgado.nome
+    valores[`outorgados.${indice}.oab`] = outorgado.oab
+    valores[`outorgados.${indice}.oabUf`] = outorgado.oabUf
+  })
 
   if (caso !== null) {
     valores['caso.descricaoDoObjeto'] = ouNulo(caso.descricaoDoObjeto)

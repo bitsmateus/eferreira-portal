@@ -123,6 +123,29 @@ export async function obterAdvogadoParaDocumento(
   return padrao === null ? ADVOGADO_PADRAO : paraODocumento(padrao)
 }
 
+/**
+ * Os outorgados da procuração de 23/11/2026, que aceita mais de um advogado.
+ * Lista vazia = só o padrão. Qualquer id desconhecido ou de advogado
+ * desativado devolve `undefined` e quem chama recusa (regra 2). A ordem é a
+ * do cadastro (o padrão primeiro), não a do navegador; repetidos contam uma vez.
+ */
+export async function obterAdvogadosParaDocumento(
+  ids: readonly string[],
+): Promise<AdvogadoOutorgado[] | undefined> {
+  const pedidos = [...new Set(ids.map((id) => id.trim()).filter((id) => id !== ''))]
+  if (pedidos.length === 0) {
+    const padrao = await obterAdvogadoParaDocumento(null)
+    return padrao === undefined ? undefined : [padrao]
+  }
+
+  const linhas = await prisma.advogado.findMany({
+    where: { id: { in: pedidos }, ativo: true },
+    orderBy: [{ padrao: 'desc' }, { criadoEm: 'asc' }],
+  })
+  if (linhas.length !== pedidos.length) return undefined
+  return linhas.map(paraODocumento)
+}
+
 // ---------------------------------------------------------------------------
 // Leitura
 // ---------------------------------------------------------------------------

@@ -107,7 +107,7 @@ describe('procuração de pessoa física', () => {
     expect(resultado.situacao).toBe('pronto')
     if (resultado.situacao !== 'pronto') return
     expect(resultado.html).toContain('estudante')
-    expect(resultado.html).not.toContain('assistido(a) por')
+    expect(resultado.html.toLowerCase()).not.toContain('assistido(a) por')
   })
 
   it('ninguém é responsável por si mesmo', async () => {
@@ -136,7 +136,8 @@ describe('procuração de pessoa física', () => {
     if (resultado.situacao !== 'pronto') return
 
     const texto = resultado.html.replace(/\s+/g, ' ')
-    expect(texto).toContain('neste ato assistido(a) por:')
+    // Procuração de 23/11/2026: "Neste ato assistido(a) por" (sem os dois-pontos).
+    expect(texto).toContain('Neste ato assistido(a) por')
     expect(texto).toContain('brasileira, casada, auxiliar de embalagem')
     // O assistido entra só com nome, nacionalidade, RG e CPF.
     expect(texto).not.toContain('estudante')

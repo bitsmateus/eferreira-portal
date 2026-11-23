@@ -313,6 +313,21 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Procuração nova, com a sociedade de advocacia e vários advogados**
+(23/11/2026). Modelo "1.Procuração ad judicia et extra.docx" do Dr. Sergio,
+transcrito sem alterar o texto (regra 10): OUTORGANTE, OUTORGADOS (um ou mais,
+marcados em "Gerar documento"), SOCIEDADE DE ADVOCACIA, PODERES GERAIS,
+PODERES ESPECIAIS, SUBSTABELECIMENTO E VIGÊNCIA. Assinatura própria da
+procuração (`procuracao-signatario-*`), sem mexer na do contrato e da
+declaração. A auditoria guarda `outorgados` (lista de ids). Ver
+`docs/modelos-de-documento.md` § Procuração. **Falta do escritório:**
+cadastrar o Dr. Lucas Bernardo Gomes (OAB/SP 549.397) e a Dra. Joyce Mayara
+Corrêa (OAB/SP 450.640) na tela Advogados; e **CONFIRMAR** as escolhas feitas
+para os marcadores do arquivo dele (qualificação, cláusula de representação e
+"qualidade do signatário" — ver o doc). Verificado: `tsc`, lint, 589
+unitários e PDFs gerados pelo caminho real (PF com 3 advogados, 1 página; PJ
+com 1, 2 páginas). Testes de banco ajustados, **não rodados** (sem Docker).
+
 **Minuta por área com os agentes do escritório** (16/11/2026). O Dr. Sergio
 mandou oito agentes (pasta "Agentes" do Dropbox), um por área, cada um com a
 petição de exemplo. Viraram `src/agentes/<área>/instrucoes.txt` (sem mudar

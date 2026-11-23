@@ -1,18 +1,16 @@
 <!--
-  Qualificação do OUTORGANTE pessoa física.
-
-  Modelo "Procuração Pessoa Fisica PF", enviado pelo escritório em 24/09/2026
-  (substitui o bloco de 14/09, que era do modelo antigo). Regra 10: texto do
-  escritório. Única adaptação: o original está no masculino ("portador",
-  "inscrito", "domiciliado"); como o sistema atende clientes dos dois gêneros,
-  a concordância vai com "(a)", como já era antes.
+  OUTORGANTE pessoa física — procuração de 23/11/2026. O modelo do escritório
+  traz "{{nome}}, {{qualificação civil}}, {{tipo de documento}} nº {{número}},
+  com endereço em {{endereço}}. {{cláusula de representação}}". Para pessoa
+  física: qualificação civil = nacionalidade, estado civil, profissão e RG;
+  documento = CPF; sem cláusula de representação. Concordância com "(a)",
+  como nos modelos anteriores.
 -->
 <p class="qualificacao">
-  <span class="rotulo-parte">Outorgante:</span>
+  <strong>OUTORGANTE:</strong>
   <span class="maiusculas">{{cliente.nome}}</span>, {{cliente.nacionalidade}},
   {{cliente.estadoCivil}}, {{cliente.profissao}}, portador(a) do RG nº
-  {{cliente.rg}}, inscrito(a) no CPF sob o nº {{cliente.documentoFormatado}},
-  e-mail: {{cliente.email}}, telefone: {{cliente.telefoneFormatado}}, residente
-  e domiciliado(a) {{cliente.endereco}}, CEP: {{cliente.cepFormatado}},
-  {{cliente.cidade}}/{{cliente.uf}}.
+  {{cliente.rg}}, CPF nº {{cliente.documentoFormatado}}, com endereço em
+  {{cliente.endereco}}, {{cliente.cidade}}/{{cliente.uf}}, CEP
+  {{cliente.cepFormatado}}.
 </p>

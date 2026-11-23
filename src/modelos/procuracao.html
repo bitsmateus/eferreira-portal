@@ -1,75 +1,76 @@
 <!--
   PROCURAÇÃO AD JUDICIA ET EXTRA — modelo oficial da E. Ferreira Advogados.
 
-  Transcrito do arquivo "1.Procuração ad judicia et extra CREDIT.docx" (14/09)
-  e conferido em 24/09/2026 contra os três modelos novos do escritório
-  ("Procuração Pessoa Fisica PF", "...Representada Assitida" e "...Pessoa
-  Juridica PJ"): o texto dos poderes é o mesmo nos três. Cita o artigo 105
-  do Código de Processo Civil.
+  Transcrito do arquivo "1.Procuração ad judicia et extra.docx", enviado pelo
+  Dr. Sergio em 23/11/2026 ("subir a nova procuração, incluir a sociedade de
+  advogados e a possibilidade de colocar mais de um advogado"). Substitui o
+  modelo de 14/09 e 24/09/2026.
 
-  Regra 10: o texto jurídico é do escritório e NÃO se altera — nem para
-  "melhorar" a redação, nem para corrigir concordância. Se algo precisar mudar,
-  o escritório manda a nova versão.
-
-  O arquivo enviado é de um cliente PESSOA JURÍDICA. O escritório confirmou que
-  "ela pode ser PJ ou PF dependendo do tipo de cliente do contrato", então a
-  qualificação do outorgante e a assinatura são partes trocáveis, encaixadas
-  mais abaixo a partir dos arquivos:
+  Regra 10: o texto jurídico é do escritório e NÃO se altera. Os marcadores
+  do arquivo dele ({{nome_ou_razao_social}}, {{clausula_de_representacao}},
+  {{nome_do_signatario}}...) viraram as partes trocáveis abaixo, uma por tipo
+  de cliente (pessoa física, jurídica e representada/assistida):
 
     outorgante  →  procuracao-outorgante-pf.html
                    procuracao-outorgante-pj.html
                    procuracao-outorgante-assistida.html
-    assinatura  →  procuracao-assinatura-pf.html
-                   procuracao-assinatura-pj.html
-                   procuracao-assinatura-assistida.html
+    assinatura  →  procuracao-signatario-pf.html
+                   procuracao-signatario-pj.html
+                   procuracao-signatario-assistida.html
+
+  OUTORGADOS: a lista de advogados é montada na hora, a partir dos escolhidos
+  em "Gerar documento" (cadastro na tela Advogados) — ver
+  `listaDeOutorgados`, em src/lib/modelos.ts. No arquivo do escritório eram
+  três (Dr. Sérgio, Dr. Lucas e Dra. Joyce), no mesmo formato.
 
   NÃO escreva a sintaxe de parte nem a de marcador dentro de um comentário:
-  as partes são encaixadas antes de os comentários serem removidos, e um
-  arquivo inteiro colado dentro de um comentário fecha o comentário no meio,
-  derramando o resto dele no documento assinado. Aconteceu.
-
-  O OUTORGADO (advogado) é escolhido na hora de gerar — cadastro
-  na tela "Advogados" (src/lib/advogados.ts). Os marcadores de outorgado só trocam nome, dados e a
-  concordância de gênero (o/a, inscrito/inscrita, procurador/procuradora); o
-  texto do escritório é o mesmo.
-
-  Ver src/lib/modelos.ts para a lista de campos.
+  as partes são encaixadas antes de os comentários serem removidos.
 -->
 <div class="documento-compacto">
 <h1>Procuração Ad Judicia Et Extra</h1>
 
 {{>outorgante}}
 
-<p class="qualificacao">
-  <span class="rotulo-parte">{{outorgado.rotulo}}:</span>
-  <span class="maiusculas">{{outorgado.nome}}</span>,
-  {{outorgado.qualificacao}}, {{outorgado.inscrito}} na OAB/{{outorgado.oabUf}} sob o
-  nº {{outorgado.oab}}, com escritório profissional na
-  {{escritorio.endereco}}, {{escritorio.cidade}} – {{escritorio.uf}}, CEP
-  {{escritorio.cep}}, {{outorgado.contato}}.
+{{>outorgados}}
+
+<p>
+  <strong>SOCIEDADE DE ADVOCACIA –</strong> O advogado Sérgio Evangelista
+  Ferreira é titular da SERGIO E. FERREIRA SOCIEDADE INDIVIDUAL DE ADVOCACIA,
+  registrada na OAB/SP sob nº 69.212, com sede na Rua Olegário Paiva, nº 180,
+  4º andar, sala 411, Centro, Mogi das Cruzes/SP, CEP 08780-040.
 </p>
 
 <p>
-  <span class="rotulo-parte">Poderes:</span> A OUTORGANTE nomeia e constitui
-  {{outorgado.o}} {{outorgado.ROTULO}} {{outorgado.procurador}}, conferindo-lhe
-  os poderes da cláusula <strong>AD JUDICIA ET EXTRA</strong>, para
-  representá-la ativa ou passivamente, em qualquer juízo, tribunal, instância
-  ou grau de jurisdição, podendo propor ações, apresentar defesas,
-  contestações, reconvenções, impugnações, manifestações e recursos, acompanhar
-  processos e procedimentos, requerer tutelas provisórias e medidas
-  incidentais, produzir provas, participar de audiências, praticar atos de
-  cumprimento e execução de decisões judiciais e, de modo geral, praticar todos
-  os atos necessários à defesa dos direitos e interesses da OUTORGANTE.
-  Confere, ainda, <strong>poderes especiais</strong>, nos termos do artigo 105
-  do Código de Processo Civil, para <strong>confessar, reconhecer a procedência
-  do pedido, transigir, desistir, renunciar ao direito sobre o qual se funda a
-  ação, receber, dar quitação, firmar compromisso e assinar declaração de
-  hipossuficiência econômica</strong>, quando cabível. {{outorgado.O}}
-  {{outorgado.ROTULO}} poderá, ainda, representar a OUTORGANTE perante órgãos e
-  entidades públicas ou privadas quando necessário à atuação jurídica
-  decorrente deste mandato, bem como <strong>substabelecer, no todo ou em
-  parte, com ou sem reserva de poderes</strong>. O presente mandato
-  permanecerá válido até sua expressa revogação pela OUTORGANTE.
+  <strong>PODERES GERAIS –</strong> A parte outorgante confere aos advogados
+  acima identificados os poderes da cláusula ad judicia et extra para
+  representá-la, em conjunto ou separadamente, ativa ou passivamente, em
+  qualquer juízo, instância ou tribunal, bem como, fora de juízo, perante
+  órgãos públicos e entidades públicas ou privadas. Os outorgados poderão
+  propor e acompanhar ações, apresentar defesas, reconvenções, impugnações e
+  manifestações, interpor recursos, requerer tutelas provisórias e medidas
+  incidentais, produzir provas e participar de audiências. Poderão também
+  formular requerimentos, acompanhar procedimentos administrativos, promover o
+  cumprimento de sentenças e a execução de títulos, bem como praticar os demais
+  atos necessários à defesa dos direitos e interesses da parte outorgante.
+</p>
+
+<p>
+  <strong>PODERES ESPECIAIS –</strong> Nos termos do art. 105 do Código de
+  Processo Civil, a parte outorgante confere a cada advogado poderes para
+  confessar, reconhecer a procedência do pedido, transigir, desistir, renunciar
+  ao direito sobre o qual se funda a ação, receber valores e dar quitação,
+  firmar compromisso e assinar declaração de hipossuficiência econômica, quando
+  cabível. Fica excluído o poder de receber citação em nome da parte
+  outorgante.
+</p>
+
+<p>
+  <strong>SUBSTABELECIMENTO E VIGÊNCIA –</strong> Cada outorgado poderá
+  substabelecer os poderes recebidos, no todo ou em parte, com ou sem reserva.
+  O substabelecimento sem reserva exige prévio e inequívoco conhecimento da
+  parte outorgante. O mandato é conferido por prazo indeterminado e poderá ser
+  revogado a qualquer tempo pela parte outorgante, observadas as demais causas
+  legais de extinção.
 </p>
 
 <p class="local-e-data">{{localDaAssinatura}}, {{dataPorExtenso}}.</p>

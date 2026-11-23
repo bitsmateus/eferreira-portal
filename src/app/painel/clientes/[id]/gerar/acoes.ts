@@ -32,7 +32,7 @@ export async function gerarEArquivar(
     tipo,
     casoId,
     await emailDaSessao(sessao),
-    texto(dados, 'advogadoId').trim() || null,
+    dados.getAll('advogadoId').filter((valor): valor is string => typeof valor === 'string'),
   )
 
   if (resultado.situacao === 'nao_encontrado') {

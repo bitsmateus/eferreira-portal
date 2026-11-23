@@ -11,6 +11,7 @@ import {
 
 import {
   MODELOS,
+  listaDeOutorgados,
   marcadoresDoModelo,
   montarModeloComArquivos,
   preencherModelo,
@@ -158,8 +159,9 @@ describe('preencherModelo', () => {
     expect(resultado.html).not.toMatch(/\{\{/)
     expect(resultado.html).toContain('Fulano de Tal da Silva')
     expect(resultado.html).toContain('engenheiro')
-    expect(resultado.html).toContain('(11) 98765-4321')
-    expect(resultado.html).toContain('fulano@exemplo.com.br')
+    // A procuração de 23/11/2026 não cita e-mail nem telefone do outorgante.
+    expect(resultado.html).not.toContain('fulano@exemplo.com.br')
+    expect(resultado.html.replace(/\s+/g, ' ')).toContain('com endereço em Rua das Flores, 100, Centro')
     expect(resultado.html).toContain('529.982.247-25')
     expect(resultado.html).toContain('08780-040')
     expect(resultado.html).toContain('14 de setembro de 2026')
@@ -348,38 +350,45 @@ describe('os modelos e o dicionário estão em dia', () => {
 })
 
 
-describe('outorgado da procuração (24/09/2026)', () => {
-  function procuracaoCom(id: string | null): string {
-    const advogado = advogadoPorId(id)
-    if (advogado === undefined) throw new Error('advogado inexistente')
+describe('outorgados da procuração (23/11/2026)', () => {
+  function procuracaoCom(ids: (string | null)[]): string {
+    const advogados = ids.map((id) => {
+      const advogado = advogadoPorId(id)
+      if (advogado === undefined) throw new Error('advogado inexistente')
+      return advogado
+    })
     const resultado = preencherModelo(
-      lerModelo(MODELOS.PROCURACAO),
-      valoresDoDocumento(cliente, null, null, emitidoEm, advogado),
+      montarModeloComArquivos(lerArquivo, TipoDocumento.PROCURACAO, 'pf', null, advogados.length),
+      valoresDoDocumento(cliente, null, null, emitidoEm, advogados),
     )
     if (!resultado.ok) throw new Error(`faltou: ${resultado.faltando.join(', ')}`)
     return resultado.html.replace(/\s+/g, ' ')
   }
 
-  it('sem escolha, sai o advogado de sempre, com o texto masculino de sempre', () => {
-    const html = procuracaoCom(null)
-    expect(html).toContain('Dr. Sergio Evangelista Ferreira')
-    expect(html).toContain('brasileiro, solteiro, advogado, inscrito na OAB/SP sob o nº 378.532')
-    expect(html).toContain('e-mail: contato@eferreira.adv.br, telefone: (11) 4580-3696.')
-    expect(html).toContain('constitui o OUTORGADO seu bastante procurador e advogado, conferindo-lhe')
-    expect(html).toContain('O OUTORGADO poderá')
+  it('um advogado: rótulo no singular, sem "todos"', () => {
+    const html = procuracaoCom([null])
+    expect(html).toContain('<strong>OUTORGADO –</strong> <strong>Dr. Sergio Evangelista Ferreira</strong>, OAB/SP nº 378.532, com endereço profissional na Rua Olegário Paiva, nº 180, 4º andar, sala 411, Centro, Mogi das Cruzes/SP, CEP 08780-040.')
   })
 
-  it('outra advogada troca dados e concordância; o endereço do escritório é o mesmo', () => {
-    const html = procuracaoCom('cristina')
-    expect(html).toContain('Dra. Cristina Moura Santos Lopes')
-    expect(html).toContain('brasileira, divorciada, advogada, inscrita na OAB/SP sob o nº 453.976')
-    expect(html).toContain('Rua Olegário Paiva, nº 180, 4º andar, Sala 411, Centro')
-    // O contato citado é o do ESCRITÓRIO, para qualquer advogado.
-    expect(html).toContain('e-mail: contato@eferreira.adv.br, telefone: (11) 4580-3696.')
-    expect(html).not.toContain('cristina.msl.adv@gmail.com')
-    expect(html).toContain('constitui a OUTORGADA sua bastante procuradora e advogada, conferindo-lhe')
-    expect(html).toContain('A OUTORGADA poderá')
-    expect(html).not.toContain('Sergio')
+  it('uma advogada sozinha: OUTORGADA', () => {
+    expect(procuracaoCom(['cristina'])).toContain('<strong>OUTORGADA –</strong> <strong>Dra. Cristina Moura Santos Lopes</strong>, OAB/SP nº 453.976, com endereço')
+  })
+
+  it('dois advogados: "e" entre eles e "todos com"', () => {
+    expect(procuracaoCom([null, 'cristina'])).toContain('<strong>OUTORGADOS –</strong> <strong>Dr. Sergio Evangelista Ferreira</strong>, OAB/SP nº 378.532 e <strong>Dra. Cristina Moura Santos Lopes</strong>, OAB/SP nº 453.976, todos com endereço profissional')
+  })
+
+  it('três ou mais: vírgulas e ", e" antes do último, como no arquivo do escritório', () => {
+    const lista = listaDeOutorgados(3).replace(/\s+/g, ' ')
+    expect(lista).toContain('OAB/{{outorgados.1.oabUf}} nº {{outorgados.1.oab}}, e <strong>{{outorgados.2.nome}}</strong>')
+    expect(lista).toContain(', todos com endereço profissional')
+  })
+
+  it('traz a sociedade de advocacia e os poderes do modelo novo', () => {
+    const html = procuracaoCom([null])
+    expect(html).toContain('SERGIO E. FERREIRA SOCIEDADE INDIVIDUAL DE ADVOCACIA, registrada na OAB/SP sob nº 69.212')
+    expect(html).toContain('Fica excluído o poder de receber citação em nome da parte outorgante.')
+    expect(html).toContain('O substabelecimento sem reserva exige prévio e inequívoco conhecimento da parte outorgante.')
   })
 
   it('id desconhecido não vira advogado nenhum', () => {
@@ -419,25 +428,21 @@ describe('variantes representada/assistida e pessoa jurídica (24/09/2026)', () 
     return resultado.html.replace(/\s+/g, ' ')
   }
 
-  it('procuração assistida: o outorgante só com nome, RG e CPF; o assistente completo', () => {
+  it('procuração assistida: o outorgante com nome, RG e CPF; o endereço e a assistência de quem assiste', () => {
     const html = texto(MODELOS.PROCURACAO, 'assistida', menor, mae)
-    expect(html).toContain('Miguel Barreto da Silva</span>, brasileiro, portador(a) do RG nº 69.945.690-3')
-    expect(html).toContain('inscrito(a) no CPF sob o nº 543.843.398-44, neste ato assistido(a) por:')
+    expect(html).toContain('Miguel Barreto da Silva</span>, brasileiro, portador(a) do RG nº 69.945.690-3, CPF nº 543.843.398-44')
+    expect(html).toContain('com endereço em Avenida Major Mello, nº 280, Vila Nova Aparecida, Mogi das Cruzes/SP, CEP 05425-070. Neste ato assistido(a) por')
     expect(html).toContain('Cíntia Cristina da Silva Soares</span>, brasileira, casada, auxiliar de embalagem')
-    expect(html).toContain('e-mail: mae@exemplo.com.br, telefone: (11) 95555-4444')
-    expect(html).toContain('residente e domiciliado(a) Avenida Major Mello')
-    expect(html).toContain('CEP: 05425-070')
     // O menor não entra com profissão, estado civil nem endereço.
     expect(html).not.toContain('engenheiro')
     expect(html).not.toContain('Rua das Flores')
   })
 
-  it('assinatura assistida: nome e CPF de quem outorga, "Representada por" o assistente', () => {
+  it('assinatura assistida: quem assina é quem assiste, e a qualidade diz por quem', () => {
     const html = texto(MODELOS.PROCURACAO, 'assistida', menor, mae)
     const assinatura = html.slice(html.indexOf('class="assinatura"'))
-    expect(assinatura).toContain('Miguel Barreto da Silva')
-    expect(assinatura).toContain('CPF nº 543.843.398-44')
-    expect(assinatura).toContain('Representada por: Cíntia Cristina da Silva Soares')
+    expect(assinatura).toContain('<strong>Cíntia Cristina da Silva Soares</strong>')
+    expect(assinatura).toContain('Assistente de Miguel Barreto da Silva')
   })
 
   it('declaração assistida usa o mesmo desenho', () => {
@@ -450,13 +455,13 @@ describe('variantes representada/assistida e pessoa jurídica (24/09/2026)', () 
 
   it('procuração de pessoa jurídica: empresa e representante legal lado a lado', () => {
     const html = texto(MODELOS.PROCURACAO, 'pj', empresa, socio)
-    expect(html).toContain('pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 11.222.333/0001-81')
-    expect(html).toContain('neste ato representada por seu representante legal')
+    expect(html).toContain('pessoa jurídica de direito privado, CNPJ nº 11.222.333/0001-81, com endereço em')
+    expect(html).toContain('Neste ato representada por seu representante legal')
     expect(html).toContain('Sicrano de Tal</span>, brasileiro, casado')
     expect(html).toContain('conforme atos constitutivos da sociedade')
     const assinatura = html.slice(html.indexOf('class="assinatura"'))
-    expect(assinatura).toContain('CNPJ nº 11.222.333/0001-81')
-    expect(assinatura).toContain('Representada por: Sicrano de Tal')
+    expect(assinatura).toContain('<strong>Sicrano de Tal</strong>')
+    expect(assinatura).toContain('Representante legal de Exemplo Consultoria Ltda')
   })
 
   it('o contrato traz o contratante da variante e a assinatura do escritório', () => {

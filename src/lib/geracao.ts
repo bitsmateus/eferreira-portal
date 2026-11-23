@@ -21,7 +21,7 @@ import {
   filtroDeClientes,
   type SessaoServidor,
 } from '@/lib/autorizacao'
-import { obterAdvogadoParaDocumento } from '@/lib/advogados'
+import { obterAdvogadosParaDocumento } from '@/lib/advogados'
 import { prisma } from '@/lib/prisma'
 import { registrarAuditoria } from '@/lib/auditoria'
 import { enviarArquivo, gerarChaveDeArquivo, removerArquivo } from '@/lib/armazenamento'
@@ -58,7 +58,7 @@ export function exigeCaso(tipo: TipoGeravel): boolean {
 }
 
 export type ResultadoDaPrevia =
-  | { situacao: 'pronto'; html: string; titulo: string; advogadoId: string }
+  | { situacao: 'pronto'; html: string; titulo: string; advogadoIds: string[] }
   | { situacao: 'nao_encontrado' }
   | { situacao: 'caso_obrigatorio' }
   /** O cadastro está incompleto: a lista diz exatamente o que falta. */
@@ -76,14 +76,15 @@ export async function montarPrevia(
   clienteId: string,
   tipo: TipoGeravel,
   casoId: string | null,
-  advogadoId: string | null = null,
+  advogadoIds: readonly string[] = [],
 ): Promise<ResultadoDaPrevia> {
   exigirEquipe(sessao)
 
   // Vale só para a procuração, mas um id que não existe é recusado sempre:
-  // o navegador não inventa quem assina como outorgado.
-  const advogado = await obterAdvogadoParaDocumento(advogadoId)
-  if (advogado === undefined) return { situacao: 'nao_encontrado' }
+  // o navegador não inventa quem assina como outorgado. Desde 23/11/2026 a
+  // procuração aceita mais de um advogado.
+  const advogados = await obterAdvogadosParaDocumento(advogadoIds)
+  if (advogados === undefined) return { situacao: 'nao_encontrado' }
 
   const cliente = await prisma.cliente.findFirst({
     where: filtroDeClientes(sessao, { id: clienteId }),
@@ -154,7 +155,7 @@ export async function montarPrevia(
   const paraDocumento: ClienteParaDocumento = cliente
 
   const preenchido = preencherModelo(
-    await montarModelo(lerModelo, tipo, varianteDoDocumento(cliente.tipoPessoa, comResponsavel), caso),
+    await montarModelo(lerModelo, tipo, varianteDoDocumento(cliente.tipoPessoa, comResponsavel), caso, advogados.length),
     valoresDoDocumento(
       paraDocumento,
       quemRepresenta === null
@@ -177,7 +178,7 @@ export async function montarPrevia(
           },
       caso,
       new Date(),
-      advogado,
+      advogados,
     ),
   )
 
@@ -203,7 +204,7 @@ export async function montarPrevia(
     situacao: 'pronto',
     html: preenchido.html,
     titulo: `${ROTULO_DO_TIPO[tipo]} — ${cliente.nome}`,
-    advogadoId: advogado.id,
+    advogadoIds: advogados.map((advogado) => advogado.id),
   }
 }
 
@@ -220,9 +221,9 @@ export async function gerarDocumento(
   tipo: TipoGeravel,
   casoId: string | null,
   emailDoAutor: string | null,
-  advogadoId: string | null = null,
+  advogadoIds: readonly string[] = [],
 ): Promise<ResultadoDaGeracao> {
-  const previa = await montarPrevia(sessao, clienteId, tipo, casoId, advogadoId)
+  const previa = await montarPrevia(sessao, clienteId, tipo, casoId, advogadoIds)
 
   if (previa.situacao !== 'pronto') return previa
 
@@ -269,7 +270,7 @@ export async function gerarDocumento(
             clienteId: cliente.id,
             casoId,
             ...(tipo === TipoDocumento.PROCURACAO
-              ? { outorgado: previa.advogadoId }
+              ? { outorgados: previa.advogadoIds }
               : {}),
           },
         },
