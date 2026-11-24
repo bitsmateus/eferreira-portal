@@ -18,6 +18,7 @@ function envio(situacao: SituacaoDoEnvio): EnvioEmAndamento {
   return {
     id: 'envio-1',
     documentoId: 'documento-1',
+    provedor: 'D4SIGN',
     situacao,
     situacaoNaD4Sign: null,
     enviadoEm: null,

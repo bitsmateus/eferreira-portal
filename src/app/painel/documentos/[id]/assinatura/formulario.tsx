@@ -7,8 +7,16 @@ import { useFormStatus } from 'react-dom'
 import {
   conferirAssinaturaDoEnvio,
   enviarDocumentoParaAssinatura,
+  reenviarDocumentoPelaZapSign,
   type EstadoDaAssinatura,
 } from './acoes'
+
+/** O que o envio consome, conforme a plataforma. */
+export function custoDoEnvio(plataforma: string): string {
+  return plataforma === 'ZapSign'
+    ? 'um documento do plano da ZapSign é usado'
+    : 'um crédito do escritório é consumido'
+}
 
 function Botao({
   children,
@@ -85,9 +93,12 @@ export function ConfirmacaoDeEnvio({
   documentoId,
   quantasPartes,
   retomando,
+  plataforma,
 }: {
   documentoId: string
   quantasPartes: number
+  /** "D4Sign" ou "ZapSign": de quem é o e-mail que a pessoa recebe. */
+  plataforma: string
   /** O documento já está no cofre de uma tentativa anterior que não saiu. */
   retomando: boolean
 }) {
@@ -109,7 +120,7 @@ export function ConfirmacaoDeEnvio({
             <div>
               Ao confirmar, {quantasPartes === 1 ? 'a pessoa' : 'as pessoas'} da
               lista acima {quantasPartes === 1 ? 'recebe' : 'recebem'} agora um
-              e-mail da D4Sign, e um crédito do escritório é consumido.
+              e-mail da {plataforma}, e {custoDoEnvio(plataforma)}.
               <strong> Isso não se desfaz.</strong>
             </div>
           </div>
@@ -137,7 +148,7 @@ export function ConfirmacaoDeEnvio({
   )
 }
 
-/** Pergunta à D4Sign se já assinaram. Leitura: não gasta crédito. */
+/** Pergunta à plataforma se já assinaram. Leitura: não gasta crédito. */
 export function BotaoDeConferencia({
   envioId,
   documentoId,
@@ -160,5 +171,57 @@ export function BotaoDeConferencia({
         <Botao variante="fantasma">Conferir agora</Botao>
       </form>
     </>
+  )
+}
+
+/**
+ * Reenvio pela ZapSign de um envio pendente na D4Sign (11/2026). Só aparece
+ * com a ZapSign ligada. Dois passos, como o envio: gasta um documento do plano
+ * e todos recebem convite novo, inclusive quem já assinou na D4Sign.
+ */
+export function BotaoDeReenvio({
+  documentoId,
+  clienteId,
+}: {
+  documentoId: string
+  clienteId: string
+}) {
+  const [estado, reenviar] = useActionState(
+    reenviarDocumentoPelaZapSign.bind(null, documentoId, clienteId),
+    undefined,
+  )
+  const [confirmando, setConfirmando] = useState(false)
+
+  return (
+    <div className="mb-4">
+      <Recado estado={estado} />
+      {confirmando ? (
+        <form action={reenviar}>
+          <input type="hidden" name="confirmacao" value="reenviar" />
+          <div className="aviso aviso-atencao mb-3">
+            <span aria-hidden="true">▲</span>
+            <div>
+              O envio pela D4Sign é cancelado e todos da lista recebem um convite novo
+              da ZapSign — inclusive quem já assinou. Um documento do plano da ZapSign
+              é usado. <strong>Isso não se desfaz.</strong>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Botao>Confirmar o reenvio</Botao>
+            <button
+              type="button"
+              onClick={() => setConfirmando(false)}
+              className="text-[12.5px] text-texto-2 underline underline-offset-2"
+            >
+              cancelar
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button type="button" onClick={() => setConfirmando(true)} className="botao">
+          Reenviar pela ZapSign
+        </button>
+      )}
+    </div>
   )
 }

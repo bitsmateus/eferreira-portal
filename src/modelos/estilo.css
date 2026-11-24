@@ -150,13 +150,21 @@ p {
 /* Marca que o sistema lê no PDF pronto para saber onde cada pessoa assina
    (`src/lib/posicao-da-assinatura.ts`): texto de 1px, quase branco, logo acima
    da linha. Não aparece impresso, mas fica no texto do PDF. */
+/* Âncora da assinatura eletrônica. A ZapSign procura este texto no PDF e
+   desenha a assinatura ali (11/2026). Em 6pt para ela conseguir ler — o 1px de
+   antes talvez nem fosse reconhecido —, branca para não aparecer, e 5mm acima
+   do traço, no espaço em branco onde se assina: sobre o traço, o texto branco
+   cortaria a linha. A altura continua 1px, então o layout não muda. */
 .marca-de-assinatura {
   height: 1px;
   margin: 0;
-  font-size: 1px;
-  line-height: 1px;
-  color: #fefefe;
+  font-size: 6pt;
+  line-height: 1;
+  color: #ffffff;
   text-align: center;
+  position: relative;
+  top: -5mm;
+  overflow: visible;
 }
 
 .maiusculas {

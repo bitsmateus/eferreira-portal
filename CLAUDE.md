@@ -313,6 +313,22 @@ o risco é do painel do D4Sign do escritório, não do portal.
 
 ## Estado atual
 
+**Assinatura eletrônica pela ZapSign** (24/11/2026). O escritório trocou a
+D4Sign pela ZapSign, a mesma conta já em uso na Consensus One. Ligada por
+`ASSINATURA_PROVEDOR=zapsign` (padrão continua `d4sign`); cada envio grava a
+plataforma (migração `20261124180000_zapsign`) e termina onde começou. Selfie
+(só a foto do rosto), âncora nas marcas `[[assina:…]]` dos modelos (agora 6pt
+branca, 5mm acima do traço), coordenada nos documentos avulsos, retorno
+automático em `/api/zapsign/retorno?chave=`, e "Reenviar pela ZapSign" para o
+que ficou pendente na D4Sign — só com a ZapSign ligada, cancelando na D4Sign
+só depois de o envio novo sair. Ver `docs/assinatura-eletronica.md` § ZapSign.
+Verificado: `tsc`, lint, `npm run build`, 609 unitários (21 novos) e, contra o
+Postgres, os 9 testes novos de `assinatura-zapsign.teste.ts`, com a ZapSign e a
+D4Sign dubladas; o resto da bateria de banco também passa, exceto os três que
+dependem do MinIO (que não subiu nesta sessão — falham igual na `main`).
+**Não verificado:** um envio real (custa documento do plano) — a altura exata
+da assinatura sobre a âncora se confere no primeiro.
+
 **Procuração nova, com a sociedade de advocacia e vários advogados**
 (23/11/2026). Modelo "1.Procuração ad judicia et extra.docx" do Dr. Sergio,
 transcrito sem alterar o texto (regra 10): OUTORGANTE, OUTORGADOS (um ou mais,

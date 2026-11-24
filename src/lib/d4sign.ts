@@ -455,6 +455,23 @@ export async function enderecoDoAssinado(
  * inteiro na memória do servidor, e um limite explícito é mais barato do que
  * descobrir o problema com o processo derrubado.
  */
+/**
+ * Cancela um documento ainda pendente — usado só no reenvio pela ZapSign
+ * (11/2026), para ninguém assinar a versão da D4Sign depois que a da ZapSign
+ * saiu. Cancelar não apaga: o documento continua no cofre, como pedido em
+ * 14/09/2026.
+ */
+export async function cancelarDocumento(
+  configuracao: ConfiguracaoD4Sign,
+  uuidDocumento: string,
+  motivo: string,
+): Promise<void> {
+  await chamar(configuracao, `/documents/${uuidDocumento}/cancel`, {
+    metodo: 'POST',
+    corpo: { comment: motivo },
+  })
+}
+
 export const TAMANHO_MAXIMO_DO_ASSINADO = 40 * 1024 * 1024
 
 export async function baixarAssinado(

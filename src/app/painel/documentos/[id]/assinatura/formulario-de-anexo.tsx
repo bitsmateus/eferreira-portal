@@ -9,6 +9,7 @@ import type { LinhaDeParte } from '@/lib/partes'
 import { posicaoPadrao, type PosicaoEscolhida } from '@/lib/posicao-da-assinatura'
 import type { ParteQueAssina } from '@/lib/assinaturas'
 import { enviarDocumentoParaAssinatura, prepararEnvioDeAnexo } from './acoes'
+import { custoDoEnvio } from './formulario'
 
 type Extra = { nome: string; email: string; papel: PapelDaParte }
 type SignatarioEscolhido = {
@@ -97,7 +98,7 @@ export function FormularioDeAnexo({
   ]
   const escolhidos: SignatarioEscolhido[] = semPosicao.map((pessoa, indice) => ({
     ...pessoa,
-    // Contrato: testemunha sem lugar marcado, a D4Sign posiciona como sempre.
+    // Contrato: testemunha sem lugar marcado, a plataforma posiciona como sempre.
     ...(soTestemunhas ? {} : { posicao: posicoes[pessoa.email] ?? posicaoPadrao(indice) }),
   }))
   const avulsosJson = JSON.stringify(escolhidos)
@@ -167,7 +168,9 @@ export function FormularioDeAnexo({
         </ul>
 
         <p className="mb-4 text-[12px] leading-relaxed text-texto-3">
-          {preparo.creditosRestantes === null ? (
+          {preparo.plataforma === 'ZapSign' ? (
+            <>O envio sai pela ZapSign e conta como um documento do plano do escritório.</>
+          ) : preparo.creditosRestantes === null ? (
             <>Não foi possível consultar o saldo da D4Sign agora.</>
           ) : (
             <>
@@ -190,7 +193,7 @@ export function FormularioDeAnexo({
               <div>
                 Ao confirmar, {preparo.partes.length === 1 ? 'a pessoa' : 'as pessoas'}{' '}
                 da lista acima {preparo.partes.length === 1 ? 'recebe' : 'recebem'} agora
-                um e-mail da D4Sign, e um crédito do escritório é consumido.
+                um e-mail da {preparo.plataforma}, e {custoDoEnvio(preparo.plataforma)}.
                 <strong> Isso não se desfaz.</strong>
               </div>
             </div>

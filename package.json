@@ -24,7 +24,8 @@
     "d4sign:conta": "tsx scripts/d4sign-conta.ts",
     "ia:teste": "tsx scripts/teste-de-ia.ts",
     "nx:contato": "tsx scripts/nx-contato.ts",
-    "d4sign:posicoes": "tsx scripts/d4sign-posicoes.ts"
+    "d4sign:posicoes": "tsx scripts/d4sign-posicoes.ts",
+    "zapsign:conta": "tsx scripts/zapsign-conta.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",

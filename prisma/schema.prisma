@@ -134,6 +134,17 @@ enum OrigemDoDocumento {
   /// O PDF assinado que voltou da D4Sign (`arquivarAssinado`). Ninguém
   /// "anexou" nem "gerou" isto: a plataforma de assinatura devolveu.
   ASSINADO_NA_D4SIGN
+  /// O mesmo, vindo da ZapSign — a plataforma que substituiu a D4Sign em
+  /// 11/2026. Valor próprio para o registro dizer de onde veio de verdade.
+  ASSINADO_NA_ZAPSIGN
+}
+
+/// Plataforma de assinatura eletrônica que recebeu o envio. A D4Sign foi
+/// trocada pela ZapSign em 11/2026; os envios antigos terminam na D4Sign, e é
+/// por esta coluna que a conferência sabe com quem falar.
+enum ProvedorAssinatura {
+  D4SIGN
+  ZAPSIGN
 }
 
 /// O que uma credencial da API pode fazer (Anexo I, 3.c: "controle de
@@ -824,11 +835,15 @@ model EnvioParaAssinatura {
   documentoId String
   documento   Documento @relation("DocumentoEnviado", fields: [documentoId], references: [id], onDelete: Cascade)
 
-  /// O identificador do documento dentro da D4Sign. É por ele que se pergunta
-  /// se já assinaram e é por ele que se baixa o assinado.
+  /// Plataforma que recebeu este envio. Envios anteriores à ZapSign são D4SIGN.
+  provedor ProvedorAssinatura @default(D4SIGN)
+
+  /// O identificador do documento na plataforma (UUID na D4Sign, token na
+  /// ZapSign). É por ele que se pergunta se já assinaram e se baixa o assinado.
   uuidDocumento String @unique
-  /// O cofre em que ele foi criado, guardado junto: a variável de ambiente
-  /// pode mudar, e depois ninguém saberia onde este documento foi parar.
+  /// O cofre da D4Sign em que ele foi criado, guardado junto: a variável de
+  /// ambiente pode mudar, e depois ninguém saberia onde este documento foi
+  /// parar. Na ZapSign não há cofre: fica "zapsign".
   cofre         String
 
   situacao         SituacaoDoEnvio @default(NO_COFRE)

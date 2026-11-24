@@ -22,6 +22,7 @@ import { ROTULO_DO_TIPO } from '@/lib/arquivos'
 import {
   ROTULO_DO_PAPEL,
   envioDoDocumento,
+  podeReenviarPelaZapSign,
   prepararEnvio,
   type EnvioEmAndamento,
   type ParteQueAssina,
@@ -30,8 +31,9 @@ import { filtroDeDocumentos } from '@/lib/autorizacao'
 import { formatarDataHora } from '@/lib/datas'
 import { listarPartes } from '@/lib/partes'
 import { prisma } from '@/lib/prisma'
+import { NOME_DO_PROVEDOR, zapsignLigada } from '@/lib/provedor-de-assinatura'
 import { exigirSessaoDaEquipe } from '@/lib/sessao'
-import { BotaoDeConferencia, ConfirmacaoDeEnvio } from './formulario'
+import { BotaoDeConferencia, BotaoDeReenvio, ConfirmacaoDeEnvio } from './formulario'
 import { FormularioDeAnexo } from './formulario-de-anexo'
 
 export const metadata: Metadata = {
@@ -42,7 +44,7 @@ const ROTULO_DA_SITUACAO: Record<SituacaoDoEnvio, string> = {
   NO_COFRE: 'No cofre, não enviado',
   AGUARDANDO: 'Aguardando assinatura',
   ASSINADO: 'Assinado',
-  CANCELADO: 'Cancelado na D4Sign',
+  CANCELADO: 'Cancelado',
 }
 
 const TOM_DA_SITUACAO: Record<
@@ -79,10 +81,14 @@ function ListaDeSignatarios({ partes }: { partes: readonly ParteQueAssina[] }) {
 function SituacaoDoEnvioNaTela({
   envio,
   clienteId,
+  podeReenviar,
 }: {
   envio: EnvioEmAndamento
   clienteId: string
+  /** Pendente na D4Sign com a ZapSign ligada: mostra o reenvio. */
+  podeReenviar: boolean
 }) {
+  const plataforma = NOME_DO_PROVEDOR[envio.provedor]
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2.5">
@@ -102,7 +108,12 @@ function SituacaoDoEnvioNaTela({
         <p className="mb-3 text-[12px] text-texto-3">
           Última conferência em{' '}
           <span className="mono">{formatarDataHora(envio.conferidoEm)}</span>
-          {envio.situacaoNaD4Sign !== null && <> · D4Sign: {envio.situacaoNaD4Sign}</>}
+          {envio.situacaoNaD4Sign !== null && (
+            <>
+              {' '}
+              · {plataforma}: {envio.situacaoNaD4Sign}
+            </>
+          )}
         </p>
       )}
 
@@ -123,8 +134,11 @@ function SituacaoDoEnvioNaTela({
         </div>
       ) : (
         <>
+          {podeReenviar && (
+            <BotaoDeReenvio documentoId={envio.documentoId} clienteId={clienteId} />
+          )}
           <p className="mb-3 text-[12.5px] leading-relaxed text-texto-2">
-            O portal pergunta à D4Sign se o documento já foi assinado. É consulta de
+            O portal pergunta à {plataforma} se o documento já foi assinado. É consulta de
             leitura — não consome crédito e não manda e-mail nenhum. Quando estiver
             assinado, o PDF volta sozinho para a pasta do cliente.
           </p>
@@ -232,7 +246,7 @@ export default async function PaginaDaAssinatura({
             <span aria-hidden="true">●</span>
             <div>
               Este documento não vai para assinatura: é o próprio PDF que já voltou
-              assinado da D4Sign.
+              assinado da assinatura eletrônica.
             </div>
           </div>
         </Cartao>
@@ -279,11 +293,15 @@ export default async function PaginaDaAssinatura({
               <span aria-hidden="true">●</span>
               <div>
                 Este documento já consta como assinado. A data foi informada na ficha
-                do cliente, não pela D4Sign.
+                do cliente, não pela assinatura eletrônica.
               </div>
             </div>
           ) : (
-            <SituacaoDoEnvioNaTela envio={envio} clienteId={documento.clienteId} />
+            <SituacaoDoEnvioNaTela
+              envio={envio}
+              clienteId={documento.clienteId}
+              podeReenviar={podeReenviarPelaZapSign(envio, zapsignLigada())}
+            />
           )}
         </Cartao>
       </>
@@ -386,7 +404,12 @@ export default async function PaginaDaAssinatura({
             <ListaDeSignatarios partes={preparo.partes} />
 
             <p className="mb-4 text-[12px] leading-relaxed text-texto-3">
-              {preparo.creditosRestantes === null ? (
+              {preparo.provedor === 'ZAPSIGN' ? (
+                <>
+                  O envio sai pela ZapSign e conta como um documento do plano do
+                  escritório.
+                </>
+              ) : preparo.creditosRestantes === null ? (
                 <>
                   Não foi possível consultar o saldo da conta da D4Sign agora. O
                   envio continua possível, mas sem saber quantos créditos restam.
@@ -407,6 +430,7 @@ export default async function PaginaDaAssinatura({
               documentoId={documento.id}
               quantasPartes={preparo.partes.length}
               retomando={preparo.retomavel !== null}
+              plataforma={NOME_DO_PROVEDOR[preparo.provedor]}
             />
           </>
         )}

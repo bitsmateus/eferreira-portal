@@ -7,8 +7,10 @@ import {
   enviarParaAssinatura,
   lerAvulsos,
   prepararEnvio,
+  reenviarPelaZapSign,
   type SignatarioAvulso,
 } from '@/lib/assinaturas'
+import { NOME_DO_PROVEDOR } from '@/lib/provedor-de-assinatura'
 import { texto } from '@/lib/formulario'
 import { emailDaSessao, exigirSessaoDaEquipe } from '@/lib/sessao'
 
@@ -63,7 +65,7 @@ export async function enviarDocumentoParaAssinatura(
   }
 
   if (resultado.situacao === 'falha_na_d4sign') {
-    return { erro: `${resultado.motivo} Nada foi enviado e nenhum crédito foi gasto.` }
+    return { erro: `${resultado.motivo} Nada foi enviado.` }
   }
 
   if (resultado.situacao === 'sem_email') {
@@ -97,6 +99,8 @@ export type EstadoDoPreparoDeAnexo =
   | {
       situacao: 'pronto'
       partes: { papel: string; nome: string; email: string | null }[]
+      /** "D4Sign" ou "ZapSign": por onde o envio sai. */
+      plataforma: string
       creditosRestantes: number | null
       retomando: boolean
     }
@@ -148,12 +152,13 @@ export async function prepararEnvioDeAnexo(
   return {
     situacao: 'pronto',
     partes: preparo.partes,
+    plataforma: NOME_DO_PROVEDOR[preparo.provedor],
     creditosRestantes: preparo.creditosRestantes,
     retomando: preparo.retomavel !== null,
   }
 }
 
-/** Pergunta à D4Sign se já assinaram. Só leitura: não gasta crédito. */
+/** Pergunta à plataforma se já assinaram. Só leitura: não gasta crédito. */
 export async function conferirAssinaturaDoEnvio(
   envioId: string,
   documentoId: string,
@@ -189,14 +194,14 @@ export async function conferirAssinaturaDoEnvio(
   }
 
   if (resultado.situacao === 'cancelado') {
-    return { erro: 'O documento foi cancelado na D4Sign.' }
+    return { erro: 'O documento foi cancelado na plataforma de assinatura.' }
   }
 
   if (resultado.situacao === 'desconhecida') {
     return {
       erro:
-        'A D4Sign respondeu uma situação que este sistema não conhece: ' +
-        `"${resultado.situacaoNaD4Sign}". Confira no painel da D4Sign.`,
+        'A plataforma de assinatura respondeu uma situação que este sistema não conhece: ' +
+        `"${resultado.situacaoNaD4Sign}". Confira no painel dela.`,
     }
   }
 
@@ -209,4 +214,49 @@ export async function conferirAssinaturaDoEnvio(
   }
 
   return { erro: 'Envio não encontrado.' }
+}
+
+/**
+ * Reenvia pela ZapSign um documento cujo envio ficou pendente na D4Sign.
+ * Só funciona com a ZapSign ligada (ver `reenviarPelaZapSign`): antes disso,
+ * nada na D4Sign é tocado. Gasta um documento do plano da ZapSign e manda
+ * convite novo a todos, inclusive a quem já tinha assinado na D4Sign.
+ */
+export async function reenviarDocumentoPelaZapSign(
+  documentoId: string,
+  clienteId: string,
+  _estado: EstadoDaAssinatura,
+  dados: FormData,
+): Promise<EstadoDaAssinatura> {
+  const sessao = await exigirSessaoDaEquipe()
+
+  if (texto(dados, 'confirmacao') !== 'reenviar') {
+    return { erro: 'Confirme o reenvio para continuar.' }
+  }
+
+  const resultado = await reenviarPelaZapSign(sessao, documentoId, await emailDaSessao(sessao))
+
+  revalidatePath(`/painel/documentos/${documentoId}/assinatura`)
+  revalidatePath(`/painel/clientes/${clienteId}`)
+
+  if (resultado.situacao === 'enviado') {
+    return { mensagem: 'Reenviado pela ZapSign. O convite novo já saiu.' }
+  }
+  if (resultado.situacao === 'zapsign_desligada') {
+    return { erro: 'A ZapSign ainda não está ligada nesta instalação. Nada foi alterado.' }
+  }
+  if (resultado.situacao === 'nada_a_reenviar') {
+    return { erro: 'Este documento não tem envio pendente na D4Sign.' }
+  }
+  if (resultado.situacao === 'falha_na_d4sign') {
+    return { erro: `${resultado.motivo} O envio da D4Sign continua valendo.` }
+  }
+  if (resultado.situacao === 'sem_email') {
+    return {
+      erro: 'Falta e-mail de quem assina.',
+      faltando: resultado.faltando,
+      ondePreencher: resultado.ondePreencher,
+    }
+  }
+  return { erro: 'Não foi possível reenviar. O envio da D4Sign continua valendo.' }
 }

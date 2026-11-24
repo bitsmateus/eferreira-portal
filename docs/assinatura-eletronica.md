@@ -1,5 +1,56 @@
 # Assinatura eletrônica — como funciona e por quê
 
+> **Troca para a ZapSign (11/2026).** O pacote da D4Sign esgotou, o limite de
+> chamadas travava o envio e as assinaturas saíam fora do lugar. O escritório
+> passou para a ZapSign (a mesma conta da Consensus One). A seção abaixo
+> descreve a ZapSign; o resto deste documento continua valendo para os envios
+> **antigos**, que terminam na D4Sign.
+
+## ZapSign
+
+**A chave.** `ASSINATURA_PROVEDOR` decide para onde vão os envios NOVOS
+(`zapsign` ou `d4sign`, o padrão). Cada envio grava `provedor` (migração
+`20261124180000_zapsign`; os antigos ficaram `D4SIGN`), e a conferência fala
+com a plataforma em que ele começou. Mantenha as variáveis `D4SIGN_*` enquanto
+houver envio pendente na D4Sign.
+
+**O envio** é uma chamada só (`src/lib/zapsign.ts`): o documento nasce com os
+signatários e os convites saem junto — não existe `NO_COFRE` na ZapSign.
+Quem assina é a mesma regra de sempre (`partesQueAssinam` / `partesDoEnvio`),
+com selfie (só a foto do rosto, `ZAPSIGN_SELFIE`), nome e e-mail travados e o
+papel no relatório de assinaturas. **Todo documento criado conta no plano**,
+mesmo nunca assinado: as recusas continuam todas em `prepararEnvio`.
+
+**Onde cada um assina.**
+- Contrato, procuração e declaração: pelas marcas que os modelos já tinham,
+  `[[assina:parte]]` e `[[assina:escritorio]]` (âncora da ZapSign). A marca
+  passou de 1px para 6pt branca, 5mm acima do traço (`estilo.css`), para a
+  ZapSign conseguir ler — invisível e sem mudar o layout (conferido: a
+  procuração PF continua com 1 página e a PJ com 2).
+- Testemunha do contrato: sem lugar marcado; fica no relatório de assinaturas.
+- Documento avulso: a escolha da tela (página, lado, altura) vira coordenada
+  da ZapSign (`rubricaDaPosicao`), enviada logo depois de criar.
+- **Não conferido com documento real**: a altura exata em que a ZapSign
+  desenha a partir da âncora. Ajuste no `top` de `.marca-de-assinatura`.
+
+**A volta.** Botão "Conferir agora" ou o aviso automático
+`POST /api/zapsign/retorno?chave=<ZAPSIGN_RETORNO_SEGREDO>`. O aviso da ZapSign
+não é assinado: dele só se lê o `token` do documento, e a situação vem da
+consulta autenticada (`conferirAssinaturaPorRetorno`, a mesma da D4Sign). O
+assinado vira `ASSINADO_NA_ZAPSIGN`, passa pela mesma conferência de "só o
+certificado" e, no contrato, libera o acesso do cliente. Avisos de documentos
+da Consensus One (conta compartilhada) respondem 200 e são ignorados.
+
+**Reenvio do que ficou na D4Sign.** Botão "Reenviar pela ZapSign" na tela do
+envio, só com a ZapSign ligada e só para envio AGUARDANDO na D4Sign. Ordem:
+marca o envio antigo como cancelado aqui, manda pela ZapSign com as mesmas
+pessoas (testemunhas inclusive) e SÓ ENTÃO cancela na D4Sign. Se o novo não
+sair, o antigo volta a valer e nada na D4Sign é tocado. Cancelar não apaga.
+
+**Conferir a conta sem gastar documento:** `npm run zapsign:conta`.
+
+
+
 Anexo II, item 3.4, resolvido: **D4Sign**. Entregue em **15/09/2026**, fechando
 o que a Sprint 3 deixou pela metade.
 

@@ -48,6 +48,7 @@ import {
   OrigemDoDocumento,
   PapelDaParte,
   PerfilUsuario,
+  ProvedorAssinatura,
   SituacaoDoEnvio,
   TipoDocumento,
   TipoPessoa,
@@ -71,6 +72,7 @@ import {
   lerPaginasDoPdf,
   pinsDosAvulsos,
   pinsPelasMarcas,
+  posicaoPadrao,
   posicionamentoLigado,
   type AjusteDoPin,
   type PaginaDoPdf,
@@ -81,6 +83,7 @@ import { registrarAssinatura } from '@/lib/assinatura'
 import { assinadoEstaCompleto, resumirPdf } from '@/lib/conferencia-do-assinado'
 import {
   baixarAssinado,
+  cancelarDocumento as cancelarNaD4Sign,
   configuracaoD4Sign,
   consultarDocumento,
   definirSignatarios,
@@ -90,8 +93,9 @@ import {
   posicionarAssinaturas,
   saldoGuardado,
   subirDocumento,
-  type ConfiguracaoD4Sign,
 } from '@/lib/d4sign'
+import { NOME_DO_PROVEDOR, provedorEscolhido, zapsignLigada } from '@/lib/provedor-de-assinatura'
+import * as zapsign from '@/lib/zapsign'
 
 // ---------------------------------------------------------------------------
 // Quem assina o quê — decisão pura, sem banco e sem rede
@@ -353,6 +357,8 @@ export type DocumentoParaAssinar = {
 export type EnvioEmAndamento = {
   id: string
   documentoId: string
+  /** Plataforma que recebeu este envio (D4Sign até 11/2026, ZapSign depois). */
+  provedor: ProvedorAssinatura
   situacao: SituacaoDoEnvio
   situacaoNaD4Sign: string | null
   enviadoEm: Date | null
@@ -365,6 +371,8 @@ export type EnvioEmAndamento = {
 export type ResultadoDoPreparo =
   | {
       situacao: 'pronto'
+      /** Plataforma pela qual este envio sairia (`ASSINATURA_PROVEDOR`). */
+      provedor: ProvedorAssinatura
       documento: DocumentoParaAssinar
       partes: ParteQueAssina[]
       /** Nulo quando a D4Sign não respondeu — a tela avisa em vez de mentir. */
@@ -387,6 +395,7 @@ export type ResultadoDoPreparo =
 const ENVIO = {
   id: true,
   documentoId: true,
+  provedor: true,
   situacao: true,
   situacaoNaD4Sign: true,
   enviadoEm: true,
@@ -401,6 +410,7 @@ const ENVIO = {
 function comoEnvio(linha: {
   id: string
   documentoId: string
+  provedor: ProvedorAssinatura
   situacao: SituacaoDoEnvio
   situacaoNaD4Sign: string | null
   enviadoEm: Date | null
@@ -412,6 +422,7 @@ function comoEnvio(linha: {
   return {
     id: linha.id,
     documentoId: linha.documentoId,
+    provedor: linha.provedor,
     situacao: linha.situacao,
     situacaoNaD4Sign: linha.situacaoNaD4Sign,
     enviadoEm: linha.enviadoEm,
@@ -512,9 +523,16 @@ export async function prepararEnvio(
 ): Promise<ResultadoDoPreparo> {
   exigirEquipe(sessao)
 
-  const configuracao = configuracaoD4Sign()
-  if (configuracao === null) return { situacao: 'sem_integracao' }
-  if (configuracao.cofre === '') return { situacao: 'sem_cofre' }
+  // A plataforma dos envios novos (ASSINATURA_PROVEDOR). Na ZapSign não há
+  // cofre nem saldo por chamada: só a chave precisa existir.
+  const provedor = provedorEscolhido()
+  const configuracao = provedor === ProvedorAssinatura.D4SIGN ? configuracaoD4Sign() : null
+  if (provedor === ProvedorAssinatura.D4SIGN) {
+    if (configuracao === null) return { situacao: 'sem_integracao' }
+    if (configuracao.cofre === '') return { situacao: 'sem_cofre' }
+  } else if (!zapsign.zapsignAtiva()) {
+    return { situacao: 'sem_integracao' }
+  }
 
   const documento = await prisma.documento.findFirst({
     where: filtroDeDocumentos(sessao, { id: documentoId }),
@@ -586,7 +604,8 @@ export async function prepararEnvio(
   // por isso vem guardada por alguns minutos (`saldoGuardado`). Se a D4Sign
   // não responder, a tela mostra "não foi possível consultar" em vez de um
   // número inventado.
-  const creditosRestantes = (await saldoGuardado(configuracao))?.restantes ?? null
+  const creditosRestantes =
+    configuracao === null ? null : ((await saldoGuardado(configuracao))?.restantes ?? null)
 
   if (creditosRestantes !== null && creditosRestantes <= 0) {
     return { situacao: 'sem_creditos' }
@@ -594,6 +613,7 @@ export async function prepararEnvio(
 
   return {
     situacao: 'pronto',
+    provedor,
     documento: {
       id: documento.id,
       nome: documento.nome,
@@ -603,8 +623,13 @@ export async function prepararEnvio(
     },
     partes,
     creditosRestantes,
+    // Retomar é coisa da D4Sign (o PDF ficou no cofre dela). Com a ZapSign
+    // escolhida, um NO_COFRE antigo não se retoma: o envio sai do zero, lá.
     retomavel:
-      emAndamento !== null && emAndamento.situacao === SituacaoDoEnvio.NO_COFRE
+      emAndamento !== null &&
+      emAndamento.situacao === SituacaoDoEnvio.NO_COFRE &&
+      emAndamento.provedor === ProvedorAssinatura.D4SIGN &&
+      provedor === ProvedorAssinatura.D4SIGN
         ? emAndamento
         : null,
   }
@@ -633,14 +658,18 @@ export async function enviarParaAssinatura(
   const preparo = await prepararEnvio(sessao, documentoId, avulsos)
   if (preparo.situacao !== 'pronto') return preparo
 
-  const configuracao = configuracaoD4Sign()
-  if (configuracao === null) return { situacao: 'sem_integracao' }
-
   const documento = await prisma.documento.findFirst({
     where: filtroDeDocumentos(sessao, { id: documentoId }),
     select: { id: true, nome: true, tipo: true, chaveArquivo: true, clienteId: true },
   })
   if (documento === null) return { situacao: 'nao_encontrado' }
+
+  if (preparo.provedor === ProvedorAssinatura.ZAPSIGN) {
+    return enviarPelaZapSign(sessao, documento, preparo, avulsos, emailDoAutor)
+  }
+
+  const configuracao = configuracaoD4Sign()
+  if (configuracao === null) return { situacao: 'sem_integracao' }
 
   const partesParaGravar = preparo.partes.map((parte) => ({ ...parte }))
 
@@ -856,14 +885,12 @@ export async function conferirAssinatura(
 ): Promise<ResultadoDaConferencia> {
   exigirEquipe(sessao)
 
-  const configuracao = configuracaoD4Sign()
-  if (configuracao === null) return { situacao: 'sem_integracao' }
-
   const envio = await prisma.envioParaAssinatura.findFirst({
     // Regra 2: o envio só é alcançável se o documento dele for alcançável.
     where: { id: envioId, documento: filtroDeDocumentos(sessao) },
     select: {
       id: true,
+      provedor: true,
       uuidDocumento: true,
       documentoAssinadoId: true,
       situacao: true,
@@ -895,6 +922,14 @@ export async function conferirAssinatura(
   // de novo (18/11/2026). NO_COFRE continua perguntando — um envio pode ter
   // saído na D4Sign mesmo com a resposta perdida no caminho.
   if (envio.situacao === SituacaoDoEnvio.CANCELADO) return { situacao: 'cancelado' }
+
+  // Cada envio é conferido na plataforma que o recebeu (11/2026).
+  if (envio.provedor === ProvedorAssinatura.ZAPSIGN) {
+    return conferirNaZapSign(sessao, envio, emailDoAutor)
+  }
+
+  const configuracao = configuracaoD4Sign()
+  if (configuracao === null) return { situacao: 'sem_integracao' }
 
   let naD4Sign: Awaited<ReturnType<typeof consultarDocumento>>
   try {
@@ -935,7 +970,14 @@ export async function conferirAssinatura(
       : { situacao: 'desconhecida', situacaoNaD4Sign: naD4Sign.situacaoBruta }
   }
 
-  return arquivarAssinado(sessao, configuracao, envio, emailDoAutor, agora)
+  return arquivarAssinado(
+    sessao,
+    () => baixarAssinado(configuracao, envio.uuidDocumento),
+    ProvedorAssinatura.D4SIGN,
+    envio,
+    emailDoAutor,
+    agora,
+  )
 }
 
 /**
@@ -957,7 +999,7 @@ export async function conferirAssinaturaPorRetorno(
 ): Promise<ResultadoDaConferencia> {
   const envio = await prisma.envioParaAssinatura.findUnique({
     where: { uuidDocumento },
-    select: { id: true, pedidoPorId: true },
+    select: { id: true, pedidoPorId: true, provedor: true },
   })
   if (envio === null) return { situacao: 'nao_encontrado' }
 
@@ -980,7 +1022,11 @@ export async function conferirAssinaturaPorRetorno(
     contratoAssinado: false,
   }
 
-  return conferirAssinatura(sessaoDoPedido, envio.id, 'retorno automático da D4Sign')
+  return conferirAssinatura(
+    sessaoDoPedido,
+    envio.id,
+    `retorno automático da ${NOME_DO_PROVEDOR[envio.provedor]}`,
+  )
 }
 
 type EnvioParaArquivar = {
@@ -1007,12 +1053,13 @@ type EnvioParaArquivar = {
  */
 async function arquivarAssinado(
   sessao: SessaoServidor,
-  configuracao: ConfiguracaoD4Sign,
+  baixar: () => Promise<Uint8Array | null>,
+  provedor: ProvedorAssinatura,
   envio: EnvioParaArquivar,
   emailDoAutor: string | null,
   agora: Date,
 ): Promise<ResultadoDaConferencia> {
-  const pdf = await baixarAssinado(configuracao, envio.uuidDocumento)
+  const pdf = await baixar()
 
   if (pdf === null) {
     await prisma.envioParaAssinatura.update({
@@ -1052,7 +1099,10 @@ async function arquivarAssinado(
           clienteId: envio.documento.clienteId,
           casoId: envio.documento.casoId,
           tipo: envio.documento.tipo,
-          origem: OrigemDoDocumento.ASSINADO_NA_D4SIGN,
+          origem:
+            provedor === ProvedorAssinatura.ZAPSIGN
+              ? OrigemDoDocumento.ASSINADO_NA_ZAPSIGN
+              : OrigemDoDocumento.ASSINADO_NA_D4SIGN,
           nome: nomeDoAssinado(envio.documento.nome),
           chaveArquivo: chave,
           tipoConteudo: 'application/pdf',
@@ -1089,7 +1139,8 @@ async function arquivarAssinado(
           entidade: 'documento',
           entidadeId: criado.id,
           detalhes: {
-            origem: 'assinado_na_d4sign',
+            origem:
+              provedor === ProvedorAssinatura.ZAPSIGN ? 'assinado_na_zapsign' : 'assinado_na_d4sign',
             envioId: envio.id,
             documentoDeOrigemId: envio.documento.id,
             clienteId: envio.documento.clienteId,
@@ -1120,4 +1171,338 @@ async function arquivarAssinado(
   }
 
   return { situacao: 'assinado', documentoAssinadoId, acessoLiberado }
+}
+
+// ---------------------------------------------------------------------------
+// ZapSign (11/2026) — o envio, a conferência e o reenvio do que ficou na D4Sign
+// ---------------------------------------------------------------------------
+
+/**
+ * A âncora de cada parte no PDF: o texto invisível que os modelos já deixam
+ * no lugar da assinatura (`.marca-de-assinatura`). A ZapSign desenha a
+ * assinatura em cima dele. Testemunha do contrato e signatário de documento
+ * avulso não têm âncora: o avulso vai por coordenada (`rubricasDosAvulsos`),
+ * e a testemunha fica no relatório de assinaturas. Função pura.
+ */
+export function ancoraDaParte(tipo: TipoDocumento, parte: ParteQueAssina): string | null {
+  if (tipo === TipoDocumento.ANEXO) return null
+  if (parte.papel === 'escritorio') return '[[assina:escritorio]]'
+  if (parte.papel === 'cliente' || parte.papel === 'representante') return '[[assina:parte]]'
+  return null
+}
+
+/**
+ * Onde cada signatário de documento AVULSO assina na ZapSign: a escolha da
+ * tela ou, sem escolha, o mesmo padrão de sempre (última página, perto do pé,
+ * um ao lado do outro). Função pura.
+ */
+export function rubricasDosAvulsos(
+  partes: readonly ParteQueAssina[],
+  avulsos: readonly SignatarioAvulso[],
+  totalDePaginas: number,
+  tokens: readonly { email: string; token: string }[],
+): zapsign.Rubrica[] {
+  const rubricas: zapsign.Rubrica[] = []
+  partes.forEach((parte, indice) => {
+    const email = (parte.email ?? '').trim().toLowerCase()
+    const token = tokens.find((t) => t.email === email)?.token
+    if (email === '' || token === undefined) return
+    const escolhida = avulsos.find((avulso) => avulso.email === email)?.posicao
+    rubricas.push(zapsign.rubricaDaPosicao(escolhida ?? posicaoPadrao(indice), totalDePaginas, token))
+  })
+  return rubricas
+}
+
+type DocumentoDoEnvio = {
+  id: string
+  nome: string
+  tipo: TipoDocumento
+  chaveArquivo: string
+  clienteId: string
+}
+
+/**
+ * O envio pela ZapSign. Uma chamada cria o documento JÁ com os signatários e
+ * dispara os convites — não existe "subiu e não saiu" para retomar. Todo
+ * documento criado conta no plano, por isso tudo o que pode recusar já foi
+ * conferido em `prepararEnvio`.
+ */
+async function enviarPelaZapSign(
+  sessao: SessaoServidor,
+  documento: DocumentoDoEnvio,
+  preparo: Extract<ResultadoDoPreparo, { situacao: 'pronto' }>,
+  avulsos: readonly SignatarioAvulso[],
+  emailDoAutor: string | null,
+): Promise<ResultadoDoEnvio> {
+  const pdf = await lerArquivo(documento.chaveArquivo)
+  const partesParaGravar = preparo.partes.map((parte) => ({ ...parte }))
+
+  let criado: zapsign.DocumentoCriado
+  try {
+    criado = await zapsign.criarDocumento({
+      nome: `${ROTULO_DO_TIPO[documento.tipo]} — ${preparo.documento.clienteNome}`,
+      pdf,
+      idExterno: documento.id,
+      mensagem: mensagemDoEnvio(documento.tipo, preparo.documento.clienteNome),
+      signatarios: preparo.partes.map((parte) => ({
+        nome: parte.nome,
+        email: (parte.email ?? '').trim().toLowerCase(),
+        qualificacao: ROTULO_DO_PAPEL[parte.papel],
+        ancora: ancoraDaParte(documento.tipo, parte),
+      })),
+    })
+  } catch (erro) {
+    // Mesmo resultado da D4Sign "antes de subir": nada saiu daqui.
+    return { situacao: 'falha_na_d4sign', motivo: zapsign.descreverFalhaDaZapSign(erro) }
+  }
+
+  const agora = new Date()
+  let envioId: string
+  try {
+    const gravado = await prisma.envioParaAssinatura.create({
+      data: {
+        documentoId: documento.id,
+        provedor: ProvedorAssinatura.ZAPSIGN,
+        uuidDocumento: criado.token,
+        cofre: 'zapsign',
+        situacao: SituacaoDoEnvio.AGUARDANDO,
+        signatarios: partesParaGravar,
+        pedidoPorId: sessao.usuarioId,
+        enviadoEm: agora,
+        signatariosDefinidosEm: agora,
+      },
+      select: { id: true },
+    })
+    envioId = gravado.id
+  } catch (erro) {
+    // O documento já existe na ZapSign e os convites saíram: o identificador
+    // vai para o log, para ninguém mandar de novo sem olhar o painel deles.
+    console.error(`Envio criado na ZapSign (${criado.token}) mas não gravado no portal.`, erro)
+    throw erro
+  }
+
+  // Documento avulso: a posição de cada um vai por coordenada, logo depois de
+  // criar. Se falhar, o envio já saiu — fica registrado, e quem assina sem
+  // posição aparece no relatório de assinaturas.
+  if (documento.tipo === TipoDocumento.ANEXO) {
+    try {
+      const paginas = await lerPaginasDoPdf(pdf)
+      await zapsign.posicionarAssinaturas(
+        criado.token,
+        rubricasDosAvulsos(preparo.partes, avulsos, paginas.length, criado.signatarios),
+      )
+      await prisma.envioParaAssinatura.update({
+        where: { id: envioId },
+        data: { posicoesDefinidasEm: new Date() },
+      })
+    } catch (erro) {
+      await prisma.envioParaAssinatura.update({
+        where: { id: envioId },
+        data: {
+          situacaoNaD4Sign: `Enviado, mas a posição das assinaturas não foi definida: ${zapsign.descreverFalhaDaZapSign(erro)}`,
+        },
+      })
+    }
+  }
+
+  await registrarAuditoria({
+    usuarioId: sessao.usuarioId,
+    usuarioEmail: emailDoAutor,
+    acao: AcaoAuditoria.CRIACAO,
+    entidade: 'envio_para_assinatura',
+    entidadeId: envioId,
+    detalhes: {
+      documentoId: documento.id,
+      clienteId: documento.clienteId,
+      tipo: documento.tipo,
+      provedor: ProvedorAssinatura.ZAPSIGN,
+      signatarios: preparo.partes.map((parte) => ({ papel: parte.papel, email: parte.email })),
+    },
+  })
+
+  return { situacao: 'enviado', envioId }
+}
+
+/** A conferência de um envio feito pela ZapSign — mesma regra da D4Sign. */
+async function conferirNaZapSign(
+  sessao: SessaoServidor,
+  envio: EnvioParaArquivar,
+  emailDoAutor: string | null,
+): Promise<ResultadoDaConferencia> {
+  if (!zapsign.zapsignAtiva()) return { situacao: 'sem_integracao' }
+
+  let naZapSign: zapsign.DocumentoNaZapSign | null
+  try {
+    naZapSign = await zapsign.consultarDocumento(envio.uuidDocumento)
+  } catch (erro) {
+    return { situacao: 'falha_na_d4sign', motivo: zapsign.descreverFalhaDaZapSign(erro) }
+  }
+  const agora = new Date()
+
+  if (naZapSign === null) {
+    await prisma.envioParaAssinatura.update({ where: { id: envio.id }, data: { conferidoEm: agora } })
+    return { situacao: 'nao_encontrado' }
+  }
+
+  if (naZapSign.situacao === 'cancelado') {
+    await prisma.envioParaAssinatura.update({
+      where: { id: envio.id },
+      data: {
+        situacao: SituacaoDoEnvio.CANCELADO,
+        situacaoNaD4Sign: naZapSign.situacaoBruta,
+        conferidoEm: agora,
+      },
+    })
+    return { situacao: 'cancelado' }
+  }
+
+  if (naZapSign.situacao === 'aguardando') {
+    await prisma.envioParaAssinatura.update({
+      where: { id: envio.id },
+      data: {
+        situacaoNaD4Sign: `${naZapSign.assinaram} de ${naZapSign.totalSignatarios} assinaram`,
+        conferidoEm: agora,
+      },
+    })
+    return { situacao: 'aguardando' }
+  }
+
+  return arquivarAssinado(
+    sessao,
+    () => zapsign.baixarAssinado(envio.uuidDocumento),
+    ProvedorAssinatura.ZAPSIGN,
+    envio,
+    emailDoAutor,
+    agora,
+  )
+}
+
+/** Papéis que vêm de fora (tela), e não da regra fixa de quem assina. */
+const PAPEIS_AVULSOS = new Set<string>(Object.values(PapelDaParte))
+
+export type ResultadoDoReenvio =
+  | ResultadoDoEnvio
+  | { situacao: 'zapsign_desligada' }
+  | { situacao: 'nada_a_reenviar' }
+
+/**
+ * Reenvia pela ZapSign um documento cujo envio está pendente na D4Sign.
+ *
+ * Decisão do grupo do escritório (11/2026): reenviar tudo pela ZapSign, mas
+ * só com ela 100% pronta — por isso nada acontece sem `zapsignLigada()`. A
+ * ordem protege o cliente de receber dois convites válidos ao mesmo tempo:
+ *
+ *   1. o envio da D4Sign é marcado CANCELADO aqui (libera o documento);
+ *   2. sai o envio novo pela ZapSign, com as mesmas pessoas;
+ *   3. só se ele saiu, o documento é cancelado na D4Sign. Se não saiu, o envio
+ *      antigo volta a valer e nada na D4Sign é tocado.
+ *
+ * Cancelar na D4Sign não apaga nada (pedido de 14/09/2026). Se a D4Sign não
+ * deixar cancelar, fica registrado para cancelar pelo painel dela.
+ */
+export async function reenviarPelaZapSign(
+  sessao: SessaoServidor,
+  documentoId: string,
+  emailDoAutor: string | null,
+): Promise<ResultadoDoReenvio> {
+  exigirEquipe(sessao)
+  if (!zapsignLigada()) return { situacao: 'zapsign_desligada' }
+
+  const antigo = await envioDoDocumento(sessao, documentoId)
+  if (
+    antigo === null ||
+    antigo.provedor !== ProvedorAssinatura.D4SIGN ||
+    antigo.situacao !== SituacaoDoEnvio.AGUARDANDO
+  ) {
+    return { situacao: 'nada_a_reenviar' }
+  }
+
+  const linhaAntiga = await prisma.envioParaAssinatura.findUnique({
+    where: { id: antigo.id },
+    select: { uuidDocumento: true, situacaoNaD4Sign: true },
+  })
+  if (linhaAntiga === null) return { situacao: 'nada_a_reenviar' }
+
+  // As mesmas pessoas de fora (testemunhas, signatários do avulso). Cliente,
+  // representante e escritório vêm da regra de sempre, em `prepararEnvio`.
+  const avulsos: SignatarioAvulso[] = antigo.partes
+    .filter((parte) => PAPEIS_AVULSOS.has(parte.papel) && (parte.email ?? '').trim() !== '')
+    .map((parte) => ({
+      nome: parte.nome,
+      email: (parte.email ?? '').trim().toLowerCase(),
+      papel: parte.papel as PapelDaParte,
+    }))
+
+  await prisma.envioParaAssinatura.update({
+    where: { id: antigo.id },
+    data: { situacao: SituacaoDoEnvio.CANCELADO, situacaoNaD4Sign: 'reenviando pela ZapSign' },
+  })
+
+  const novo = await enviarParaAssinatura(sessao, documentoId, emailDoAutor, avulsos).catch(
+    async (erro: unknown) => {
+      await prisma.envioParaAssinatura.update({
+        where: { id: antigo.id },
+        data: { situacao: SituacaoDoEnvio.AGUARDANDO, situacaoNaD4Sign: linhaAntiga.situacaoNaD4Sign },
+      })
+      throw erro
+    },
+  )
+
+  if (novo.situacao !== 'enviado') {
+    // Não saiu: o envio da D4Sign volta a valer, e nada lá foi tocado.
+    await prisma.envioParaAssinatura.update({
+      where: { id: antigo.id },
+      data: { situacao: SituacaoDoEnvio.AGUARDANDO, situacaoNaD4Sign: linhaAntiga.situacaoNaD4Sign },
+    })
+    return novo
+  }
+
+  let canceladoNaD4Sign = false
+  const configuracao = configuracaoD4Sign()
+  if (configuracao !== null) {
+    try {
+      await cancelarNaD4Sign(configuracao, linhaAntiga.uuidDocumento, 'Reenviado pela ZapSign.')
+      canceladoNaD4Sign = true
+    } catch {
+      // Limite da chave ou instabilidade: registrado abaixo para o painel.
+    }
+  }
+
+  await prisma.envioParaAssinatura.update({
+    where: { id: antigo.id },
+    data: {
+      situacaoNaD4Sign: canceladoNaD4Sign
+        ? 'cancelado na D4Sign: reenviado pela ZapSign'
+        : 'reenviado pela ZapSign — cancele este documento no painel da D4Sign',
+    },
+  })
+
+  await registrarAuditoria({
+    usuarioId: sessao.usuarioId,
+    usuarioEmail: emailDoAutor,
+    acao: AcaoAuditoria.ATUALIZACAO,
+    entidade: 'envio_para_assinatura',
+    entidadeId: antigo.id,
+    detalhes: {
+      documentoId,
+      resultado: 'reenviado_pela_zapsign',
+      envioNovoId: novo.envioId,
+      canceladoNaD4Sign,
+    },
+  })
+
+  return novo
+}
+
+/** O botão de reenvio aparece só para isto. Função pura. */
+export function podeReenviarPelaZapSign(
+  envio: Pick<EnvioEmAndamento, 'provedor' | 'situacao'> | null,
+  ligada: boolean,
+): boolean {
+  return (
+    ligada &&
+    envio !== null &&
+    envio.provedor === ProvedorAssinatura.D4SIGN &&
+    envio.situacao === SituacaoDoEnvio.AGUARDANDO
+  )
 }

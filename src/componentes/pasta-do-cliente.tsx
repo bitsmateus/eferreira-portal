@@ -145,7 +145,8 @@ export function PastaDoCliente({
                   {ROTULO_DO_TIPO[documento.tipo]} ·{' '}
                   <span className="mono">{formatarData(documento.criadoEm)}</span> ·{' '}
                   {formatarTamanho(documento.tamanhoBytes)}
-                  {documento.origem === OrigemDoDocumento.ASSINADO_NA_D4SIGN ? (
+                  {documento.origem === OrigemDoDocumento.ASSINADO_NA_D4SIGN ||
+                  documento.origem === OrigemDoDocumento.ASSINADO_NA_ZAPSIGN ? (
                     <> · recebido da assinatura eletrônica</>
                   ) : (
                     documento.enviadoPor !== null && (
