@@ -309,11 +309,11 @@ describe('a volta: conferência e aviso automático', () => {
     expect(cliente.contratoAssinadoEm).not.toBeNull()
   })
 
-  it('aviso de documento de outro sistema (conta compartilhada): 200 e nada muda', async () => {
+  it('aviso de documento que não é deste portal: 200 e nada muda', async () => {
     const resposta = await retornoDaZapSign(
       new NextRequest('https://portal.test/api/zapsign/retorno?chave=segredo123', {
         method: 'POST',
-        body: JSON.stringify({ token: 'documento-da-consensus-one' }),
+        body: JSON.stringify({ token: 'documento-de-fora-do-portal' }),
       }),
     )
     expect(resposta.status).toBe(200)

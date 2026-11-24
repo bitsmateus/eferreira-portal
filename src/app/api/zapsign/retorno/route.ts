@@ -12,9 +12,9 @@
  *  - o corpo não decide nada. Dele se lê só o `token` do documento; a situação
  *    de verdade vem da consulta autenticada que o portal faz de volta
  *    (`conferirAssinaturaPorRetorno`, a mesma da D4Sign);
- *  - responde 200 para documento conhecido ou não — a conta da ZapSign é a
- *    mesma de outro sistema do grupo, e avisos dos documentos dele chegam aqui
- *    também. Responder 200 evita reenvio eterno e não revela o que existe.
+ *  - responde 200 para documento conhecido ou não — documentos criados na
+ *    conta por fora do portal também geram aviso. Responder 200 evita
+ *    reenvio eterno e não revela o que existe.
  */
 
 import { NextResponse, type NextRequest } from 'next/server'

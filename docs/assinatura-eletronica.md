@@ -2,7 +2,7 @@
 
 > **Troca para a ZapSign (11/2026).** O pacote da D4Sign esgotou, o limite de
 > chamadas travava o envio e as assinaturas saíam fora do lugar. O escritório
-> passou para a ZapSign (a mesma conta da Consensus One). A seção abaixo
+> passou para a ZapSign, com conta própria (não é a da Consensus One). A seção abaixo
 > descreve a ZapSign; o resto deste documento continua valendo para os envios
 > **antigos**, que terminam na D4Sign.
 
@@ -39,7 +39,7 @@ não é assinado: dele só se lê o `token` do documento, e a situação vem da
 consulta autenticada (`conferirAssinaturaPorRetorno`, a mesma da D4Sign). O
 assinado vira `ASSINADO_NA_ZAPSIGN`, passa pela mesma conferência de "só o
 certificado" e, no contrato, libera o acesso do cliente. Avisos de documentos
-da Consensus One (conta compartilhada) respondem 200 e são ignorados.
+que não são deste portal (outros usos da conta) respondem 200 e são ignorados.
 
 **Reenvio do que ficou na D4Sign.** Botão "Reenviar pela ZapSign" na tela do
 envio, só com a ZapSign ligada e só para envio AGUARDANDO na D4Sign. Ordem:

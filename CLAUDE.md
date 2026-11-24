@@ -314,7 +314,8 @@ o risco é do painel do D4Sign do escritório, não do portal.
 ## Estado atual
 
 **Assinatura eletrônica pela ZapSign** (24/11/2026). O escritório trocou a
-D4Sign pela ZapSign, a mesma conta já em uso na Consensus One. Ligada por
+D4Sign pela ZapSign, com conta própria (chave, plano e webhook separados dos
+da Consensus One, que fez a mesma troca antes). Ligada por
 `ASSINATURA_PROVEDOR=zapsign` (padrão continua `d4sign`); cada envio grava a
 plataforma (migração `20261124180000_zapsign`) e termina onde começou. Selfie
 (só a foto do rosto), âncora nas marcas `[[assina:…]]` dos modelos (agora 6pt
