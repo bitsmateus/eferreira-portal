@@ -17,7 +17,8 @@ houver envio pendente na D4Sign.
 **O envio** é uma chamada só (`src/lib/zapsign.ts`): o documento nasce com os
 signatários e os convites saem junto — não existe `NO_COFRE` na ZapSign.
 Quem assina é a mesma regra de sempre (`partesQueAssinam` / `partesDoEnvio`),
-com selfie (só a foto do rosto, `ZAPSIGN_SELFIE`), nome e e-mail travados e o
+sem selfie (ligada em 24/11 e tirada em 25/11/2026, a pedido; `ZAPSIGN_SELFIE=1`
+religa), nome e e-mail travados e o
 papel no relatório de assinaturas. **Todo documento criado conta no plano**,
 mesmo nunca assinado: as recusas continuam todas em `prepararEnvio`.
 

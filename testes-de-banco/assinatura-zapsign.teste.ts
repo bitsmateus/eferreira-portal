@@ -6,7 +6,7 @@
  * que o portal grava, não o MinIO.
  *
  * O que se prova:
- *  - o envio cria UM documento na ZapSign, com a âncora de cada um e selfie;
+ *  - o envio cria UM documento na ZapSign, com a âncora de cada um, sem selfie;
  *  - documento avulso vai com a posição por coordenada, logo depois de criar;
  *  - a conferência e o aviso automático arquivam o assinado como
  *    ASSINADO_NA_ZAPSIGN e, no contrato, liberam o acesso do cliente;
@@ -204,7 +204,7 @@ afterAll(async () => {
 // ------------------------------------------------------------------- testes
 
 describe('envio pela ZapSign', () => {
-  it('procuração: um documento só, âncora da parte e selfie, gravado como ZAPSIGN', async () => {
+  it('procuração: um documento só, âncora da parte, sem selfie, gravado como ZAPSIGN', async () => {
     const id = await documento(TipoDocumento.PROCURACAO, 'Procuracao.pdf')
 
     const resultado = await enviarParaAssinatura(sessao(), id, EMAIL_DO_OPERADOR)
@@ -217,7 +217,7 @@ describe('envio pela ZapSign', () => {
     expect(signers[0]).toMatchObject({
       email: EMAIL_DO_CLIENTE,
       signature_placement: '[[assina:parte]]',
-      require_selfie_photo: true,
+      require_selfie_photo: false,
     })
 
     const envio = await prisma.envioParaAssinatura.findFirstOrThrow({ where: { documentoId: id } })

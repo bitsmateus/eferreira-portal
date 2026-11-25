@@ -50,7 +50,7 @@ describe('corpo do documento na ZapSign', () => {
     expect(corpo['lang']).toBe('pt-br')
   })
 
-  it('cada um com e-mail automático, nome travado, selfie e a âncora do seu lugar', () => {
+  it('cada um com e-mail automático, nome travado, sem selfie e a âncora do seu lugar', () => {
     const [cliente, escritorio, testemunha] = corpoDoDocumento(PEDIDO)['signers'] as Record<
       string,
       unknown
@@ -58,7 +58,7 @@ describe('corpo do documento na ZapSign', () => {
     expect(cliente).toMatchObject({
       name: 'Maria',
       auth_mode: AUTENTICACAO_PADRAO,
-      require_selfie_photo: true,
+      require_selfie_photo: false,
       send_automatic_email: true,
       lock_name: true,
       lock_email: true,
@@ -83,18 +83,19 @@ describe('corpo do documento na ZapSign', () => {
     expect(b).not.toHaveProperty('signature_placement')
   })
 
-  it('selfie é só a foto: nada de validação biométrica (custo extra)', () => {
-    for (const s of corpoDoDocumento(PEDIDO)['signers'] as Record<string, unknown>[]) {
+  it('nada de validação biométrica (custo extra), nem com a selfie religada', () => {
+    for (const s of corpoDoDocumento(PEDIDO, AUTENTICACAO_PADRAO, true)['signers'] as Record<string, unknown>[]) {
       expect(s).not.toHaveProperty('selfie_validation_type')
     }
   })
 })
 
 describe('configuração por variável', () => {
-  it('selfie ligada por padrão; "0" desliga', () => {
-    expect(exigirSelfie(undefined)).toBe(true)
+  it('selfie tirada em 25/11/2026: desligada por padrão; "1" religa', () => {
+    expect(exigirSelfie(undefined)).toBe(false)
+    expect(exigirSelfie('')).toBe(false)
     expect(exigirSelfie('0')).toBe(false)
-    expect(exigirSelfie('nao')).toBe(false)
+    expect(exigirSelfie('1')).toBe(true)
   })
 
   it('forma de identificação: padrão, da lista, e valor inválido cai no padrão', () => {

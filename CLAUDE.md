@@ -317,8 +317,8 @@ o risco é do painel do D4Sign do escritório, não do portal.
 D4Sign pela ZapSign, com conta própria (chave, plano e webhook separados dos
 da Consensus One, que fez a mesma troca antes). Ligada por
 `ASSINATURA_PROVEDOR=zapsign` (padrão continua `d4sign`); cada envio grava a
-plataforma (migração `20261124180000_zapsign`) e termina onde começou. Selfie
-(só a foto do rosto), âncora nas marcas `[[assina:…]]` dos modelos (agora 6pt
+plataforma (migração `20261124180000_zapsign`) e termina onde começou. Sem
+selfie (tirada em 25/11/2026, a pedido; `ZAPSIGN_SELFIE=1` religa), âncora nas marcas `[[assina:…]]` dos modelos (agora 6pt
 branca, 5mm acima do traço), coordenada nos documentos avulsos, retorno
 automático em `/api/zapsign/retorno?chave=`, e "Reenviar pela ZapSign" para o
 que ficou pendente na D4Sign — só com a ZapSign ligada, cancelando na D4Sign

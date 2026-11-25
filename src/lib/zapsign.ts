@@ -129,13 +129,12 @@ export function modoDeAutenticacao(
 }
 
 /**
- * Selfie (só a foto do rosto) ao assinar — decisão do Dr. Sergio para a
- * ZapSign: "vamos confirmar por selfie". Fica no relatório de assinaturas,
- * como na procuração de exemplo que o escritório mandou. Sem validação
- * biométrica, que tem custo extra e não foi pedida. ZAPSIGN_SELFIE=0 desliga.
+ * Selfie (foto do rosto) ao assinar. Foi ligada em 24/11/2026 e TIRADA em
+ * 25/11/2026, a pedido: a assinatura volta a ser só na tela com o código por
+ * e-mail. Desligada por padrão; ZAPSIGN_SELFIE=1 religa sem nova versão.
  */
 export function exigirSelfie(valor: string | undefined = process.env['ZAPSIGN_SELFIE']): boolean {
-  return !/^(0|nao|não|false|off)$/i.test((valor ?? '').trim())
+  return /^(1|sim|true|on)$/i.test((valor ?? '').trim())
 }
 
 export type SignatarioParaZapSign = {
